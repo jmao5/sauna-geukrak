@@ -1,26 +1,182 @@
+/* 1. Tailwind v4 필수 임포트 */
 @import "tailwindcss";
 
+/* ------------------------------------------------------------ */
+/* 테마 설정 */
+/* ------------------------------------------------------------ */
+@theme {
+  --font-pretendard: var(--font-pretendard);
+  --font-juache: var(--font-juache);
+
+  /* Semantic Colors - Defined by Variables below */
+  --color-bg-main: var(--bg-main);
+  --color-bg-sub: var(--bg-sub);
+  --color-text-main: var(--text-main);
+  --color-text-sub: var(--text-sub);
+  --color-point: var(--point-color);
+  --color-point-hover: var(--point-hover);
+  --color-point-ring: var(--point-ring);
+  --color-border-main: var(--border-main);
+
+  /* Colors - Status */
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-ring: #f87171;
+  --color-success: #22c55e;
+  --color-success-hover: #16a34a;
+  --color-success-ring: #4ade80;
+  --color-warning: #facc15;
+  --color-warning-hover: #eab308;
+  --color-warning-ring: #fde047;
+
+  /* Colors - Etc */
+  --color-gold: #fbbf24;
+  --color-silver: #9ca3af;
+  --color-bronze: #854d0e;
+  --color-disabled: #93a3af;
+  --color-confirm: #10b981;
+  --color-info: #f9bd7d;
+
+  /* Shadows */
+  --shadow-nav: 0px -1px 4px 0px rgba(0, 0, 0, 0.25);
+  --shadow-bottom: 0px 1px 0px 0px #d1d5db;
+
+  /* Z-Index */
+  --z-index-navbar: 50;
+  --z-index-bottomSheet: 100;
+  --z-index-toast: 110;
+  --z-index-pwaInstallBanner: 120;
+}
+
+/* ------------------------------------------------------------ */
+/* 전역 스타일 및 다크모드 변수 */
+/* ------------------------------------------------------------ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-main: #f8f8f8;
+  --bg-sub: #ffffff;
+  --text-main: #111827;
+  --text-sub: #6b7280;
+  --point-color: #60d4de;
+  --point-hover: #3fb7c1;
+  --point-ring: #70e3ed;
+  --border-main: #f1f1f1;
+
+  @media screen and (max-width: 320px) {
+    font-size: 14px;
+  }
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --bg-main: #121837;
+  --bg-sub: #1f2544;
+  --text-main: #f9fafb;
+  --text-sub: #9ca3af;
+  --point-color: #f9bd7d;
+  --point-hover: #f0aa60;
+  --point-ring: #ffc588;
+  --border-main: #2d355a;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+* {
+  font-family: var(--font-juache), sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  @apply transition-colors duration-200;
+}
+
+/* [추가] 모바일 웹 앱 (PWA) 네이티브 느낌 강화 */
+@layer base {
+  html, body {
+    /* 터치 시 회색 하이라이트 제거 */
+    -webkit-tap-highlight-color: transparent;
+    /* 텍스트 드래그 선택 방지 (입력창 제외) */
+    -webkit-user-select: none;
+    user-select: none;
+    /* 핀치 줌 방지 보완 */
+    touch-action: manipulation;
+    /* 고무줄 스크롤 방지 및 높이 고정 */
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+  }
+
+  /* 입력창과 선택이 필요한 텍스트는 예외 처리 */
+  input, textarea, [contenteditable="true"], .selectable {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  img {
+    /* 이미지 꾹 눌러서 저장/복사 팝업 방지 (앱 느낌) */
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  width: 100vw;
+  height: 100%;
+  color: var(--text-main);
+  background-color: #000; /* 외부 배경은 항상 검은색으로 고정 (데스크톱 뷰) */
+}
+
+/* [추가] 폰트 유틸리티 클래스 */
+.font-pretendard {
+  font-family: var(--font-pretendard);
+}
+
+.font-paperozi {
+  font-family: var(--font-paperozi);
+}
+
+/* 기존 커스텀 클래스들 */
+.app-container {
+  @apply absolute inset-0 m-auto h-full w-full max-w-md sm:max-w-xl;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+
+  @media screen and (min-width: 1524px) {
+    right: 40%;
+    height: 90%;
+    border-radius: 2rem;
+    border: 0.5rem solid white;
+    overflow: hidden;
+    box-sizing: content-box;
+    box-shadow:
+            0px 10px 10px -5px rgba(0, 0, 0, 0.04),
+            0px 20px 25px -5px rgba(0, 0, 0, 0.1);
+    max-width: 640px;
+  }
+}
+
+.app-info {
+  @apply absolute m-auto w-[25%] h-full right-[5%] overflow-hidden;
+
+  @media screen and (max-width: 1523px) {
+    display: none;
+  }
+}
+
+.navbar-info {
+  @media screen and (min-width: 1523px) {
+    position: fixed;
+    left: calc(25% + (238vw - 1523px) * 0.03);
+    bottom: 70px;
+    transform: translateX(-50%);
+    width: 100vw;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+@keyframes twinkle {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+  100% { opacity: 0.3; transform: scale(0.8); }
+}
+
+.animate-twinkle {
+  animation: twinkle 3s infinite ease-in-out;
 }
