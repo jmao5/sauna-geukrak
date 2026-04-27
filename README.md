@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🧖‍♂️ 사우나 극락 (Sauna Geukrak)
 
-## Getting Started
+사우나 극락은 한국의 사우나 문화를 사랑하는 사람들을 위한 사우나 탐색 및 방문 기록 플랫폼입니다. 사용자는 지도를 통해 주변 사우나를 찾고, 상세한 시설 정보(온도, 가격 등)를 확인하며, 자신의 방문 경험을 기록하고 공유할 수 있습니다.
 
-First, run the development server:
+---
+
+## 🚀 향후 개발 방향
+
+### 1. 솔루션 개요 및 추천 아키텍처
+빠르고 효율적인 서비스 구축을 위해 다음과 같은 최신 기술 스택을 활용합니다.
+
+*   **프론트엔드 (사용자 화면):** `Next.js (App Router)` + `Tailwind CSS`
+    *   SEO 최적화 및 빠른 페이지 로딩 속도 확보
+    *   반응형 디자인을 통한 모바일/데스크톱 동시 지원
+*   **백엔드 & 데이터베이스:** `Supabase` (또는 Firebase)
+    *   별도의 서버 구축 없이 인증(Auth), DB(PostgreSQL), 스토리지(이미지)를 통합 관리
+    *   실시간 데이터 동기화 지원
+*   **지도 API:** `Kakao Maps API` (또는 네이버 지도 API)
+    *   한국 내 정확한 장소 데이터 및 지도 UI 최적화
+
+### 2. 데이터베이스 구조 (가정)
+
+효율적인 데이터 관리를 위해 다음과 같은 스키마 구조를 지향합니다.
+
+| 테이블 | 주요 필드 |
+| :--- | :--- |
+| **사우나 (Saunas)** | ID, 이름, 주소, 위도/경도, 사우나 온도, 냉탕 온도, 가격, 편의시설 정보 등 |
+| **사용자 (Users)** | ID, 이메일, 닉네임, 프로필 이미지, 가입일 등 |
+| **리뷰/기록 (Reviews)** | ID, 사우나 ID, 사용자 ID, 방문 날짜, 별점, 후기 내용, 사진 URL 등 |
+
+### 3. 플랫폼 및 핵심 기능
+
+*   **플랫폼:** 웹 사이트 (반응형 Web)
+*   **핵심 기능:**
+    *   **지도 기반 탐색:** 사용자 위치 주변 또는 특정 지역의 사우나 검색
+    *   **상세 정보 제공:** 사우나별 상세 제원(온도, 시설 등) 및 이용료 정보
+    *   **방문 기록 및 리뷰:** 사용자별 사우나 방문 기록(로그) 작성 및 별점/후기 공유
+    *   **큐레이션:** 테마별(ex. 냉탕이 차가운 곳, 노천탕이 있는 곳) 사우나 추천
+
+---
+
+## 🛠 실행 방법
+
+현재 개발 환경 설정은 다음과 같습니다.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+브라우저에서 `http://localhost:3000` 접속 후 확인 가능합니다.
