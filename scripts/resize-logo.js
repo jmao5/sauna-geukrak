@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const path = require('path');
 
-const SOURCE = 'C:\\Users\\jsh\\.gemini\\antigravity\\brain\\58d4f784-8f92-4849-91fc-5026cd52291e\\sauna_geukrak_logo_1777275165471.png';
+const SOURCE = path.resolve(__dirname, '..', 'public', 'logo-source.png');
 const ICONS_DIR = path.resolve(__dirname, '..', 'public', 'icons');
 const FAVICON_DIR = path.resolve(__dirname, '..', 'public');
 
