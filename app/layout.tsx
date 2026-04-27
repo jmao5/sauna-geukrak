@@ -56,6 +56,10 @@ export const metadata: Metadata = {
     description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
   },
 
+  verification: {
+    google: '0nTgDHM2T8QPuBOP45Kg1NFw7cgi_hMnXdyi5cZuEgk',
+  },
+
   icons: {
     icon: '/favicon.ico',
     apple: '/icons/icon-192x192.png',
