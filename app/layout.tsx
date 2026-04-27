@@ -36,10 +36,25 @@ export const metadata: Metadata = {
 
   title: {
     template: '%s | 사우나 극락',
-    default: '사우나 극락',
+    default: '사우나 극락 - 한국 사우나 탐색 및 기록',
   },
-  description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
-  keywords: ['사우나', '찜질방', '온천', '목욕', '사우나 극락', '사우나 이키타이'],
+  description: '전국의 사우나, 찜질방 정보를 확인하고 나만의 방문 기록을 남겨보세요. 온도 정보부터 생생한 후기까지, 사우나 극락에서 확인하세요.',
+  keywords: ['사우나', '찜질방', '온천', '목욕', '사우나 추천', '사우나 극락', '사우나 이키타이'],
+
+  openGraph: {
+    title: '사우나 극락',
+    description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
+    url: 'https://sauna-geukrak.vercel.app',
+    siteName: '사우나 극락',
+    locale: 'ko_KR',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: '사우나 극락',
+    description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
+  },
 
   icons: {
     icon: '/favicon.ico',
