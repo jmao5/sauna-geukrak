@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const path = require('path');
 
-const SOURCE = path.resolve(__dirname, '..', 'public', 'logo-source.png');
+const SOURCE = path.resolve(__dirname, '..', 'public', 'logo-source2.png');
 const ICONS_DIR = path.resolve(__dirname, '..', 'public', 'icons');
 const FAVICON_DIR = path.resolve(__dirname, '..', 'public');
 
