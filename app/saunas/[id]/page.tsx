@@ -1,5 +1,6 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/server'
+import { api } from '@/lib/api-instance'
 import { SaunaDetailClient } from './SaunaDetailClient'
 import { notFound } from 'next/navigation'
 
@@ -16,13 +17,8 @@ export default async function SaunaDetailPage({
     queryKey: ['sauna', id],
     queryFn: async () => {
       const supabase = await createClient()
-      const { data, error } = await supabase
-        .from('saunas')
-        .select('*')
-        .eq('id', id)
-        .single()
-      
-      if (error || !data) throw new Error('Not found')
+      const data = await api.saunas.getById(id, supabase)
+      if (!data) throw new Error('Not found')
       return data
     },
   })
