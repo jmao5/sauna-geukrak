@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import localFont from 'next/font/local'
 import './globals.css'
 import QueryProvider from '@/components/providers/QueryProvider'
@@ -99,6 +100,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased overflow-hidden">
+        <Script 
+          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`} 
+          strategy="beforeInteractive" 
+        />
         <QueryProvider>
           <ThemeProvider>
             <MotionProvider>
