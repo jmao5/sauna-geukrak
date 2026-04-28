@@ -35,35 +35,36 @@ async function run() {
   await cleanImage.clone().resize(180, 180).png().toFile(path.join(ICONS_DIR, 'apple-touch-icon.png'));
   console.log('Created apple-touch-icon.png (Full, Clean)');
 
-  // 2. 파비콘용 (중앙 캐릭터 집중 크롭)
-  // 테두리 제거된 이미지 기준 상단 70% 추출
-  const favSize = Math.floor(cleanHeight * 0.7);
+  // 2. 파비콘용 (중앙 캐릭터에만 집중 - 하트 및 하단 글자 완전 제외)
+  // 캐릭터의 위치를 고려하여 더 정교하게 크롭합니다. (최종 미세 조정)
+  const favSize = Math.floor(cleanHeight * 0.35); // 더 타이트하게 조정
+  const favTop = Math.floor(cleanHeight * 0.38); // 캐릭터 얼굴과 몸통 중심
   const favLeft = Math.floor((cleanWidth - favSize) / 2);
 
   await cleanImage.clone()
     .extract({
       left: favLeft > 0 ? favLeft : 0,
-      top: 0,
+      top: favTop,
       width: favSize > cleanWidth ? cleanWidth : favSize,
       height: favSize
     })
     .resize(32, 32)
     .png()
     .toFile(path.join(FAVICON_DIR, 'favicon.ico'));
-  console.log('Created favicon.ico (Cropped, Clean)');
+  console.log('Created favicon.ico (Character Tight Crop, Clean)');
 
   // app/favicon.ico 복사
   await cleanImage.clone()
     .extract({
       left: favLeft > 0 ? favLeft : 0,
-      top: 0,
+      top: favTop,
       width: favSize > cleanWidth ? cleanWidth : favSize,
       height: favSize
     })
     .resize(32, 32)
     .png()
     .toFile(path.join(__dirname, '..', 'app', 'favicon.ico'));
-  console.log('Created app/favicon.ico (Cropped, Clean)');
+  console.log('Created app/favicon.ico (Character Tight Crop, Clean)');
 }
 
 run().then(() => console.log('Branding icons updated!')).catch(console.error);
