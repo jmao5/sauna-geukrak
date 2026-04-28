@@ -36,7 +36,7 @@ export default function SaunaMap() {
   // 2. TanStack Query를 사용하여 사우나 데이터 가져오기
   const { data: saunas = [], isLoading, isError } = useQuery({
     queryKey: ['saunas'],
-    queryFn: api.saunas.getAll,
+    queryFn: () => api.saunas.getAll(),
   })
 
   // 데이터가 로드되면 중심점 이동
