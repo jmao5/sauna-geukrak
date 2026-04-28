@@ -1,29 +1,41 @@
-import { createClient } from '@/lib/supabase/server'
-import { SaunaDto } from '@/types/sauna'
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api-instance'
+import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { MdArrowBack, MdLocationOn, MdInfoOutline, MdLocalDrink, MdOutlineTv } from 'react-icons/md'
 import { FaFireAlt, FaTemperatureLow, FaBed, FaShower } from 'react-icons/fa'
 
-export default async function SaunaDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const supabase = await createClient()
+export default function SaunaDetailPage() {
+  const params = useParams()
+  const router = useRouter()
+  const id = params.id as string
 
-  const { data, error } = await supabase
-    .from('saunas')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data: sauna, isLoading, isError } = useQuery({
+    queryKey: ['sauna', id],
+    queryFn: () => api.saunas.getById(id),
+    enabled: !!id,
+  })
 
-  if (error || !data) {
-    notFound()
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <p className="text-gray-500 font-medium">사우나 정보를 불러오는 중입니다...</p>
+      </div>
+    )
   }
 
-  const sauna = data as SaunaDto
+  if (isError || !sauna) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center gap-4">
+        <p className="text-red-500 font-medium">사우나 정보를 찾을 수 없습니다.</p>
+        <button onClick={() => router.push('/')} className="px-4 py-2 bg-gray-200 rounded-lg font-bold">
+          메인으로 돌아가기
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-sans">
