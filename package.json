@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@base-ui-components/react": "1.0.0-rc.0",
-    "@ducanh2912/next-pwa": "^10.2.9",
     "@suspensive/react": "^3.17.0",
     "@tanstack/react-query": "^5.90.11",
     "@tanstack/react-query-devtools": "^5.91.1",

@@ -24,7 +24,6 @@ const juache = localFont({
 
 // 1. 뷰포트 설정
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -62,13 +61,6 @@ export const metadata: Metadata = {
 
   icons: {
     icon: '/favicon.ico',
-    apple: '/icons/icon-192x192.png',
-  },
-
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: '사우나 극락',
   },
 
   formatDetection: {
