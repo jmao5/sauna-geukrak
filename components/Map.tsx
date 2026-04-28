@@ -72,20 +72,24 @@ export default function SaunaMap() {
         level={6} // 축척 레벨
       >
         {saunas.map((sauna) => (
-          <MapMarker
-            key={sauna.id}
-            position={{ lat: sauna.latitude, lng: sauna.longitude }}
-            image={{
-              src: '/favicon.ico', // 우리가 만든 파비콘을 마커로 사용!
-              size: { width: 32, height: 32 },
-              options: { offset: { x: 16, y: 32 } },
-            }}
-          >
-            {/* 마커 위에 작게 이름 표시 */}
-            <div style={{ padding: '5px', color: '#000', fontSize: '12px', fontWeight: 'bold' }}>
-              {sauna.name}
-            </div>
-          </MapMarker>
+          <div key={sauna.id}>
+            <MapMarker
+              position={{ lat: sauna.latitude, lng: sauna.longitude }}
+              image={{
+                src: '/icon-192x192.png',
+                size: { width: 36, height: 36 },
+                options: { offset: { x: 18, y: 36 } },
+              }}
+            />
+            <CustomOverlayMap
+              position={{ lat: sauna.latitude, lng: sauna.longitude }}
+              yAnchor={2.5} // 마커 위쪽으로 띄움
+            >
+              <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-md border border-gray-100 text-xs font-bold text-gray-800 whitespace-nowrap">
+                {sauna.name}
+              </div>
+            </CustomOverlayMap>
+          </div>
         ))}
       </Map>
     </div>
