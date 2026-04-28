@@ -87,7 +87,7 @@ export default function SaunaMap() {
             {hoveredMarkerId === sauna.id && (
               <CustomOverlayMap
                 position={{ lat: sauna.latitude, lng: sauna.longitude }}
-                yAnchor={2.6} // 마커 위쪽으로 더 띄움
+                yAnchor={2.2} // 마커 위쪽으로 더 띄움
                 xAnchor={0.5}
                 zIndex={10}
               >
