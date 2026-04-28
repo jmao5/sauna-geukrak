@@ -10,17 +10,23 @@ import { SaunaSummaryDto } from '@/types/sauna'
 export default function SaunaMap() {
   const router = useRouter()
   const [isLoaded, setIsLoaded] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [center, setCenter] = useState({ lat: 37.545, lng: 126.84 }) // 기본 서울 강서구 중심
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
 
   // 1. 카카오맵 스크립트 로드 확인
   useEffect(() => {
+    let attempts = 0
     const checkKakaoMap = setInterval(() => {
+      attempts++
       if (window.kakao && window.kakao.maps) {
         window.kakao.maps.load(() => {
           setIsLoaded(true)
         })
         clearInterval(checkKakaoMap)
+      } else if (attempts > 50) { // 5초 이상 로드 실패 시 (100ms * 50)
+        clearInterval(checkKakaoMap)
+        setLoadError(true)
       }
     }, 100)
 
@@ -43,6 +49,17 @@ export default function SaunaMap() {
   // 마커 클릭 핸들러: 상세 페이지로 라우팅
   const handleMarkerClick = (sauna: SaunaSummaryDto) => {
     router.push(`/saunas/${sauna.id}`)
+  }
+
+  if (loadError) {
+    return (
+      <div className="w-full h-[calc(100vh-140px)] flex flex-col items-center justify-center bg-red-50 rounded-xl p-4 text-center">
+        <p className="text-red-600 font-bold mb-2">지도를 불러올 수 없습니다 😢</p>
+        <p className="text-sm text-red-500">
+          브라우저의 <b>추적 방지(Tracking Prevention)</b> 기능이나 <b>광고 차단 확장 프로그램</b>, 또는 <b>시크릿 모드</b> 때문에 카카오맵이 차단되었을 수 있습니다.<br/>설정을 해제하고 새로고침 해주세요.
+        </p>
+      </div>
+    )
   }
 
   if (!isLoaded || isLoading) {
