@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api-instance'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { MdClose, MdNavigation, MdInfoOutline } from 'react-icons/md'
 
@@ -107,7 +107,7 @@ export default function SaunaMap() {
       {/* 바텀 시트 (선택된 사우나 정보) */}
       <AnimatePresence>
         {selectedSauna && (
-          <motion.div
+          <m.div
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
@@ -160,7 +160,7 @@ export default function SaunaMap() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
