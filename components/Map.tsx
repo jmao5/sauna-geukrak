@@ -76,7 +76,7 @@ export default function SaunaMap() {
             <MapMarker
               position={{ lat: sauna.latitude, lng: sauna.longitude }}
               image={{
-                src: '/icon-192x192.png',
+                src: '/icons/icon-192x192.png',
                 size: { width: 36, height: 36 },
                 options: { offset: { x: 18, y: 36 } },
               }}
