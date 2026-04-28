@@ -4,7 +4,7 @@ require('dotenv').config({ path: '.env.local' });
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 // REST API 키는 카카오 디벨로퍼스 '내 애플리케이션' 요약 정보에서 확인할 수 있습니다.
-const kakaoRestApiKey = process.env.KAKAO_REST_API_KEY;
+const kakaoRestApiKey = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Missing Supabase credentials in .env.local');
@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 if (!kakaoRestApiKey) {
-  console.error('Missing KAKAO_REST_API_KEY in .env.local');
+  console.error('Missing NEXT_PUBLIC_KAKAO_REST_API_KEY in .env.local');
   console.error('카카오 디벨로퍼스에서 REST API 키를 복사하여 .env.local에 추가해주세요.');
   process.exit(1);
 }
