@@ -1,9 +1,11 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/server'
 import { api } from '@/lib/api-instance'
-import HomeClient from './HomeClient'
+import MapClient from './MapClient'
 
-export default async function HomePage() {
+export const metadata = { title: '지도' }
+
+export default async function MapPage() {
   const queryClient = new QueryClient()
 
   await queryClient.prefetchQuery({
@@ -16,7 +18,7 @@ export default async function HomePage() {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <HomeClient />
+      <MapClient />
     </HydrationBoundary>
   )
 }

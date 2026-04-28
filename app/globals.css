@@ -8,15 +8,28 @@
   --font-pretendard: var(--font-pretendard);
   --font-juache: var(--font-juache);
 
-  /* Semantic Colors - Defined by Variables below */
+  /* Semantic Colors */
   --color-bg-main: var(--bg-main);
   --color-bg-sub: var(--bg-sub);
+  --color-bg-card: var(--bg-card);
+  --color-bg-elevated: var(--bg-elevated);
   --color-text-main: var(--text-main);
   --color-text-sub: var(--text-sub);
+  --color-text-muted: var(--text-muted);
   --color-point: var(--point-color);
   --color-point-hover: var(--point-hover);
   --color-point-ring: var(--point-ring);
   --color-border-main: var(--border-main);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  /* Sauna 도메인 전용 컬러 */
+  --color-sauna: var(--sauna-color);
+  --color-sauna-bg: var(--sauna-bg);
+  --color-sauna-text: var(--sauna-text);
+  --color-cold: var(--cold-color);
+  --color-cold-bg: var(--cold-bg);
+  --color-cold-text: var(--cold-text);
 
   /* Colors - Status */
   --color-danger: #dc2626;
@@ -29,7 +42,7 @@
   --color-warning-hover: #eab308;
   --color-warning-ring: #fde047;
 
-  /* Colors - Etc */
+  /* Colors - Misc */
   --color-gold: #fbbf24;
   --color-silver: #9ca3af;
   --color-bronze: #854d0e;
@@ -38,8 +51,10 @@
   --color-info: #f9bd7d;
 
   /* Shadows */
-  --shadow-nav: 0px -1px 4px 0px rgba(0, 0, 0, 0.25);
-  --shadow-bottom: 0px 1px 0px 0px #d1d5db;
+  --shadow-nav: 0px -1px 4px 0px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0px 1px 3px rgba(0, 0, 0, 0.06), 0px 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card-hover: 0px 4px 20px rgba(0, 0, 0, 0.1);
+  --shadow-bottom: 0px 1px 0px 0px #e5e7eb;
 
   /* Z-Index */
   --z-index-navbar: 50;
@@ -49,65 +64,92 @@
 }
 
 /* ------------------------------------------------------------ */
-/* 전역 스타일 및 다크모드 변수 */
+/* 전역 변수 (라이트 모드) */
 /* ------------------------------------------------------------ */
 :root {
-  --bg-main: #f8f8f8;
-  --bg-sub: #ffffff;
-  --text-main: #111827;
-  --text-sub: #6b7280;
-  --point-color: #60d4de;
-  --point-hover: #3fb7c1;
-  --point-ring: #70e3ed;
-  --border-main: #f1f1f1;
+  /* 이키타이 감성: 와시(和紙) 베이지 베이스 */
+  --bg-main: #f5f3ef;
+  --bg-sub: #faf9f7;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  --text-main: #1a1714;
+  --text-sub: #6b6560;
+  --text-muted: #a09890;
+  --point-color: #c94b1a;
+  --point-hover: #b84318;
+  --point-ring: #e87a50;
+  --border-main: #e8e4de;
+  --border-subtle: #f0ede8;
+  --border-strong: #d4cfc8;
+
+  /* 사우나 (깊은 벽돌 오렌지) */
+  --sauna-color: #c94b1a;
+  --sauna-bg: #fff3ee;
+  --sauna-text: #a83d14;
+
+  /* 냉탕 (깊은 감청) */
+  --cold-color: #1a5fb4;
+  --cold-bg: #eef3ff;
+  --cold-text: #1a5fb4;
 
   @media screen and (max-width: 320px) {
     font-size: 14px;
   }
 }
 
+/* ------------------------------------------------------------ */
+/* 다크 모드 */
+/* ------------------------------------------------------------ */
 .dark {
-  --bg-main: #121837;
-  --bg-sub: #1f2544;
-  --text-main: #f9fafb;
-  --text-sub: #9ca3af;
-  --point-color: #f9bd7d;
-  --point-hover: #f0aa60;
-  --point-ring: #ffc588;
-  --border-main: #2d355a;
+  --bg-main: #0f0e0c;
+  --bg-sub: #1a1815;
+  --bg-card: #211f1c;
+  --bg-elevated: #2a2825;
+  --text-main: #f0ede8;
+  --text-sub: #9c9590;
+  --text-muted: #6b6560;
+  --point-color: #e8855a;
+  --point-hover: #d97248;
+  --point-ring: #f0a070;
+  --border-main: #302d2a;
+  --border-subtle: #252320;
+  --border-strong: #3d3a35;
+
+  --sauna-color: #e8855a;
+  --sauna-bg: #1f0f08;
+  --sauna-text: #e8855a;
+
+  --cold-color: #6ea8fe;
+  --cold-bg: #0a1020;
+  --cold-text: #93c5fd;
 }
 
+/* ------------------------------------------------------------ */
+/* 기본 리셋 & 폰트 */
+/* ------------------------------------------------------------ */
 * {
-  font-family: var(--font-juache), sans-serif;
+  font-family: var(--font-pretendard), var(--font-juache), -apple-system, sans-serif;
   font-weight: normal;
-  font-style: normal;
-  @apply transition-colors duration-200;
+  @apply transition-colors duration-150;
 }
 
-/* [추가] 모바일 웹 앱 (PWA) 네이티브 느낌 강화 */
 @layer base {
   html, body {
-    /* 터치 시 회색 하이라이트 제거 */
     -webkit-tap-highlight-color: transparent;
-    /* 텍스트 드래그 선택 방지 (입력창 제외) */
     -webkit-user-select: none;
     user-select: none;
-    /* 핀치 줌 방지 보완 */
     touch-action: manipulation;
-    /* 고무줄 스크롤 방지 및 높이 고정 */
     overflow: hidden;
     height: 100%;
     width: 100%;
   }
 
-  /* 입력창과 선택이 필요한 텍스트는 예외 처리 */
   input, textarea, [contenteditable="true"], .selectable {
     -webkit-user-select: text;
     user-select: text;
   }
 
   img {
-    /* 이미지 꾹 눌러서 저장/복사 팝업 방지 (앱 느낌) */
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
   }
@@ -117,19 +159,62 @@ body {
   width: 100vw;
   height: 100%;
   color: var(--text-main);
-  background-color: #000; /* 외부 배경은 항상 검은색으로 고정 (데스크톱 뷰) */
+  background-color: #000;
 }
 
-/* [추가] 폰트 유틸리티 클래스 */
+/* ------------------------------------------------------------ */
+/* 유틸리티 클래스 */
+/* ------------------------------------------------------------ */
 .font-pretendard {
-  font-family: var(--font-pretendard);
+  font-family: var(--font-pretendard), -apple-system, sans-serif;
 }
 
-.font-paperozi {
-  font-family: var(--font-paperozi);
+.font-juache {
+  font-family: var(--font-juache), sans-serif;
 }
 
-/* 기존 커스텀 클래스들 */
+/* 스크롤바 숨김 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* 온도 숫자 전용 */
+.temp-number {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-pretendard), -apple-system, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+/* 이키타이 스타일 카드 */
+.sauna-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-main);
+  border-radius: 0.875rem;
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.sauna-card:active {
+  transform: scale(0.98);
+}
+
+/* 이키타이 리스트 행 */
+.sauna-row {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background-color 0.1s ease;
+}
+
+.sauna-row:active {
+  background-color: var(--bg-main);
+}
+
+/* 앱 레이아웃 */
 .app-container {
   @apply absolute inset-0 m-auto h-full w-full max-w-md sm:max-w-xl;
   background-color: var(--bg-main);
@@ -143,8 +228,8 @@ body {
     overflow: hidden;
     box-sizing: content-box;
     box-shadow:
-            0px 10px 10px -5px rgba(0, 0, 0, 0.04),
-            0px 20px 25px -5px rgba(0, 0, 0, 0.1);
+      0px 10px 10px -5px rgba(0, 0, 0, 0.04),
+      0px 20px 25px -5px rgba(0, 0, 0, 0.1);
     max-width: 640px;
   }
 }
@@ -157,20 +242,6 @@ body {
   }
 }
 
-.navbar-info {
-  @media screen and (min-width: 1523px) {
-    position: fixed;
-    left: calc(25% + (238vw - 1523px) * 0.03);
-    bottom: 70px;
-    transform: translateX(-50%);
-    width: 100vw;
-    max-width: 500px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-}
-
 @keyframes twinkle {
   0% { opacity: 0.3; transform: scale(0.8); }
   50% { opacity: 1; transform: scale(1.2); }
@@ -179,4 +250,39 @@ body {
 
 .animate-twinkle {
   animation: twinkle 3s infinite ease-in-out;
+}
+
+/* shimmer 스켈레톤 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-main) 25%,
+    var(--bg-sub) 50%,
+    var(--bg-main) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* 섹션 구분선 스타일 */
+.section-divider {
+  height: 8px;
+  background: var(--bg-main);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* 이키타이 온도 강조 숫자 - 크고 임팩트 있게 */
+.temp-display {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-pretendard), -apple-system, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
