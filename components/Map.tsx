@@ -60,7 +60,7 @@ export default function SaunaMap() {
         style={{ width: '100%', height: '100%' }}
         level={6} // 축척 레벨
       >
-        {saunas.map((sauna: any) => (
+        {saunas.map((sauna) => (
           <div key={sauna.id}>
             <MapMarker
               position={{ lat: sauna.latitude, lng: sauna.longitude }}
