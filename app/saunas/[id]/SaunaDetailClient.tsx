@@ -6,6 +6,7 @@ import { SaunaDto } from '@/types/sauna'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import {
@@ -15,8 +16,10 @@ import {
   BiMap,
   BiShare,
   BiStar,
+  BiSolidStar,
   BiX,
   BiUser,
+  BiSolidBookmark,
 } from 'react-icons/bi'
 
 // ── 온도 히어로 ──────────────────────────────────────────────
@@ -61,7 +64,6 @@ function TempHero({ sauna }: { sauna: SaunaDto }) {
   )
 }
 
-// ── 섹션 ─────────────────────────────────────────────────────
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
@@ -113,23 +115,20 @@ function DetailSkeleton() {
   )
 }
 
-// ── 별점 표시 ─────────────────────────────────────────────────
 function StarRow({ rating }: { rating: number }) {
   return (
     <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map((n) => (
-        <BiStar
-          key={n}
-          size={13}
-          className={n <= rating ? 'text-gold' : 'text-border-main'}
-          style={{ fill: n <= rating ? 'currentColor' : 'none' }}
-        />
+        n <= rating ? (
+          <BiSolidStar key={n} size={13} className="text-gold" />
+        ) : (
+          <BiStar key={n} size={13} className="text-border-main" />
+        )
       ))}
     </div>
   )
 }
 
-// ── 리뷰 목록 ─────────────────────────────────────────────────
 const VISIT_TIME_LABELS: Record<string, string> = {
   morning: '🌅 아침',
   afternoon: '☀️ 오후',
@@ -188,36 +187,29 @@ function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void
 
         return (
           <div key={review.id} className="px-4 py-4">
-            {/* 유저 정보 + 별점 */}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 overflow-hidden rounded-full bg-bg-main border border-border-subtle flex-shrink-0">
-                  {avatar ? (
-                    <img src={avatar} alt={displayName} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center">
-                      <BiUser size={16} className="text-text-muted" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-[12px] font-black text-text-main">{displayName}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <StarRow rating={review.rating} />
-                    {dateStr && (
-                      <span className="text-[10px] text-text-muted">{dateStr}</span>
-                    )}
-                    {review.visit_time && (
-                      <span className="text-[10px] text-text-muted">
-                        · {VISIT_TIME_LABELS[review.visit_time] ?? review.visit_time}
-                      </span>
-                    )}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 overflow-hidden rounded-full bg-bg-main border border-border-subtle flex-shrink-0">
+                {avatar ? (
+                  <img src={avatar} alt={displayName} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center">
+                    <BiUser size={16} className="text-text-muted" />
                   </div>
+                )}
+              </div>
+              <div>
+                <p className="text-[12px] font-black text-text-main">{displayName}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <StarRow rating={review.rating} />
+                  {dateStr && <span className="text-[10px] text-text-muted">{dateStr}</span>}
+                  {review.visit_time && (
+                    <span className="text-[10px] text-text-muted">
+                      · {VISIT_TIME_LABELS[review.visit_time] ?? review.visit_time}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* 내용 */}
             {review.content && (
               <p className="text-[12px] leading-relaxed text-text-sub mt-1">{review.content}</p>
             )}
@@ -229,14 +221,11 @@ function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void
 }
 
 // ── 사활 기록 바텀시트 ────────────────────────────────────────
-function ReviewBottomSheet({
-  sauna,
-  onClose,
-}: {
-  sauna: SaunaDto
-  onClose: () => void
-}) {
-  const { user, accessToken } = useUserStore()
+// createPortal로 document.body에 직접 마운트 →
+// overflow-y-auto 스크롤 컨테이너 안에 fixed를 쓰면 클릭 좌표가 스크롤 위치에 따라
+// 어긋나서 별점/버튼 클릭이 막히는 문제 해결
+function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () => void }) {
+  const { user, session } = useUserStore()
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -244,6 +233,9 @@ function ReviewBottomSheet({
   const [content, setContent] = useState('')
   const [visitDate, setVisitDate] = useState(new Date().toISOString().slice(0, 10))
   const [visitTime, setVisitTime] = useState<'morning' | 'afternoon' | 'evening' | 'night'>('afternoon')
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   const VISIT_TIMES = [
     { id: 'morning', label: '아침', emoji: '🌅' },
@@ -255,7 +247,8 @@ function ReviewBottomSheet({
   const mutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error('로그인 필요')
-      const token = accessToken()
+      // accessToken 함수 대신 session에서 직접 읽어서 클로저 문제 방지
+      const token = session?.access_token
       if (!token) throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.')
       return api.reviews.create(
         {
@@ -279,32 +272,31 @@ function ReviewBottomSheet({
     },
   })
 
-  if (!user) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
-        <div
-          className="w-full rounded-t-2xl bg-bg-card border-t border-border-main p-6 text-center"
-          onClick={e => e.stopPropagation()}
-        >
-          <p className="mb-1 text-base font-black text-text-main">로그인이 필요해요</p>
-          <p className="mb-5 text-[12px] text-text-sub">사활 기록은 로그인 후 작성 가능합니다</p>
-          <button
-            onClick={() => router.push('/login')}
-            className="w-full rounded-xl bg-point py-3 text-[13px] font-black text-white"
-          >
-            로그인하러 가기
-          </button>
-        </div>
-      </div>
-    )
-  }
+  if (!mounted) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+  const sheet = !user ? (
+    <div className="fixed inset-0 z-[200] flex items-end" onClick={onClose}>
+      <div
+        className="w-full rounded-t-2xl bg-bg-card border-t border-border-main p-6 text-center"
+        onClick={e => e.stopPropagation()}
+      >
+        <p className="mb-1 text-base font-black text-text-main">로그인이 필요해요</p>
+        <p className="mb-5 text-[12px] text-text-sub">사활 기록은 로그인 후 작성 가능합니다</p>
+        <button
+          onClick={() => router.push('/login')}
+          className="w-full rounded-xl bg-point py-3 text-[13px] font-black text-white"
+        >
+          로그인하러 가기
+        </button>
+      </div>
+    </div>
+  ) : (
+    <div className="fixed inset-0 z-[200] flex items-end bg-black/40" onClick={onClose}>
       <div
         className="w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-bg-card border-t border-border-main"
         onClick={e => e.stopPropagation()}
       >
+        {/* 헤더 */}
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3.5">
           <div>
             <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Review</p>
@@ -316,16 +308,21 @@ function ReviewBottomSheet({
         </div>
 
         <div className="p-4 space-y-5">
+          {/* 별점 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Rating</p>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} onClick={() => setRating(n)}>
-                  <BiStar
-                    size={30}
-                    className={n <= rating ? 'text-gold fill-gold' : 'text-border-main'}
-                    style={{ fill: n <= rating ? 'currentColor' : 'none' }}
-                  />
+                <button
+                  key={n}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setRating(n) }}
+                >
+                  {n <= rating ? (
+                    <BiSolidStar size={30} className="text-gold" />
+                  ) : (
+                    <BiStar size={30} className="text-border-strong text-text-muted" />
+                  )}
                 </button>
               ))}
               {rating > 0 && (
@@ -336,6 +333,7 @@ function ReviewBottomSheet({
             </div>
           </div>
 
+          {/* 방문 날짜 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Visit Date</p>
             <input
@@ -347,17 +345,20 @@ function ReviewBottomSheet({
             />
           </div>
 
+          {/* 방문 시간대 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Time</p>
             <div className="grid grid-cols-4 gap-2">
               {VISIT_TIMES.map(({ id, label, emoji }) => (
                 <button
                   key={id}
-                  onClick={() => setVisitTime(id)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${visitTime === id
-                    ? 'border-point bg-point/5 text-point'
-                    : 'border-border-main bg-bg-main text-text-sub'
-                    }`}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setVisitTime(id) }}
+                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${
+                    visitTime === id
+                      ? 'border-point bg-point/5 text-point'
+                      : 'border-border-main bg-bg-main text-text-sub'
+                  }`}
                 >
                   <span className="text-base">{emoji}</span>
                   {label}
@@ -366,6 +367,7 @@ function ReviewBottomSheet({
             </div>
           </div>
 
+          {/* 메모 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Memo (선택)</p>
             <textarea
@@ -379,8 +381,10 @@ function ReviewBottomSheet({
             <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/200</p>
           </div>
 
+          {/* 저장 */}
           <button
-            onClick={() => mutation.mutate()}
+            type="button"
+            onClick={(e) => { e.stopPropagation(); mutation.mutate() }}
             disabled={rating === 0 || mutation.isPending}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-point py-3.5 text-[13px] font-black text-white transition active:scale-[0.97] disabled:opacity-50"
           >
@@ -394,6 +398,8 @@ function ReviewBottomSheet({
       </div>
     </div>
   )
+
+  return createPortal(sheet, document.body)
 }
 
 // ── 메인 ────────────────────────────────────────────────────
@@ -435,6 +441,24 @@ export function SaunaDetailClient({ id }: { id: string }) {
     favMutation.mutate()
   }
 
+  const handleShare = async () => {
+    const url = window.location.href
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: sauna?.name || '사우나 극락',
+          text: '여기 사우나 어때요?',
+          url,
+        })
+      } catch (err) {
+        console.error('Share failed:', err)
+      }
+    } else {
+      await navigator.clipboard.writeText(url)
+      toast.success('링크가 복사되었습니다')
+    }
+  }
+
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
     queryKey: ['sauna', id],
     queryFn: () => api.saunas.getById(id),
@@ -469,14 +493,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
         {/* 히어로 이미지 */}
         <div className="relative h-56 w-full flex-shrink-0">
           {thumbnail ? (
-            <Image
-              src={thumbnail}
-              alt={sauna.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 680px"
-              priority
-            />
+            <Image src={thumbnail} alt={sauna.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 680px" priority />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg via-bg-main to-cold-bg">
               <span className="text-6xl opacity-10">🧖</span>
@@ -485,20 +502,13 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
           <div className="absolute left-4 top-4 z-10">
-            <button
-              onClick={() => router.back()}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
-            >
+            <button onClick={() => router.back()} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
               <BiChevronLeft size={22} />
             </button>
           </div>
           <div className="absolute right-4 top-4 z-10 flex gap-2">
             {user && (
-              <button
-                onClick={() => router.push(`/saunas/${id}/edit`)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
-                aria-label="사우나 정보 수정"
-              >
+              <button onClick={() => router.push(`/saunas/${id}/edit`)} className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
                 <BiEdit size={16} />
               </button>
             )}
@@ -510,10 +520,13 @@ export function SaunaDetailClient({ id }: { id: string }) {
               {favMutation.isPending ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
-                <BiBookmark size={16} style={{ fill: isFav ? 'currentColor' : 'none' }} />
+                isFav ? <BiSolidBookmark size={16} /> : <BiBookmark size={16} />
               )}
             </button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
+            <button
+              onClick={handleShare}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
+            >
               <BiShare size={16} />
             </button>
           </div>
@@ -521,8 +534,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <h1 className="text-[22px] font-black text-white leading-tight">{sauna.name}</h1>
             <p className="mt-0.5 flex items-center gap-1 text-[11px] text-white/70">
-              <BiMap size={11} />
-              {sauna.address}
+              <BiMap size={11} />{sauna.address}
             </p>
           </div>
         </div>
@@ -654,7 +666,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <InfoRow label="주차" value={sauna.parking ? '가능' : '불가'} />
         </Section>
 
-        {/* ── 사활 기록 섹션 ── */}
+        {/* 사활 기록 목록 */}
         <div className="section-divider" />
         <Section title="사활 기록">
           <ReviewList saunaId={id} onWrite={() => setShowReview(true)} />
