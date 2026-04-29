@@ -125,7 +125,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased overflow-hidden">
         <Script
           src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
-          strategy="beforeInteractive"
+          strategy="lazyOnload"
         />
         <QueryProvider>
           <ThemeProvider>

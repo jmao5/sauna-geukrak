@@ -19,16 +19,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     const supabase = createClient()
 
-    // getUser()로 실제 서버 검증 + 토큰 자동 갱신
-    supabase.auth.getUser().then(({ data: { user }, error }) => {
-      if (error || !user) {
-        clearSession()
-        return
-      }
-      // 유저가 확인됐으면 세션도 가져와서 store에 저장
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session)
-      })
+    // getSession()으로 빠르게 초기 세션 확인 (캐시 사용)
+    // 토큰 유효성 검증은 onAuthStateChange의 TOKEN_REFRESHED 이벤트가 처리
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
     })
 
     // 이후 인증 상태 변화 구독 (로그인/로그아웃/토큰 갱신 등)
