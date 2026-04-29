@@ -311,7 +311,12 @@ export function SaunaDetailClient({ id }: { id: string }) {
     enabled: !!id,
   })
 
-  const { data: kakaoImage } = useKakaoSaunaImage(sauna?.name ?? '', sauna?.address, sauna?.images?.[0])
+  // DB 이미지가 없으면 카카오맵에서 폴백 이미지 가져옴
+  const [kakaoImage, setKakaoImage] = useState<string | null>(null)
+  useEffect(() => {
+    if (!sauna || sauna.images?.[0]) return
+    api.kakao.getPlaceImage(sauna.name, sauna.address).then(setKakaoImage)
+  }, [sauna?.id, sauna?.images?.[0], sauna?.name, sauna?.address])
 
   if (isLoading) return <DetailSkeleton />
   if (isError || !sauna) {

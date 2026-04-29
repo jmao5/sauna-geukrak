@@ -186,10 +186,31 @@ export const api = {
         .select('user_id')
         .eq('user_id', userId)
         .eq('sauna_id', saunaId)
-        .maybeSingle()  // .single()은 0행이면 406 에러 → maybeSingle()은 0행이면 null 반환
+        .maybeSingle()
 
       if (error) return false
       return !!data
+    },
+  },
+
+  kakao: {
+    /**
+     * 이미지가 없는 사우나의 카카오맵 대표 이미지를 가져옵니다. (Client Side)
+     * 직접 카카오 API 호출 시 CORS 오류가 발생하므로, /api/kakao-image 라우트를 호출합니다.
+     */
+    getPlaceImage: async (name: string, address?: string): Promise<string | null> => {
+      try {
+        const params = new URLSearchParams({ name })
+        if (address) params.set('address', address)
+
+        const res = await fetch(`/api/kakao-image?${params.toString()}`)
+        if (!res.ok) return null
+
+        const data = await res.json()
+        return data.image ?? null
+      } catch {
+        return null
+      }
     },
   },
 }
