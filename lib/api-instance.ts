@@ -1,15 +1,6 @@
 import { createClient as createBrowserClient } from './supabase/client'
-import { createBrowserClient as createAuthedBrowserClient } from '@supabase/ssr'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
-
-const getAuthedClient = (accessToken: string): SupabaseClient => {
-  return createAuthedBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
-  )
-}
 
 const getSupabaseClient = (customClient?: SupabaseClient): SupabaseClient => {
   return customClient && typeof customClient.from === 'function'
@@ -31,25 +22,25 @@ export interface SaunaSearchParams {
 
 export const api = {
   saunas: {
-    /** 사우나 등록 (로그인 필요) */
+    /** 사우나 등록 */
     create: async (
       payload: Omit<SaunaDto, 'id' | 'created_at'>,
-      accessToken: string
+      customClient?: SupabaseClient
     ): Promise<SaunaDto> => {
-      const supabase = getAuthedClient(accessToken)
+      const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('saunas').insert(payload).select().single()
-      if (error) throw new Error(`사우나 등록에 실패했습니다.`)
+      if (error) throw new Error(`사우나 등록에 실패했습니다: ${error.message}`)
       return data as SaunaDto
     },
 
-    /** 사우나 수정 (로그인 필요) */
+    /** 사우나 수정 */
     update: async (
       id: string,
       payload: Omit<SaunaDto, 'id' | 'created_at'>,
-      accessToken: string
+      customClient?: SupabaseClient
     ): Promise<SaunaDto> => {
-      const supabase = getAuthedClient(accessToken)
+      const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('saunas').update(payload).eq('id', id).select().single()
       if (error) throw new Error(`사우나 수정에 실패했습니다: ${error.message}`)
@@ -128,9 +119,9 @@ export const api = {
         visit_date: string; visit_time?: string; congestion?: string
         sessions?: object[]; images?: string[]
       },
-      accessToken: string
+      customClient?: SupabaseClient
     ) => {
-      const supabase = getAuthedClient(accessToken)
+      const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('reviews')
         .insert(review)
@@ -142,8 +133,8 @@ export const api = {
   },
 
   favorites: {
-    getByUserId: async (userId: string, accessToken: string) => {
-      const supabase = getAuthedClient(accessToken)
+    getByUserId: async (userId: string, customClient?: SupabaseClient) => {
+      const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('favorites')
         .select('sauna_id, created_at, saunas (id, name, address, sauna_rooms, cold_baths, images)')
@@ -153,23 +144,23 @@ export const api = {
       return data
     },
 
-    add: async (userId: string, saunaId: string, accessToken: string) => {
-      const supabase = getAuthedClient(accessToken)
+    add: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
+      const supabase = getSupabaseClient(customClient)
       const { error } = await supabase
         .from('favorites')
         .upsert({ user_id: userId, sauna_id: saunaId }, { onConflict: 'user_id,sauna_id' })
       if (error) throw new Error(`찜 추가에 실패했습니다: ${error.message}`)
     },
 
-    remove: async (userId: string, saunaId: string, accessToken: string) => {
-      const supabase = getAuthedClient(accessToken)
+    remove: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
+      const supabase = getSupabaseClient(customClient)
       const { error } = await supabase
         .from('favorites').delete().eq('user_id', userId).eq('sauna_id', saunaId)
       if (error) throw new Error(`찜 제거에 실패했습니다: ${error.message}`)
     },
 
-    check: async (userId: string, saunaId: string, accessToken: string): Promise<boolean> => {
-      const supabase = getAuthedClient(accessToken)
+    check: async (userId: string, saunaId: string, customClient?: SupabaseClient): Promise<boolean> => {
+      const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('favorites').select('user_id').eq('user_id', userId).eq('sauna_id', saunaId).maybeSingle()
       if (error) return false
@@ -191,8 +182,8 @@ export const api = {
   },
 
   storage: {
-    uploadImage: async (saunaId: string, file: File, accessToken: string): Promise<string> => {
-      const supabase = getAuthedClient(accessToken)
+    uploadImage: async (saunaId: string, file: File, customClient?: SupabaseClient): Promise<string> => {
+      const supabase = getSupabaseClient(customClient)
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${saunaId}/${crypto.randomUUID()}.${ext}`
       const { error } = await supabase.storage
@@ -203,8 +194,8 @@ export const api = {
       return data.publicUrl
     },
 
-    deleteImage: async (publicUrl: string, accessToken: string): Promise<void> => {
-      const supabase = getAuthedClient(accessToken)
+    deleteImage: async (publicUrl: string, customClient?: SupabaseClient): Promise<void> => {
+      const supabase = getSupabaseClient(customClient)
       const marker = '/sauna-geukrak/'
       const idx = publicUrl.indexOf(marker)
       if (idx === -1) return

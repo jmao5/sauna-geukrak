@@ -37,10 +37,10 @@ function EditSkeleton() {
 
 export default function SaunaEditClient({ id }: { id: string }) {
   const router = useRouter()
-  const { user, accessToken } = useUserStore()
+  const { user } = useUserStore()
   const queryClient = useQueryClient()
 
-  // SSR prefetch 캐시 구독 — SaunaDetailClient와 동일한 패턴
+  // SSR prefetch 캐시 구독
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
     queryKey: ['sauna', id],
     queryFn: () => api.saunas.getById(id),
@@ -80,9 +80,8 @@ export default function SaunaEditClient({ id }: { id: string }) {
 
   const mutation = useMutation({
     mutationFn: (payload: FormState) => {
-      const token = accessToken()
-      if (!token) throw new Error('로그인이 필요합니다')
-      return api.saunas.update(id, payload, token)
+      if (!user) throw new Error('로그인이 필요합니다')
+      return api.saunas.update(id, payload)
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(['sauna', id], updated)
@@ -134,7 +133,6 @@ export default function SaunaEditClient({ id }: { id: string }) {
     </div>
   )
 
-  const token = accessToken()
   const SAUNA_TYPES = ['건식', '습식', '핀란드식', '한증막', '불가마']
 
   return (
@@ -174,13 +172,12 @@ export default function SaunaEditClient({ id }: { id: string }) {
           </div>
         </SectionCard>
 
-        {/* 사진 — 기존 이미지 수정 + 추가 모두 지원 */}
+        {/* 사진 */}
         <SectionCard title="사진" emoji="📷">
           <ImageUploader
             images={form.images}
             onChange={(urls) => onChange({ images: urls })}
             saunaId={id}
-            accessToken={token ?? undefined}
             maxCount={5}
           />
         </SectionCard>

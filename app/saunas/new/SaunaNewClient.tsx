@@ -512,7 +512,7 @@ function DetailFormStep({
 ──────────────────────────────────────────────────────────── */
 export default function SaunaNewClient() {
   const router = useRouter()
-  const { user, accessToken } = useUserStore()
+  const { user } = useUserStore()
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
   const [form, setForm] = useState<FormState>(defaultForm())
@@ -542,10 +542,9 @@ export default function SaunaNewClient() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const token = accessToken()
-      if (!token) throw new Error('not_logged_in')
+      if (!user) throw new Error('not_logged_in')
       if (!form.name || !form.address) throw new Error('missing_fields')
-      return await api.saunas.create(form, token)
+      return await api.saunas.create(form)
     },
     onSuccess: (created) => {
       toast.success(`${created.name} 등록 완료! 🎉`)

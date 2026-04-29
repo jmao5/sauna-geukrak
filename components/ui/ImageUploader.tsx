@@ -8,8 +8,7 @@
  * Props:
  *   - images     : 현재 이미지 URL 배열 (form.images)
  *   - onChange   : 이미지 URL 배열이 바뀔 때 호출 (urls => void)
- *   - saunaId    : Storage 경로에 쓸 사우나 ID — 등록 시엔 없을 수 있어 optional
- *   - accessToken: Storage 업로드/삭제에 필요한 Supabase access token
+ *   - saunaId    : Storage 경로에 쓸 사우나 ID — 등록 시엔 'temp' 등으로 처리
  *   - maxCount   : 최대 업로드 개수 (기본 5)
  *
  * 동작:
@@ -29,7 +28,6 @@ interface Props {
   images: string[]
   onChange: (urls: string[]) => void
   saunaId?: string
-  accessToken?: string
   maxCount?: number
 }
 
@@ -42,7 +40,6 @@ export default function ImageUploader({
   images,
   onChange,
   saunaId = 'temp',
-  accessToken,
   maxCount = 5,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -102,17 +99,9 @@ export default function ImageUploader({
           continue
         }
 
-        let publicUrl: string
-
-        if (accessToken) {
-          // accessToken이 있으면 Supabase Storage에 실제 업로드
-          publicUrl = await api.storage.uploadImage(saunaId, compressedFile, accessToken)
-        } else {
-          // 등록 폼처럼 accessToken이 아직 없는 경우 — ObjectURL을 임시로 사용
-          // (실제 제출 시 별도 처리 필요 — 현재 new 폼은 이 경로)
-          // ⚠️ 압축된 파일에 대해 새로운 ObjectURL을 생성
-          publicUrl = URL.createObjectURL(compressedFile)
-        }
+        // 3. Supabase Storage에 실제 업로드
+        // api-instance에서 브라우저 클라이언트를 통해 인증 정보를 자동으로 포함함
+        const publicUrl = await api.storage.uploadImage(saunaId, compressedFile)
 
         URL.revokeObjectURL(previewUrl)
         setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
@@ -131,9 +120,9 @@ export default function ImageUploader({
     onChange(images.filter((_, i) => i !== index))
 
     // Storage에서도 삭제 (외부 URL이면 스킵)
-    if (accessToken && url.includes('supabase')) {
+    if (url.includes('supabase')) {
       try {
-        await api.storage.deleteImage(url, accessToken)
+        await api.storage.deleteImage(url)
       } catch {
         // 삭제 실패해도 UI는 유지 (이미 제거됨)
         // 고아 파일은 추후 Storage 정리로 처리

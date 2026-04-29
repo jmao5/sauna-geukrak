@@ -221,11 +221,8 @@ function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void
 }
 
 // ── 사활 기록 바텀시트 ────────────────────────────────────────
-// createPortal로 document.body에 직접 마운트 →
-// overflow-y-auto 스크롤 컨테이너 안에 fixed를 쓰면 클릭 좌표가 스크롤 위치에 따라
-// 어긋나서 별점/버튼 클릭이 막히는 문제 해결
 function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () => void }) {
-  const { user, session } = useUserStore()
+  const { user } = useUserStore()
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -247,20 +244,14 @@ function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () =>
   const mutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error('로그인 필요')
-      // accessToken 함수 대신 session에서 직접 읽어서 클로저 문제 방지
-      const token = session?.access_token
-      if (!token) throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.')
-      return api.reviews.create(
-        {
-          sauna_id: sauna.id,
-          user_id: user.id,
-          rating,
-          content: content.trim() || undefined,
-          visit_date: visitDate,
-          visit_time: visitTime,
-        },
-        token
-      )
+      return api.reviews.create({
+        sauna_id: sauna.id,
+        user_id: user.id,
+        rating,
+        content: content.trim() || undefined,
+        visit_date: visitDate,
+        visit_time: visitTime,
+      })
     },
     onSuccess: () => {
       toast.success('사활 기록 완료! 🔥')
@@ -406,27 +397,23 @@ function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () =>
 export function SaunaDetailClient({ id }: { id: string }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { user, accessToken } = useUserStore()
+  const { user } = useUserStore()
   const [showReview, setShowReview] = useState(false)
-
-  const token = accessToken()
 
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
-    queryFn: () => (user && token) ? api.favorites.check(user.id, id, token) : Promise.resolve(false),
-    enabled: !!user && !!id && !!token,
+    queryFn: () => user ? api.favorites.check(user.id, id) : Promise.resolve(false),
+    enabled: !!user && !!id,
   })
 
   const favMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
-      const t = accessToken()
-      if (!t) throw new Error('not_logged_in')
       if (isFav) {
-        await api.favorites.remove(user.id, id, t)
+        await api.favorites.remove(user.id, id)
         return 'removed'
       } else {
-        await api.favorites.add(user.id, id, t)
+        await api.favorites.add(user.id, id)
         return 'added'
       }
     },
