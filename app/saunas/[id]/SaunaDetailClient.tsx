@@ -1,16 +1,20 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api-instance'
-import { useRouter } from 'next/navigation'
-import { SaunaDto } from '@/types/sauna'
 import { useUserStore } from '@/stores/userStore'
-import {
-  BiChevronLeft, BiShare, BiBookmark, BiMap, BiX, BiStar,
-} from 'react-icons/bi'
+import { SaunaDto } from '@/types/sauna'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
+import {
+  BiBookmark,
+  BiChevronLeft,
+  BiMap,
+  BiShare,
+  BiStar,
+  BiX,
+} from 'react-icons/bi'
 
 // ── 온도 히어로 ──────────────────────────────────────────────
 function TempHero({ sauna }: { sauna: SaunaDto }) {
@@ -231,11 +235,10 @@ function ReviewBottomSheet({
                 <button
                   key={id}
                   onClick={() => setVisitTime(id)}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${
-                    visitTime === id
+                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${visitTime === id
                       ? 'border-point bg-point/5 text-point'
                       : 'border-border-main bg-bg-main text-text-sub'
-                  }`}
+                    }`}
                 >
                   <span className="text-base">{emoji}</span>
                   {label}
@@ -279,30 +282,43 @@ function ReviewBottomSheet({
 // ── 메인 ────────────────────────────────────────────────────
 export function SaunaDetailClient({ id }: { id: string }) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { user } = useUserStore()
   const [showReview, setShowReview] = useState(false)
 
   // 찜 상태
-  const { data: isFav = false, refetch: refetchFav } = useQuery({
+  const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
     queryFn: () => user ? api.favorites.check(user.id, id) : Promise.resolve(false),
     enabled: !!user && !!id,
   })
 
-  const toggleFav = async () => {
-    if (!user) { router.push('/login'); return }
-    try {
+  const favMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error('not_logged_in')
       if (isFav) {
         await api.favorites.remove(user.id, id)
-        toast.success('찜 목록에서 제거했어요')
+        return 'removed'
       } else {
         await api.favorites.add(user.id, id)
-        toast.success('찜 목록에 추가했어요 ❤️')
+        return 'added'
       }
-      refetchFav()
-    } catch {
-      toast.error('잠시 후 다시 시도해주세요')
-    }
+    },
+    onSuccess: (status) => {
+      if (status === 'removed') toast.success('찜 목록에서 제거했어요')
+      if (status === 'added') toast.success('찜 목록에 추가했어요 ❤️')
+      queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
+    },
+    onError: (error) => {
+      if (error.message !== 'not_logged_in') {
+        toast.error('잠시 후 다시 시도해주세요')
+      }
+    },
+  })
+
+  const toggleFav = () => {
+    if (!user) { router.push('/login'); return }
+    favMutation.mutate()
   }
 
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
@@ -360,11 +376,15 @@ export function SaunaDetailClient({ id }: { id: string }) {
             {/* 찜 버튼 — 실제 동작 */}
             <button
               onClick={toggleFav}
-              className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 ${
-                isFav ? 'bg-point text-white' : 'bg-black/40 text-white'
-              }`}
+              disabled={favMutation.isPending}
+              className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 disabled:opacity-50 ${isFav ? 'bg-point text-white' : 'bg-black/40 text-white'
+                }`}
             >
-              <BiBookmark size={16} style={{ fill: isFav ? 'currentColor' : 'none' }} />
+              {favMutation.isPending ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <BiBookmark size={16} style={{ fill: isFav ? 'currentColor' : 'none' }} />
+              )}
             </button>
             <button className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
               <BiShare size={16} />
@@ -386,9 +406,8 @@ export function SaunaDetailClient({ id }: { id: string }) {
         <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-bg-card border-b border-border-subtle">
           <button
             onClick={toggleFav}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[13px] font-black transition active:scale-[0.97] ${
-              isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-main'
-            }`}
+            className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[13px] font-black transition active:scale-[0.97] ${isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-main'
+              }`}
           >
             {isFav ? '❤️ 찜됨' : '🤍 극락가고싶다'}
           </button>

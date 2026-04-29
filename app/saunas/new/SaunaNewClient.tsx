@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
 import { api } from '@/lib/api-instance'
@@ -499,7 +500,6 @@ export default function SaunaNewClient() {
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
   const [form, setForm] = useState<FormState>(defaultForm())
-  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // 공용 훅으로 카카오 SDK 로드 관리 (autoload=false → kakao.maps.load() 직접 호출 보장)
   const { isReady: kakaoReady } = useKakaoReady()
@@ -525,27 +525,30 @@ export default function SaunaNewClient() {
     setForm((prev) => ({ ...prev, ...patch }))
   }
 
-  const handleSubmit = async () => {
-    const token = accessToken()
-    if (!token) {
-      toast.error('로그인이 필요합니다')
-      return
-    }
-    if (!form.name || !form.address) {
-      toast.error('시설명과 주소를 입력해주세요')
-      return
-    }
-
-    setIsSubmitting(true)
-    try {
-      const created = await api.saunas.create(form, token)
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const token = accessToken()
+      if (!token) throw new Error('not_logged_in')
+      if (!form.name || !form.address) throw new Error('missing_fields')
+      return await api.saunas.create(form, token)
+    },
+    onSuccess: (created) => {
       toast.success(`${created.name} 등록 완료! 🎉`)
       router.push(`/saunas/${created.id}`)
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : '등록 중 오류가 발생했습니다')
-    } finally {
-      setIsSubmitting(false)
-    }
+    },
+    onError: (error) => {
+      if (error.message === 'not_logged_in') {
+        toast.error('로그인이 필요합니다')
+      } else if (error.message === 'missing_fields') {
+        toast.error('시설명과 주소를 입력해주세요')
+      } else {
+        toast.error(error.message || '등록 중 오류가 발생했습니다')
+      }
+    },
+  })
+
+  const handleSubmit = () => {
+    createMutation.mutate()
   }
 
   if (!user) return null
@@ -595,7 +598,7 @@ export default function SaunaNewClient() {
             form={form}
             onChange={handleFormChange}
             onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
+            isSubmitting={createMutation.isPending}
           />
         )}
       </div>
