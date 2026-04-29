@@ -131,15 +131,19 @@ export const api = {
       accessToken: string
     ) => {
       const supabase = getAuthedClient(accessToken)
-      const { data, error } = await supabase.from('reviews').insert(review).select().single()
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert(review)
+        .select()
+        .single()
       if (error) throw new Error(`리뷰 작성에 실패했습니다: ${error.message}`)
       return data
     },
   },
 
   favorites: {
-    getByUserId: async (userId: string, customClient?: SupabaseClient) => {
-      const supabase = getSupabaseClient(customClient)
+    getByUserId: async (userId: string, accessToken: string) => {
+      const supabase = getAuthedClient(accessToken)
       const { data, error } = await supabase
         .from('favorites')
         .select('sauna_id, created_at, saunas (id, name, address, sauna_rooms, cold_baths, images)')
@@ -149,21 +153,23 @@ export const api = {
       return data
     },
 
-    add: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
-      const supabase = getSupabaseClient(customClient)
-      const { error } = await supabase.from('favorites').insert({ user_id: userId, sauna_id: saunaId })
-      if (error) throw new Error(`찜 추가에 실패했습니다.`)
+    add: async (userId: string, saunaId: string, accessToken: string) => {
+      const supabase = getAuthedClient(accessToken)
+      const { error } = await supabase
+        .from('favorites')
+        .upsert({ user_id: userId, sauna_id: saunaId }, { onConflict: 'user_id,sauna_id' })
+      if (error) throw new Error(`찜 추가에 실패했습니다: ${error.message}`)
     },
 
-    remove: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
-      const supabase = getSupabaseClient(customClient)
+    remove: async (userId: string, saunaId: string, accessToken: string) => {
+      const supabase = getAuthedClient(accessToken)
       const { error } = await supabase
         .from('favorites').delete().eq('user_id', userId).eq('sauna_id', saunaId)
-      if (error) throw new Error(`찜 제거에 실패했습니다.`)
+      if (error) throw new Error(`찜 제거에 실패했습니다: ${error.message}`)
     },
 
-    check: async (userId: string, saunaId: string, customClient?: SupabaseClient): Promise<boolean> => {
-      const supabase = getSupabaseClient(customClient)
+    check: async (userId: string, saunaId: string, accessToken: string): Promise<boolean> => {
+      const supabase = getAuthedClient(accessToken)
       const { data, error } = await supabase
         .from('favorites').select('user_id').eq('user_id', userId).eq('sauna_id', saunaId).maybeSingle()
       if (error) return false

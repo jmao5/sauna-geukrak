@@ -406,23 +406,27 @@ function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () =>
 export function SaunaDetailClient({ id }: { id: string }) {
   const router = useRouter()
   const queryClient = useQueryClient()
-  const { user } = useUserStore()
+  const { user, accessToken } = useUserStore()
   const [showReview, setShowReview] = useState(false)
+
+  const token = accessToken()
 
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
-    queryFn: () => user ? api.favorites.check(user.id, id) : Promise.resolve(false),
-    enabled: !!user && !!id,
+    queryFn: () => (user && token) ? api.favorites.check(user.id, id, token) : Promise.resolve(false),
+    enabled: !!user && !!id && !!token,
   })
 
   const favMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
+      const t = accessToken()
+      if (!t) throw new Error('not_logged_in')
       if (isFav) {
-        await api.favorites.remove(user.id, id)
+        await api.favorites.remove(user.id, id, t)
         return 'removed'
       } else {
-        await api.favorites.add(user.id, id)
+        await api.favorites.add(user.id, id, t)
         return 'added'
       }
     },

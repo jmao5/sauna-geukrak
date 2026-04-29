@@ -19,8 +19,9 @@ const MENU_ITEMS = [
 
 export default function MyPageClient() {
   const router = useRouter()
-  const { user, isLoading, clearSession } = useUserStore()
+  const { user, isLoading, clearSession, accessToken } = useUserStore()
 
+  const token = accessToken()
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? '사우나 매니아'
   const avatarUrl = user?.user_metadata?.avatar_url ?? null
   const email = user?.email ?? null
@@ -28,8 +29,8 @@ export default function MyPageClient() {
   // 찜 개수
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
-    queryFn: () => api.favorites.getByUserId(user!.id),
-    enabled: !!user,
+    queryFn: () => api.favorites.getByUserId(user!.id, token!),
+    enabled: !!user && !!token,
   })
 
   // 사활 기록 개수
