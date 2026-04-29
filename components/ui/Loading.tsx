@@ -4,13 +4,15 @@ import { ReactNode, useEffect, useState } from 'react'
 import { SyncLoader } from 'react-spinners'
 import { m } from 'framer-motion'
 import { clsx } from 'clsx'
-import Image from 'next/image' // Next.js 이미지 컴포넌트 추가
+import Image from 'next/image'
+import Lottie from 'lottie-react' // 🚀 lottie-react 라이브러리 추가
+import defaultSaunaLottie from '../../public/lottie/sauna-loading.json'
 
-// 1. 'image' 타입을 추가합니다.
-type LoadingVariant = 'spinner' | 'dots' | 'image'
+// 1. 'lottie' 타입을 추가합니다.
+type LoadingVariant = 'spinner' | 'dots' | 'image' | 'lottie'
 
 interface LoadingProps {
-  /** 로딩 스타일: 'image' 로 설정하면 커스텀 이미지가 나옵니다. */
+  /** 로딩 스타일: 'lottie' 로 설정하면 Lottie 애니메이션이 나옵니다. */
   variant?: LoadingVariant
   /** 화면 전체를 덮을지 여부 (기본값: true) */
   fullScreen?: boolean
@@ -22,24 +24,27 @@ interface LoadingProps {
   className?: string
   /** 점 또는 스피너의 색상 */
   color?: string
-  /** 🖼️ [추가됨] 이미지/GIF 파일 경로 (예: '/loading-sauna.gif') */
+  /** 🖼️ 정적 이미지 경로 (variant="image" 일 때 사용) */
   imageSrc?: string
-  /** 🖼️ [추가됨] 이미지 너비 (기본값: 100) */
+  /** 🖼️ 이미지/Lottie 너비 및 높이 (기본값: 150) */
   imageSize?: number
+  /** ✨ [추가됨] Lottie 애니메이션 JSON 데이터 */
+  animationData?: unknown
 }
 
 /**
  * 사우나 극락 전용 공통 로딩 컴포넌트
  */
 export default function Loading({
-  variant = 'image', // 기본값을 'image'로 변경!
+  variant = 'lottie', // ✨ 기본값을 'lottie'로 변경하여 전역에 즉시 적용!
   fullScreen = true,
   message,
   messageDelay = 1000,
   className,
   color = '#ea580c',
-  imageSrc = '/sauna-loading.gif', // public 폴더에 넣을 기본 GIF 이름
-  imageSize = 100
+  imageSrc = '/sauna-loading.png',
+  imageSize = 100,
+  animationData = defaultSaunaLottie, // Lottie JSON 데이터 객체
 }: LoadingProps) {
   const [mounted, setMounted] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
@@ -66,28 +71,35 @@ export default function Loading({
         className
       )}
     >
-      {/* 🖼️ 커스텀 이미지/GIF 영역 */}
+      {variant === 'lottie' && !!animationData && (
+        <div className="relative flex items-center justify-center">
+          <Lottie
+            animationData={animationData}
+            loop={true}
+            style={{ width: imageSize, height: imageSize }}
+          />
+        </div>
+      )}
+
+      {/* 🖼️ 기존 커스텀 이미지 영역 */}
       {variant === 'image' && imageSrc && (
         <m.div
           className="relative flex items-center justify-center"
-          // GIF가 아니라 일반 이미지(PNG)를 넣을 경우를 대비해 살짝 호흡하는 듯한 애니메이션을 기본으로 넣었습니다.
-          animate={{ scale: [0.95, 1.05, 0.95] }}
+          animate={{ scale: [0.95, 1.05, 0.95], opacity: [0.8, 1, 0.8] }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          {/* GIF 애니메이션이 멈추지 않도록 unoptimized={true}를 줍니다 */}
           <Image
             src={imageSrc}
             alt="로딩 중..."
             width={imageSize}
             height={imageSize}
             className="object-contain"
-            unoptimized={true}
             priority
           />
         </m.div>
       )}
 
-      {/* 기존 애니메이션들 */}
+      {/* 스피너 및 도트 애니메이션 */}
       {variant === 'spinner' && (
         <SyncLoader color={color} size={10} margin={3} speedMultiplier={0.7} />
       )}

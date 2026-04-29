@@ -7,7 +7,8 @@ import { SaunaSummaryDto } from '@/types/sauna'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import Skeleton from '@/components/ui/Skeleton'
 import Link from 'next/link'
-import { BiSearch, BiMap, BiChevronRight } from 'react-icons/bi'
+import Image from 'next/image'
+import { BiSearch, BiMap } from 'react-icons/bi'
 
 type Filter = 'all' | 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female'
 
@@ -35,7 +36,7 @@ function CardSkeleton() {
 export default function HomeClient() {
   const [activeFilter, setActiveFilter] = useState<Filter>('all')
 
-  const { data: allSaunas = [], isLoading } = useQuery<(SaunaSummaryDto & { images?: string[]; rules?: any; kr_specific?: any; pricing?: any })[]>({
+  const { data: allSaunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
     queryKey: ['saunas'],
     queryFn: () => api.saunas.getAll(),
   })
@@ -97,6 +98,7 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => setActiveFilter(opt.id)}
+                aria-pressed={isActive}
                 className={`flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all active:scale-95 ${
                   isActive
                     ? 'bg-point text-white'
@@ -114,19 +116,21 @@ export default function HomeClient() {
       {/* ── 목록 ── */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-        {/* 픽업 배너 (이키타이 스타일 에디토리얼) */}
+        {/* 픽업 배너 */}
         {!isLoading && activeFilter === 'all' && filteredSaunas.length > 0 && (
           <div className="px-4 pt-4 pb-3">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Editor's Pick</p>
             </div>
-            {/* 피처드 카드 - 가로 전체 */}
             <Link href={`/saunas/${filteredSaunas[0].id}`} className="block relative h-44 w-full rounded-2xl overflow-hidden mb-1">
               {filteredSaunas[0].images?.[0] ? (
-                <img
+                <Image
                   src={filteredSaunas[0].images[0]}
                   alt={filteredSaunas[0].name}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 680px"
+                  priority
                 />
               ) : (
                 <div className="h-full w-full bg-gradient-to-br from-sauna-bg via-bg-main to-cold-bg" />
@@ -136,12 +140,12 @@ export default function HomeClient() {
                 <p className="text-[10px] font-bold text-white/60 mb-1 tracking-widest uppercase">Featured</p>
                 <p className="text-lg font-black text-white leading-tight">{filteredSaunas[0].name}</p>
                 <div className="mt-1.5 flex items-center gap-2">
-                  {filteredSaunas[0].sauna_rooms?.length > 0 && (
+                  {filteredSaunas[0].sauna_rooms && filteredSaunas[0].sauna_rooms.length > 0 && (
                     <span className="text-[12px] font-black text-orange-300">
                       🔥 {Math.max(...filteredSaunas[0].sauna_rooms.map((r) => r.temp))}°C
                     </span>
                   )}
-                  {filteredSaunas[0].cold_baths?.length > 0 && (
+                  {filteredSaunas[0].cold_baths && filteredSaunas[0].cold_baths.length > 0 && (
                     <span className="text-[12px] font-black text-blue-300">
                       ❄️ {Math.min(...filteredSaunas[0].cold_baths.map((b) => b.temp))}°C
                     </span>
