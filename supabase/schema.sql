@@ -95,7 +95,39 @@ alter table public.favorites enable row level security;
 -- 사우나 데이터는 누구나 읽을 수 있음
 create policy "사우나 정보는 누구나 조회 가능" on public.saunas for select using (true);
 
--- 리뷰는 누구나 읽을 수 있지만, 작성/수정/삭제는 본인만 가능
+-- 사우나 등록은 로그인한 사용자만 가능 (Google OAuth access_token 검증)
+create policy "사우나 등록은 로그인한 사용자만" on public.saunas for insert with check (auth.uid() is not null);
+create policy "사우나 수정은 관리자만 (추후 role 추가)" on public.saunas for update using (auth.uid() is not null);
+
+-- users 자동 생성 트리거 (Google OAuth 로그인 시 public.users에 프로필 행 생성)
+create or replace function public.handle_new_user()
+returns trigger as $
+begin
+  insert into public.users (id, nickname, avatar_url)
+  values (
+    new.id,
+    coalesce(
+      new.raw_user_meta_data->>'name',
+      new.raw_user_meta_data->>'full_name',
+      split_part(new.email, '@', 1)
+    ),
+    new.raw_user_meta_data->>'avatar_url'
+  )
+  on conflict (id) do update
+    set
+      nickname = excluded.nickname,
+      avatar_url = excluded.avatar_url;
+  return new;
+end;
+$ language plpgsql security definer;
+
+create or replace trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute procedure public.handle_new_user();
+
+-- users 본인 조회/수정
+create policy "본인 프로필 조회" on public.users for select using (auth.uid() = id);
+create policy "본인 프로필 수정" on public.users for update using (auth.uid() = id);
 create policy "리뷰는 누구나 조회 가능" on public.reviews for select using (true);
 create policy "리뷰 작성은 로그인한 사용자만" on public.reviews for insert with check (auth.uid() = user_id);
 create policy "리뷰 수정은 작성자 본인만" on public.reviews for update using (auth.uid() = user_id);

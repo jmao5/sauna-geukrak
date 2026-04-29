@@ -6,6 +6,7 @@ import QueryProvider from '@/components/providers/QueryProvider'
 import ThemeProvider from '@/components/providers/ThemeProvider'
 import { MotionProvider } from '@/components/providers/MotionProvider'
 import ClientLayout from '@/components/ClientLayout'
+import AuthProvider from '@/components/providers/AuthProvider'
 import AppFrame from '@/components/layout/AppFrame'
 import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
@@ -107,11 +108,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <ThemeProvider>
             <MotionProvider>
-              <AppFrame>
-                <Suspense fallback={<Loading fullScreen={false} message="준비 중입니다..." />}>
-                  <ClientLayout>{children}</ClientLayout>
-                </Suspense>
-              </AppFrame>
+              <AuthProvider>
+                <AppFrame>
+                  <Suspense fallback={<Loading fullScreen={false} message="준비 중입니다..." />}>
+                    <ClientLayout>{children}</ClientLayout>
+                  </Suspense>
+                </AppFrame>
+              </AuthProvider>
             </MotionProvider>
             <Toaster
               position="bottom-center"

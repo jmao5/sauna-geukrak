@@ -1,6 +1,17 @@
 import { createClient as createBrowserClient } from './supabase/client'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 
+/**
+ * access_token을 Authorization 헤더로 주입하는 인증된 Supabase 클라이언트 생성
+ * 사우나 등록 등 RLS가 요구하는 INSERT/UPDATE에 사용
+ */
+const getAuthedClient = (accessToken: string) => {
+  const supabase = createBrowserClient()
+  // @ts-ignore — internal header override for anon client
+  supabase.rest.headers['Authorization'] = `Bearer ${accessToken}`
+  return supabase
+}
+
 // Helper to check if customClient is a valid SupabaseClient
 const getSupabaseClient = (customClient?: any) => {
   return customClient && typeof customClient.from === 'function'
@@ -22,6 +33,22 @@ export interface SaunaSearchParams {
 
 export const api = {
   saunas: {
+    /** 사우나 등록 (로그인 필요 — access_token 사용) */
+    create: async (
+      payload: Omit<SaunaDto, 'id' | 'created_at'>,
+      accessToken: string
+    ): Promise<SaunaDto> => {
+      const supabase = getAuthedClient(accessToken)
+      const { data, error } = await supabase
+        .from('saunas')
+        .insert(payload)
+        .select()
+        .single()
+
+      if (error) throw new Error(`Failed to create sauna: ${error.message}`)
+      return data as SaunaDto
+    },
+
     /** 모든 사우나 목록 (SSR 지원) */
     getAll: async (customClient?: any): Promise<SaunaSummaryDto[]> => {
       const supabase = getSupabaseClient(customClient)

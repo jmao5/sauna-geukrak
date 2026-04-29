@@ -48,7 +48,7 @@ export interface Pricing {
   child: number
 }
 
-// 전체 사우나 상세 정보 DTO
+/** 전체 사우나 상세 정보 DTO */
 export interface SaunaDto {
   id: string
   name: string
@@ -69,7 +69,10 @@ export interface SaunaDto {
   created_at: string
 }
 
-// 지도나 목록에서 간략히 보여줄 때 사용하는 DTO
+/**
+ * 지도·목록에서 사용하는 요약 DTO.
+ * api.saunas.getAll()이 SELECT하는 컬럼과 일치하도록 선언.
+ */
 export interface SaunaSummaryDto {
   id: string
   name: string
@@ -78,4 +81,9 @@ export interface SaunaSummaryDto {
   longitude: number
   sauna_rooms: SaunaRoom[]
   cold_baths: ColdBath[]
+  /** getAll()에서 SELECT되는 추가 컬럼 */
+  pricing?: Pricing
+  rules?: Rules
+  kr_specific?: KrSpecific
+  images?: string[]
 }

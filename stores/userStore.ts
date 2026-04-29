@@ -1,16 +1,37 @@
-import { create, StateCreator } from 'zustand'
-import { UserData } from '@/types/user'
+import { create } from 'zustand'
+import type { User, Session } from '@supabase/supabase-js'
 
 interface UserStore {
-  user: UserData | null
-  setUser: (user: UserData) => void
-  clearUser: () => void
+  user: User | null
+  session: Session | null
+  isLoading: boolean
+  /** Supabase access_token 반환 (없으면 null) */
+  accessToken: () => string | null
+  setSession: (session: Session | null) => void
+  setLoading: (loading: boolean) => void
+  clearSession: () => void
 }
 
-const stateInitializer: StateCreator<UserStore> = (set) => ({
+export const useUserStore = create<UserStore>((set, get) => ({
   user: null,
-  setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null }),
-})
+  session: null,
+  isLoading: true,
 
-export const useUserStore = create<UserStore>()(stateInitializer)
+  accessToken: () => get().session?.access_token ?? null,
+
+  setSession: (session) =>
+    set({
+      session,
+      user: session?.user ?? null,
+      isLoading: false,
+    }),
+
+  setLoading: (isLoading) => set({ isLoading }),
+
+  clearSession: () =>
+    set({
+      user: null,
+      session: null,
+      isLoading: false,
+    }),
+}))
