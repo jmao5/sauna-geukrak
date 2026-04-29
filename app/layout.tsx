@@ -132,7 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <MotionProvider>
               <AuthProvider>
                 <AppFrame>
-                  <Suspense fallback={<Loading fullScreen={false} message="준비 중입니다..." />}>
+                  <Suspense fallback={<Loading message="준비 중입니다..." />}>
                     <ClientLayout>{children}</ClientLayout>
                   </Suspense>
                 </AppFrame>
