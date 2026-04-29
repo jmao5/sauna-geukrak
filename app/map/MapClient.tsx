@@ -9,6 +9,8 @@ import { SaunaSummaryDto } from '@/types/sauna'
 import { BiCurrentLocation } from 'react-icons/bi'
 import Loading from '@/components/ui/Loading'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import Script from 'next/script'
+
 
 export default function MapClient() {
   const router = useRouter()
@@ -147,6 +149,11 @@ export default function MapClient() {
           )}
         </button>
       </div>
+      {/* 카카오맵 스크립트 로드 */}
+      <Script
+        src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
+        strategy="afterInteractive"
+      />
     </div>
   )
 }
