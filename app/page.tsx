@@ -6,7 +6,7 @@ import HomeClient from './HomeClient'
 export default async function HomePage() {
   const queryClient = new QueryClient()
 
-  queryClient.prefetchQuery({
+  await queryClient.prefetchQuery({
     queryKey: ['saunas'],
     queryFn: async () => {
       const supabase = await createClient()
