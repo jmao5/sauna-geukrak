@@ -124,7 +124,7 @@ export const api = {
       return data
     },
 
-    /** 리뷰 작성 */
+    /** 리뷰 작성 (로그인 필수 — access_token 사용) */
     create: async (
       review: {
         sauna_id: string
@@ -137,11 +137,11 @@ export const api = {
         sessions?: object[]
         images?: string[]
       },
-      customClient?: SupabaseClient
+      accessToken: string
     ) => {
-      const supabase = getSupabaseClient(customClient)
+      const supabase = getAuthedClient(accessToken)
       const { data, error } = await supabase.from('reviews').insert(review).select().single()
-      if (error) throw new Error(`리뷰 작성에 실패했습니다.`)
+      if (error) throw new Error(`리뷰 작성에 실패했습니다: ${error.message}`)
       return data
     },
   },

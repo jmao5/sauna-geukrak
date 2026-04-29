@@ -16,20 +16,23 @@ const pretendard = localFont({
   src: './fonts/Pretendard-Regular.woff2',
   variable: '--font-pretendard',
   display: 'swap',
-  weight: '400' })
+  weight: '400'
+})
 
 const juache = localFont({
   src: './fonts/Juache.woff',
   variable: '--font-juache',
   display: 'swap',
-  weight: '400' })
+  weight: '400'
+})
 
 // 1. 뷰포트 설정
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false }
+  userScalable: false
+}
 
 // 2. 글로벌 메타데이터 설정
 export const metadata: Metadata = {
@@ -37,7 +40,7 @@ export const metadata: Metadata = {
 
   title: {
     template: '%s | 사우나 극락',
-    default: '사우나 극락 - 한국 사우나 탐색 및 기록',
+    default: '사우나 극락',
   },
   description: '전국의 사우나, 찜질방 정보를 확인하고 나만의 방문 기록을 남겨보세요. 온도 정보부터 생생한 후기까지, 사우나 극락에서 확인하세요.',
   keywords: ['사우나', '찜질방', '온천', '목욕', '사우나 추천', '사우나 극락', '사우나 이키타이'],
@@ -101,9 +104,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased overflow-hidden">
-        <Script 
-          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`} 
-          strategy="beforeInteractive" 
+        <Script
+          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
+          strategy="beforeInteractive"
         />
         <QueryProvider>
           <ThemeProvider>
@@ -125,15 +128,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   color: '#fff',
                   padding: '12px 20px',
                   borderRadius: '99px',
-                  backdropFilter: 'blur(10px)' },
+                  backdropFilter: 'blur(10px)'
+                },
                 success: {
                   iconTheme: {
                     primary: '#FF007A',
-                    secondary: 'white' } },
+                    secondary: 'white'
+                  }
+                },
                 error: {
                   iconTheme: {
                     primary: '#dc2626',
-                    secondary: 'white' } } }}
+                    secondary: 'white'
+                  }
+                }
+              }}
             />
           </ThemeProvider>
         </QueryProvider>
