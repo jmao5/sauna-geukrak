@@ -3,10 +3,13 @@
  */
 
 // Navbar를 숨길 정확한 경로들
-export const NAVBAR_HIDDEN_EXACT_PATHS = ['/404'];
+export const NAVBAR_HIDDEN_EXACT_PATHS = ['/404']
 
 // Navbar를 숨길 경로 접두사들 (하위 경로 포함)
-export const NAVBAR_HIDDEN_PREFIX_PATHS: string[] = [];
+export const NAVBAR_HIDDEN_PREFIX_PATHS: string[] = [
+  '/login',
+  '/saunas/new',
+]
 
 // FloatingActions를 숨길 경로 접두사들
 export const FLOATING_ACTIONS_HIDDEN_PREFIX_PATHS: string[] = [];

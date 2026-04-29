@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
+import { useEffect, useRef, useState } from 'react'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiChevronRight } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
@@ -14,20 +14,42 @@ interface SaunaCardProps {
 }
 
 function TempPill({ type, temp }: { type: 'sauna' | 'cold'; temp: number }) {
-  if (type === 'sauna') {
-    return (
-      <span className="flex items-center gap-0.5">
-        <span className="text-[10px]">🔥</span>
-        <span className="temp-number text-[13px] font-black text-sauna">{temp}°</span>
-      </span>
-    )
-  }
   return (
     <span className="flex items-center gap-0.5">
-      <span className="text-[10px]">❄️</span>
-      <span className="temp-number text-[13px] font-black text-cold">{temp}°</span>
+      <span className="text-[10px]">{type === 'sauna' ? '🔥' : '❄️'}</span>
+      <span className={`temp-number text-[13px] font-black ${type === 'sauna' ? 'text-sauna' : 'text-cold'}`}>
+        {temp}°
+      </span>
     </span>
   )
+}
+
+/**
+ * 뷰포트에 진입한 순간 한 번만 true로 바뀌는 훅.
+ * 카드가 화면에 보일 때만 카카오 이미지를 fetch하기 위해 사용.
+ */
+function useIsVisible(rootMargin = '100px') {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const [isVisible, setIsVisible] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || isVisible) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true)
+          observer.disconnect() // 한 번 진입하면 더 이상 감시 불필요
+        }
+      },
+      { rootMargin }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [isVisible, rootMargin])
+
+  return { ref, isVisible }
 }
 
 export default function SaunaCard({ sauna, className = '', variant = 'grid' }: SaunaCardProps) {
@@ -44,16 +66,21 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
   if (sauna.rules?.female_allowed) features.push('여성가능')
 
   const thumbnail = sauna.images?.[0]
-
-  const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail)
-  const displayImage = thumbnail ?? kakaoImage
   const price = sauna.pricing?.adult_day
+
+  // 뷰포트 진입 전까지 카카오 이미지 fetch 지연
+  const { ref, isVisible } = useIsVisible()
+  const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail, isVisible)
+  const displayImage = thumbnail ?? kakaoImage
 
   if (variant === 'row') {
     return (
-      <Link href={`/saunas/${sauna.id}`} className={`sauna-row flex items-center gap-3 px-4 py-3.5 ${className}`}>
-        {/* 썸네일 */}
-        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
+      <Link
+        ref={ref}
+        href={`/saunas/${sauna.id}`}
+        className={`flex items-center gap-3 px-4 py-3.5 border-b border-border-subtle transition active:bg-bg-sub ${className}`}
+      >
+        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-bg-main">
           {displayImage ? (
             <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
           ) : (
@@ -62,32 +89,30 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             </div>
           )}
         </div>
-
-        {/* 정보 */}
         <div className="min-w-0 flex-1">
           <p className="mb-0.5 truncate text-[13px] font-black text-text-main">{sauna.name}</p>
           <p className="mb-1.5 truncate text-[11px] text-text-sub">{sauna.address}</p>
           <div className="flex items-center gap-2">
             {maxSaunaTemp !== null && <TempPill type="sauna" temp={maxSaunaTemp} />}
             {minColdTemp !== null && <TempPill type="cold" temp={minColdTemp} />}
-            {price && (
-              <span className="text-[11px] text-text-muted">
-                {price.toLocaleString()}원~
-              </span>
+            {price != null && price > 0 && (
+              <span className="text-[11px] text-text-muted">{price.toLocaleString()}원~</span>
             )}
           </div>
         </div>
-
         <BiChevronRight size={18} className="flex-shrink-0 text-text-muted" />
       </Link>
     )
   }
 
-  // grid variant (카드형)
+  // grid variant
   return (
-    <Link href={`/saunas/${sauna.id}`} className={`sauna-card block overflow-hidden ${className}`}>
-      {/* 이미지 */}
-      <div className="relative h-32 w-full overflow-hidden">
+    <Link
+      ref={ref}
+      href={`/saunas/${sauna.id}`}
+      className={`sauna-card block overflow-hidden ${className}`}
+    >
+      <div className="relative h-32 w-full overflow-hidden bg-bg-main">
         {displayImage ? (
           <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
         ) : (
@@ -95,7 +120,6 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             <span className="text-3xl opacity-20">🧖</span>
           </div>
         )}
-        {/* 온도 오버레이 */}
         {(maxSaunaTemp !== null || minColdTemp !== null) && (
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 backdrop-blur-sm">
             {maxSaunaTemp !== null && <TempPill type="sauna" temp={maxSaunaTemp} />}
@@ -107,17 +131,13 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
         )}
       </div>
 
-      {/* 텍스트 */}
       <div className="p-3">
         <p className="mb-0.5 truncate text-[12px] font-black text-text-main">{sauna.name}</p>
         <p className="truncate text-[10px] text-text-sub">{sauna.address}</p>
         {features.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {features.slice(0, 2).map((f) => (
-              <span
-                key={f}
-                className="rounded-sm bg-bg-main px-1.5 py-0.5 text-[9px] font-bold text-text-muted"
-              >
+              <span key={f} className="rounded-sm bg-bg-main px-1.5 py-0.5 text-[9px] font-bold text-text-muted">
                 {f}
               </span>
             ))}

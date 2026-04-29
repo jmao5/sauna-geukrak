@@ -12,11 +12,23 @@ import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import Loading from '@/components/ui/Loading'
 
+/**
+ * Pretendard 폰트 설정
+ *
+ * 현재: Pretendard-Regular.woff2를 weight 100-900으로 선언
+ *   → 900 이하 weight는 브라우저 합성 bold로 보여집니다.
+ *
+ * 품질 개선하려면 PretendardVariable.woff2 추가:
+ *   https://github.com/orioncactus/pretendard/releases
+ *   → PretendardVariable.woff2 를 app/fonts/ 에 복사
+ *   → src를 './fonts/PretendardVariable.woff2' 로 변경
+ */
 const pretendard = localFont({
   src: './fonts/Pretendard-Regular.woff2',
   variable: '--font-pretendard',
   display: 'swap',
-  weight: '400'
+  weight: '100 900',
+  fallback: ['-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
 })
 
 const juache = localFont({

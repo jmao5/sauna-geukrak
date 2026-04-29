@@ -118,7 +118,7 @@ function ReviewBottomSheet({
   sauna: SaunaDto
   onClose: () => void
 }) {
-  const { user } = useUserStore()
+  const { user, accessToken } = useUserStore()
   const router = useRouter()
   const queryClient = useQueryClient()
 
@@ -137,14 +137,19 @@ function ReviewBottomSheet({
   const mutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error('로그인 필요')
-      return api.reviews.create({
-        sauna_id: sauna.id,
-        user_id: user.id,
-        rating,
-        content: content.trim() || undefined,
-        visit_date: visitDate,
-        visit_time: visitTime,
-      })
+      const token = accessToken()
+      if (!token) throw new Error('인증 토큰이 없습니다. 다시 로그인해주세요.')
+      return api.reviews.create(
+        {
+          sauna_id: sauna.id,
+          user_id: user.id,
+          rating,
+          content: content.trim() || undefined,
+          visit_date: visitDate,
+          visit_time: visitTime,
+        },
+        token
+      )
     },
     onSuccess: () => {
       toast.success('사활 기록 완료! 🔥')
