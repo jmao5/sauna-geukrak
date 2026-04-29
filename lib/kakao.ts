@@ -81,8 +81,14 @@ async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
 
   if (!match?.[1]) return null
 
-  // //img1.kakaocdn.net 형태 → https: 붙여줌
-  return match[1].startsWith('//') ? `https:${match[1]}` : match[1]
+  let url = match[1]
+  if (url.startsWith('//')) {
+    url = `https:${url}`
+  } else if (url.startsWith('http://')) {
+    url = url.replace('http://', 'https://')
+  }
+
+  return url
 }
 
 // ── 공개 API ─────────────────────────────────────────────────
