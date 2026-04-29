@@ -428,11 +428,11 @@ function DetailFormStep({
                 )}
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <NumberInput label="온도 (°C)" value={bath.temp} onChange={(v) => updateBath(i, { temp: v })} min={0} unit="°C" />
                 <NumberInput label="수용 인원" value={bath.capacity} onChange={(v) => updateBath(i, { capacity: v })} min={1} unit="명" />
-                <NumberInput label="수심 (cm)" value={bath.depth} onChange={(v) => updateBath(i, { depth: v })} min={0} unit="cm" />
               </div>
+              <NumberInput label="수심 (cm)" value={bath.depth} onChange={(v) => updateBath(i, { depth: v })} min={0} unit="cm" />
 
               <Toggle checked={bath.is_groundwater} onChange={(v) => updateBath(i, { is_groundwater: v })} label="🏔️ 지하수" />
             </div>
