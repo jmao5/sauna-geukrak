@@ -22,11 +22,16 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
+    const next = searchParams.get('next') ?? '/'
+
+    // next 파라미터를 쿠키에 저장 (쿼리스트링으로 redirectTo에 붙이면 Supabase URL 검증 실패)
+    document.cookie = `oauth_redirect_next=${encodeURIComponent(next)}; path=/; max-age=300; SameSite=Lax`
+
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(searchParams.get('next') ?? '/')}`,
+        redirectTo: `${window.location.origin}/api/auth/callback`,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

@@ -9,7 +9,6 @@ import { cookies } from 'next/headers'
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
   const error = searchParams.get('error')
   const errorDescription = searchParams.get('error_description')
 
@@ -25,6 +24,10 @@ export async function GET(request: NextRequest) {
   }
 
   const cookieStore = await cookies()
+
+  // 로그인 전에 저장해둔 next 경로 읽기 (없으면 홈)
+  const rawNext = cookieStore.get('oauth_redirect_next')?.value
+  const next = rawNext ? decodeURIComponent(rawNext) : '/'
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -56,15 +59,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // 성공: next 파라미터 경로 또는 홈으로 이동
-  const forwardedHost = request.headers.get('x-forwarded-host')
-  const isLocalEnv = process.env.NODE_ENV === 'development'
+  // oauth_redirect_next 쿠키 삭제
+  const response = NextResponse.redirect(
+    process.env.NODE_ENV === 'development'
+      ? `${origin}${next}`
+      : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}${next}`
+  )
+  response.cookies.delete('oauth_redirect_next')
 
-  if (isLocalEnv) {
-    return NextResponse.redirect(`${origin}${next}`)
-  } else if (forwardedHost) {
-    return NextResponse.redirect(`https://${forwardedHost}${next}`)
-  } else {
-    return NextResponse.redirect(`${origin}${next}`)
-  }
+  return response
 }
