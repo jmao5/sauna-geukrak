@@ -48,9 +48,10 @@ export default function FloatingActions() {
 
   if (!mounted || isHidden) return null
 
+  // fixed 대신 absolute 사용 — AppFrame 컨테이너(relative) 기준으로 위치
+  // 네브바 높이(h-16 = 4rem) + 여백(1rem)
   return (
     <AnimatePresence>
-      {/* 홈에서만 보이는 + 버튼 */}
       {isHome && (
         <m.button
           key="add-sauna"
@@ -58,14 +59,14 @@ export default function FloatingActions() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           onClick={handleAddSauna}
-          className="fixed right-4 bottom-20 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-lg text-white transition active:scale-90"
+          className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-lg text-white transition active:scale-90"
+          style={{ bottom: 'calc(4rem + 1rem)' }}
           aria-label="사우나 등록"
         >
           <BiPlus size={24} />
         </m.button>
       )}
 
-      {/* 스크롤 상단 버튼 — 홈에선 + 버튼 위에 표시 */}
       {showScrollTop && (
         <m.button
           key="scroll-top"
@@ -73,9 +74,10 @@ export default function FloatingActions() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           onClick={scrollToTop}
-          className={`fixed right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-bg-sub shadow-card border border-border-main text-text-sub transition active:scale-90 ${
-            isHome ? 'bottom-36' : 'bottom-20'
-          }`}
+          className="absolute right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-bg-sub shadow-card border border-border-main text-text-sub transition active:scale-90"
+          style={{
+            bottom: isHome ? 'calc(4rem + 5rem)' : 'calc(4rem + 1rem)',
+          }}
           aria-label="맨 위로"
         >
           <BiArrowToTop size={20} />
