@@ -10,14 +10,12 @@ import { SaunaSummaryDto } from '@/types/sauna'
 
 export default function FavoritesClient() {
   const router = useRouter()
-  const { user, accessToken } = useUserStore()
-
-  const token = accessToken()
+  const { user } = useUserStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['favorites', user?.id],
-    queryFn: () => api.favorites.getByUserId(user!.id, token!),
-    enabled: !!user && !!token,
+    queryFn: () => api.favorites.getByUserId(user!.id),
+    enabled: !!user,
   })
 
   const saunas: SaunaSummaryDto[] = (data ?? [])
