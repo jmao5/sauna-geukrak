@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { useState } from 'react'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
+import Loading from '@/components/ui/Loading'
 
 export default function SaunaMap() {
   const router = useRouter()
@@ -44,7 +45,7 @@ export default function SaunaMap() {
   if (!isLoaded || isLoading) {
     return (
       <div className="w-full h-[calc(100vh-140px)] flex items-center justify-center bg-gray-100 rounded-xl">
-        <p className="text-gray-500 font-medium">지도를 불러오는 중입니다...</p>
+        <Loading fullScreen={false} message="지도를 불러오는 중입니다..." messageDelay={0} imageSize={80} />
       </div>
     )
   }

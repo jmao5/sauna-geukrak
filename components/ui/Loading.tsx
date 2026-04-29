@@ -6,7 +6,6 @@ import { m } from 'framer-motion'
 import { clsx } from 'clsx'
 import Image from 'next/image'
 import Lottie from 'lottie-react' // 🚀 lottie-react 라이브러리 추가
-import defaultSaunaLottie from '../../public/lottie/sauna-loading.json'
 
 // 1. 'lottie' 타입을 추가합니다.
 type LoadingVariant = 'spinner' | 'dots' | 'image' | 'lottie'
@@ -44,10 +43,21 @@ export default function Loading({
   color = '#ea580c',
   imageSrc = '/sauna-loading.png',
   imageSize = 100,
-  animationData = defaultSaunaLottie, // Lottie JSON 데이터 객체
+  animationData, // 외부에서 안 넘겨주면 빈 값으로 둠
 }: LoadingProps) {
   const [mounted, setMounted] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
+  const [lottieData, setLottieData] = useState<unknown>(animationData)
+
+  useEffect(() => {
+    // 만약 animationData가 안 넘어왔고, lottie 스타일이라면 JSON을 fetch 해옵니다.
+    if (!animationData && variant === 'lottie') {
+      fetch('/lottie/waiting.json')
+        .then((res) => res.json())
+        .then((data) => setLottieData(data))
+        .catch((err) => console.error('Lottie load error:', err))
+    }
+  }, [animationData, variant])
 
   useEffect(() => {
     setMounted(true)
@@ -71,10 +81,10 @@ export default function Loading({
         className
       )}
     >
-      {variant === 'lottie' && !!animationData && (
+      {variant === 'lottie' && !!lottieData && (
         <div className="relative flex items-center justify-center">
           <Lottie
-            animationData={animationData}
+            animationData={lottieData}
             loop={true}
             style={{ width: imageSize, height: imageSize }}
           />

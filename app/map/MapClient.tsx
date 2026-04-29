@@ -7,6 +7,7 @@ import { api } from '@/lib/api-instance'
 import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiCurrentLocation } from 'react-icons/bi'
+import Loading from '@/components/ui/Loading'
 
 export default function MapClient() {
   const router = useRouter()
@@ -79,10 +80,7 @@ export default function MapClient() {
       <div className="relative flex-1">
         {(!isLoaded || isLoading) ? (
           <div className="flex h-full items-center justify-center bg-bg-main">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-border-main border-t-point" />
-              <p className="text-[11px] text-text-sub">지도 불러오는 중...</p>
-            </div>
+            <Loading />
           </div>
         ) : (
           <Map
