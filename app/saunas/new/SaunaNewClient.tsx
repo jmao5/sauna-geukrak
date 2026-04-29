@@ -11,6 +11,7 @@ import {
 } from 'react-icons/bi'
 import toast from 'react-hot-toast'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
+import ImageUploader from '@/components/ui/ImageUploader'
 
 /* ────────────────────────────────────────────────────────────
    타입
@@ -194,7 +195,6 @@ function KakaoSearchStep({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* 안내 */}
       <div className="rounded-2xl border border-sauna/20 bg-sauna-bg p-4">
         <p className="text-xs font-bold text-sauna-text">
           🔍 카카오 장소 검색으로 사우나를 선택하면
@@ -204,7 +204,6 @@ function KakaoSearchStep({
         </p>
       </div>
 
-      {/* 검색 입력 */}
       <div className="flex gap-2">
         <div className="flex flex-1 items-center gap-2 rounded-xl border border-border-main bg-bg-main px-3">
           <BiSearch size={16} className="flex-shrink-0 text-text-sub" />
@@ -234,7 +233,6 @@ function KakaoSearchStep({
         </button>
       </div>
 
-      {/* 결과 목록 */}
       {noResult && (
         <div className="flex flex-col items-center gap-2 py-8 text-center">
           <span className="text-3xl">🔍</span>
@@ -307,18 +305,29 @@ function DetailFormStep({
   return (
     <div className="space-y-3">
 
+      {/* ── 기본 정보 ── */}
       <SectionCard title="기본 정보" emoji="📍">
         <div className="space-y-3">
           <TextInput label="시설명" value={form.name} onChange={(v) => onChange({ name: v })} placeholder="사우나 이름" />
           <TextInput label="주소" value={form.address} onChange={(v) => onChange({ address: v })} placeholder="도로명 주소" />
           <div className="grid grid-cols-2 gap-2">
             <TextInput label="연락처" value={form.contact} onChange={(v) => onChange({ contact: v })} placeholder="02-1234-5678" />
-            <TextInput label="영업시간" value={form.business_hours} onChange={(v) => onChange({ business_hours: v })} placeholder="24시간 / 06:00~24:00" />
+            <TextInput label="영업시간" value={form.business_hours} onChange={(v) => onChange({ business_hours: v })} placeholder="24시간" />
           </div>
           <Toggle checked={form.parking} onChange={(v) => onChange({ parking: v })} label="주차 가능" />
         </div>
       </SectionCard>
 
+      {/* ── 사진 업로드 ── */}
+      <SectionCard title="사진" emoji="📷">
+        <ImageUploader
+          images={form.images}
+          onChange={(urls) => onChange({ images: urls })}
+          maxCount={5}
+        />
+      </SectionCard>
+
+      {/* ── 사우나실 ── */}
       <SectionCard title="사우나실" emoji="🔥">
         <div className="space-y-3">
           {form.sauna_rooms.map((room, i) => (
@@ -370,6 +379,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 냉탕 ── */}
       <SectionCard title="냉탕" emoji="❄️">
         <div className="space-y-3">
           {form.cold_baths.map((bath, i) => (
@@ -401,6 +411,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 휴식 공간 ── */}
       <SectionCard title="휴식 공간" emoji="🌿">
         <div className="grid grid-cols-2 gap-3">
           <NumberInput label="외기욕 의자" value={form.resting_area.outdoor_seats} onChange={(v) => onChange({ resting_area: { ...form.resting_area, outdoor_seats: v } })} unit="개" />
@@ -410,6 +421,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 어메니티 ── */}
       <SectionCard title="어메니티" emoji="🛁">
         <div className="space-y-2">
           {([
@@ -429,6 +441,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 이용 규칙 ── */}
       <SectionCard title="이용 규칙" emoji="📋">
         <div className="space-y-2">
           <Toggle checked={form.rules.male_allowed} onChange={(v) => onChange({ rules: { ...form.rules, male_allowed: v } })} label="👨 남성 이용 가능" />
@@ -437,6 +450,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 한국 특화 ── */}
       <SectionCard title="한국 특화 정보" emoji="🇰🇷">
         <div className="space-y-3">
           <Toggle checked={form.kr_specific.has_jjimjilbang} onChange={(v) => onChange({ kr_specific: { ...form.kr_specific, has_jjimjilbang: v } })} label="🧖 찜질방 있음" />
@@ -453,6 +467,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 요금 ── */}
       <SectionCard title="이용 요금" emoji="💳">
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -470,6 +485,7 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
+      {/* ── 등록 버튼 ── */}
       <button
         type="button"
         onClick={onSubmit}
@@ -501,7 +517,6 @@ export default function SaunaNewClient() {
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
   const [form, setForm] = useState<FormState>(defaultForm())
 
-  // 공용 훅으로 카카오 SDK 로드 관리 (autoload=false → kakao.maps.load() 직접 호출 보장)
   const { isReady: kakaoReady } = useKakaoReady()
 
   useEffect(() => {
@@ -537,19 +552,11 @@ export default function SaunaNewClient() {
       router.push(`/saunas/${created.id}`)
     },
     onError: (error) => {
-      if (error.message === 'not_logged_in') {
-        toast.error('로그인이 필요합니다')
-      } else if (error.message === 'missing_fields') {
-        toast.error('시설명과 주소를 입력해주세요')
-      } else {
-        toast.error(error.message || '등록 중 오류가 발생했습니다')
-      }
+      if (error.message === 'not_logged_in') toast.error('로그인이 필요합니다')
+      else if (error.message === 'missing_fields') toast.error('시설명과 주소를 입력해주세요')
+      else toast.error(error.message || '등록 중 오류가 발생했습니다')
     },
   })
-
-  const handleSubmit = () => {
-    createMutation.mutate()
-  }
 
   if (!user) return null
 
@@ -597,7 +604,7 @@ export default function SaunaNewClient() {
           <DetailFormStep
             form={form}
             onChange={handleFormChange}
-            onSubmit={handleSubmit}
+            onSubmit={() => createMutation.mutate()}
             isSubmitting={createMutation.isPending}
           />
         )}
