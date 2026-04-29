@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
 import { api } from '@/lib/api-instance'
@@ -9,6 +9,7 @@ import {
   BiChevronLeft, BiSearch, BiPlus, BiMinus, BiX, BiCheck,
 } from 'react-icons/bi'
 import toast from 'react-hot-toast'
+import { useKakaoReady } from '@/hooks/useKakaoReady'
 
 /* ────────────────────────────────────────────────────────────
    타입
@@ -152,8 +153,10 @@ function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
    STEP 1: 카카오 장소 검색
 ──────────────────────────────────────────────────────────── */
 function KakaoSearchStep({
+  isKakaoReady,
   onSelect,
 }: {
+  isKakaoReady: boolean
   onSelect: (place: KakaoPlace) => void
 }) {
   const [query, setQuery] = useState('')
@@ -163,7 +166,7 @@ function KakaoSearchStep({
 
   const handleSearch = () => {
     if (!query.trim()) return
-    if (!window.kakao?.maps?.services) {
+    if (!isKakaoReady) {
       toast.error('카카오 지도 서비스를 로드하는 중입니다. 잠시 후 다시 시도해주세요.')
       return
     }
@@ -221,7 +224,7 @@ function KakaoSearchStep({
         </div>
         <button
           onClick={handleSearch}
-          disabled={isSearching || !query.trim()}
+          disabled={isSearching || !query.trim() || !isKakaoReady}
           className="rounded-xl bg-point px-4 py-2.5 text-sm font-black text-white transition active:scale-95 disabled:opacity-50"
         >
           {isSearching ? (
@@ -282,7 +285,6 @@ function DetailFormStep({
   onSubmit: () => void
   isSubmitting: boolean
 }) {
-  /* ── 사우나실 helpers ── */
   const updateRoom = (i: number, patch: Partial<SaunaRoom>) => {
     const rooms = [...form.sauna_rooms]
     rooms[i] = { ...rooms[i], ...patch }
@@ -291,7 +293,6 @@ function DetailFormStep({
   const addRoom = () => onChange({ sauna_rooms: [...form.sauna_rooms, defaultSaunaRoom()] })
   const removeRoom = (i: number) => onChange({ sauna_rooms: form.sauna_rooms.filter((_, idx) => idx !== i) })
 
-  /* ── 냉탕 helpers ── */
   const updateBath = (i: number, patch: Partial<ColdBath>) => {
     const baths = [...form.cold_baths]
     baths[i] = { ...baths[i], ...patch }
@@ -305,49 +306,22 @@ function DetailFormStep({
   return (
     <div className="space-y-3">
 
-      {/* ── 기본 정보 ── */}
       <SectionCard title="기본 정보" emoji="📍">
         <div className="space-y-3">
-          <TextInput
-            label="시설명"
-            value={form.name}
-            onChange={(v) => onChange({ name: v })}
-            placeholder="사우나 이름"
-          />
-          <TextInput
-            label="주소"
-            value={form.address}
-            onChange={(v) => onChange({ address: v })}
-            placeholder="도로명 주소"
-          />
+          <TextInput label="시설명" value={form.name} onChange={(v) => onChange({ name: v })} placeholder="사우나 이름" />
+          <TextInput label="주소" value={form.address} onChange={(v) => onChange({ address: v })} placeholder="도로명 주소" />
           <div className="grid grid-cols-2 gap-2">
-            <TextInput
-              label="연락처"
-              value={form.contact}
-              onChange={(v) => onChange({ contact: v })}
-              placeholder="02-1234-5678"
-            />
-            <TextInput
-              label="영업시간"
-              value={form.business_hours}
-              onChange={(v) => onChange({ business_hours: v })}
-              placeholder="24시간 / 06:00~24:00"
-            />
+            <TextInput label="연락처" value={form.contact} onChange={(v) => onChange({ contact: v })} placeholder="02-1234-5678" />
+            <TextInput label="영업시간" value={form.business_hours} onChange={(v) => onChange({ business_hours: v })} placeholder="24시간 / 06:00~24:00" />
           </div>
-          <Toggle
-            checked={form.parking}
-            onChange={(v) => onChange({ parking: v })}
-            label="주차 가능"
-          />
+          <Toggle checked={form.parking} onChange={(v) => onChange({ parking: v })} label="주차 가능" />
         </div>
       </SectionCard>
 
-      {/* ── 사우나실 ── */}
       <SectionCard title="사우나실" emoji="🔥">
         <div className="space-y-3">
           {form.sauna_rooms.map((room, i) => (
             <div key={i} className="rounded-xl border border-sauna/20 bg-sauna-bg p-3.5 space-y-3">
-              {/* 헤더 */}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-sauna-text">사우나실 {i + 1}</span>
                 {form.sauna_rooms.length > 1 && (
@@ -356,8 +330,6 @@ function DetailFormStep({
                   </button>
                 )}
               </div>
-
-              {/* 타입 선택 */}
               <div>
                 <p className="mb-1.5 text-[10px] font-bold text-text-sub">종류</p>
                 <div className="flex flex-wrap gap-1.5">
@@ -367,9 +339,7 @@ function DetailFormStep({
                       type="button"
                       onClick={() => updateRoom(i, { type: t })}
                       className={`rounded-full px-3 py-1 text-[11px] font-bold transition active:scale-95 ${
-                        room.type === t
-                          ? 'bg-sauna text-white'
-                          : 'border border-border-main bg-bg-card text-text-sub'
+                        room.type === t ? 'bg-sauna text-white' : 'border border-border-main bg-bg-card text-text-sub'
                       }`}
                     >
                       {t}
@@ -377,24 +347,10 @@ function DetailFormStep({
                   ))}
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
-                <NumberInput
-                  label="온도 (°C)"
-                  value={room.temp}
-                  onChange={(v) => updateRoom(i, { temp: v })}
-                  min={40}
-                  unit="°C"
-                />
-                <NumberInput
-                  label="수용 인원"
-                  value={room.capacity}
-                  onChange={(v) => updateRoom(i, { capacity: v })}
-                  min={1}
-                  unit="명"
-                />
+                <NumberInput label="온도 (°C)" value={room.temp} onChange={(v) => updateRoom(i, { temp: v })} min={40} unit="°C" />
+                <NumberInput label="수용 인원" value={room.capacity} onChange={(v) => updateRoom(i, { capacity: v })} min={1} unit="명" />
               </div>
-
               <div className="space-y-2">
                 <Toggle checked={room.has_auto_loyly} onChange={(v) => updateRoom(i, { has_auto_loyly: v })} label="💦 오토 로우리" />
                 <Toggle checked={!!room.has_self_loyly} onChange={(v) => updateRoom(i, { has_self_loyly: v })} label="🌿 셀프 로우리" />
@@ -402,7 +358,6 @@ function DetailFormStep({
               </div>
             </div>
           ))}
-
           <button
             type="button"
             onClick={addRoom}
@@ -414,7 +369,6 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
-      {/* ── 냉탕 ── */}
       <SectionCard title="냉탕" emoji="❄️">
         <div className="space-y-3">
           {form.cold_baths.map((bath, i) => (
@@ -427,17 +381,14 @@ function DetailFormStep({
                   </button>
                 )}
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <NumberInput label="온도 (°C)" value={bath.temp} onChange={(v) => updateBath(i, { temp: v })} min={0} unit="°C" />
                 <NumberInput label="수용 인원" value={bath.capacity} onChange={(v) => updateBath(i, { capacity: v })} min={1} unit="명" />
               </div>
               <NumberInput label="수심 (cm)" value={bath.depth} onChange={(v) => updateBath(i, { depth: v })} min={0} unit="cm" />
-
               <Toggle checked={bath.is_groundwater} onChange={(v) => updateBath(i, { is_groundwater: v })} label="🏔️ 지하수" />
             </div>
           ))}
-
           <button
             type="button"
             onClick={addBath}
@@ -449,7 +400,6 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
-      {/* ── 휴식 공간 ── */}
       <SectionCard title="휴식 공간" emoji="🌿">
         <div className="grid grid-cols-2 gap-3">
           <NumberInput label="외기욕 의자" value={form.resting_area.outdoor_seats} onChange={(v) => onChange({ resting_area: { ...form.resting_area, outdoor_seats: v } })} unit="개" />
@@ -459,7 +409,6 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
-      {/* ── 어메니티 ── */}
       <SectionCard title="어메니티" emoji="🛁">
         <div className="space-y-2">
           {([
@@ -479,7 +428,6 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
-      {/* ── 이용 규칙 ── */}
       <SectionCard title="이용 규칙" emoji="📋">
         <div className="space-y-2">
           <Toggle checked={form.rules.male_allowed} onChange={(v) => onChange({ rules: { ...form.rules, male_allowed: v } })} label="👨 남성 이용 가능" />
@@ -488,72 +436,39 @@ function DetailFormStep({
         </div>
       </SectionCard>
 
-      {/* ── 한국 특화 ── */}
       <SectionCard title="한국 특화 정보" emoji="🇰🇷">
         <div className="space-y-3">
           <Toggle checked={form.kr_specific.has_jjimjilbang} onChange={(v) => onChange({ kr_specific: { ...form.kr_specific, has_jjimjilbang: v } })} label="🧖 찜질방 있음" />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-[10px] font-bold text-text-sub">때밀이 요금 (남)</label>
-              <input
-                type="number"
-                value={form.kr_specific.sesin_price_male || ''}
-                onChange={(e) => onChange({ kr_specific: { ...form.kr_specific, sesin_price_male: Number(e.target.value) } })}
-                placeholder="0"
-                className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point"
-              />
+              <input type="number" value={form.kr_specific.sesin_price_male || ''} onChange={(e) => onChange({ kr_specific: { ...form.kr_specific, sesin_price_male: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
             </div>
             <div>
               <label className="mb-1 block text-[10px] font-bold text-text-sub">때밀이 요금 (여)</label>
-              <input
-                type="number"
-                value={form.kr_specific.sesin_price_female || ''}
-                onChange={(e) => onChange({ kr_specific: { ...form.kr_specific, sesin_price_female: Number(e.target.value) } })}
-                placeholder="0"
-                className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point"
-              />
+              <input type="number" value={form.kr_specific.sesin_price_female || ''} onChange={(e) => onChange({ kr_specific: { ...form.kr_specific, sesin_price_female: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
             </div>
           </div>
         </div>
       </SectionCard>
 
-      {/* ── 요금 ── */}
       <SectionCard title="이용 요금" emoji="💳">
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="mb-1 block text-[10px] font-bold text-text-sub">성인 (낮)</label>
-            <input
-              type="number"
-              value={form.pricing.adult_day || ''}
-              onChange={(e) => onChange({ pricing: { ...form.pricing, adult_day: Number(e.target.value) } })}
-              placeholder="0"
-              className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point"
-            />
+            <input type="number" value={form.pricing.adult_day || ''} onChange={(e) => onChange({ pricing: { ...form.pricing, adult_day: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
           </div>
           <div>
             <label className="mb-1 block text-[10px] font-bold text-text-sub">성인 (야간)</label>
-            <input
-              type="number"
-              value={form.pricing.adult_night || ''}
-              onChange={(e) => onChange({ pricing: { ...form.pricing, adult_night: Number(e.target.value) } })}
-              placeholder="0"
-              className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point"
-            />
+            <input type="number" value={form.pricing.adult_night || ''} onChange={(e) => onChange({ pricing: { ...form.pricing, adult_night: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
           </div>
           <div>
             <label className="mb-1 block text-[10px] font-bold text-text-sub">어린이</label>
-            <input
-              type="number"
-              value={form.pricing.child || ''}
-              onChange={(e) => onChange({ pricing: { ...form.pricing, child: Number(e.target.value) } })}
-              placeholder="0"
-              className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point"
-            />
+            <input type="number" value={form.pricing.child || ''} onChange={(e) => onChange({ pricing: { ...form.pricing, child: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
           </div>
         </div>
       </SectionCard>
 
-      {/* ── 제출 버튼 ── */}
       <button
         type="button"
         onClick={onSubmit}
@@ -586,28 +501,13 @@ export default function SaunaNewClient() {
   const [form, setForm] = useState<FormState>(defaultForm())
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // 카카오 지도 SDK 로드 대기
-  const [kakaoReady, setKakaoReady] = useState(false)
-  useEffect(() => {
-    let attempts = 0
-    const check = setInterval(() => {
-      attempts++
-      if (window.kakao?.maps?.services) {
-        setKakaoReady(true)
-        clearInterval(check)
-      } else if (attempts > 50) {
-        clearInterval(check)
-      }
-    }, 100)
-    return () => clearInterval(check)
-  }, [])
+  // 공용 훅으로 카카오 SDK 로드 관리 (autoload=false → kakao.maps.load() 직접 호출 보장)
+  const { isReady: kakaoReady } = useKakaoReady()
 
-  // 비로그인 시 로그인 페이지로
   useEffect(() => {
     if (!user) router.replace('/login?next=/saunas/new')
   }, [user, router])
 
-  // 카카오 장소 선택 → 폼 자동 입력
   const handlePlaceSelect = (place: KakaoPlace) => {
     setSelectedPlace(place)
     setForm((prev) => ({
@@ -671,8 +571,6 @@ export default function SaunaNewClient() {
               </p>
             )}
           </div>
-
-          {/* 스텝 인디케이터 */}
           <div className="ml-auto flex items-center gap-1.5">
             <div className={`h-2 w-6 rounded-full transition-colors ${step === 'search' ? 'bg-point' : 'bg-border-main'}`} />
             <div className={`h-2 w-6 rounded-full transition-colors ${step === 'detail' ? 'bg-point' : 'bg-border-main'}`} />
@@ -690,7 +588,7 @@ export default function SaunaNewClient() {
                 <p className="text-xs font-semibold text-warning">카카오 지도 서비스 로드 중...</p>
               </div>
             )}
-            <KakaoSearchStep onSelect={handlePlaceSelect} />
+            <KakaoSearchStep isKakaoReady={kakaoReady} onSelect={handlePlaceSelect} />
           </>
         ) : (
           <DetailFormStep
