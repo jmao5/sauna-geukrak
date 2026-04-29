@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiCurrentLocation } from 'react-icons/bi'
 import Loading from '@/components/ui/Loading'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 export default function MapClient() {
   const router = useRouter()
@@ -16,6 +17,7 @@ export default function MapClient() {
   const [center, setCenter] = useState({ lat: 37.545, lng: 126.84 })
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
   const [isLocating, setIsLocating] = useState(false)
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     let attempts = 0
@@ -108,9 +110,9 @@ export default function MapClient() {
                   xAnchor={0.5}
                   zIndex={hoveredMarkerId === sauna.id ? 20 : 10}
                 >
-                  <div className={`relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card transition-opacity duration-200 ${hoveredMarkerId === sauna.id
+                  <div className={`relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card transition-opacity duration-200 ${isMobile || hoveredMarkerId === sauna.id
                     ? 'opacity-100'
-                    : 'opacity-100 md:opacity-0 md:pointer-events-none'
+                    : 'opacity-0 pointer-events-none'
                     }`}>
                     {sauna.name}
                     {sauna.sauna_rooms?.length > 0 && (
