@@ -114,8 +114,6 @@ create or replace trigger on_auth_user_created
 -- ❌ 기존 "본인만 조회" 정책은 favorites/reviews insert 시 FK 검증 실패를 유발함
 create policy "로그인한 유저는 프로필 조회 가능" on public.users
   for select using (auth.uid() is not null);
-create policy "본인 프로필 생성" on public.users
-  for insert with check (auth.uid() = id);
 create policy "본인 프로필 수정" on public.users for update using (auth.uid() = id);
 
 -- reviews: 누구나 읽기, 본인만 쓰기/수정/삭제
