@@ -76,7 +76,7 @@ export const api = {
       return data as SaunaDto
     },
 
-    /** 텍스트 검색 + 필터 */
+    /** 텍스트 검색 + 필터 — 서버사이드 필터링 */
     search: async (params: SaunaSearchParams, customClient?: SupabaseClient): Promise<SaunaSummaryDto[]> => {
       const supabase = getSupabaseClient(customClient)
       let query = supabase
@@ -86,6 +86,8 @@ export const api = {
       if (params.tattooAllowed) query = query.eq('rules->>tattoo_allowed', 'true')
       if (params.femaleAllowed) query = query.eq('rules->>female_allowed', 'true')
       if (params.hasJjimjilbang) query = query.eq('kr_specific->>has_jjimjilbang', 'true')
+      if (params.hasAutoloyly) query = query.filter('sauna_rooms', 'cs', '[{"has_auto_loyly":true}]')
+      if (params.hasGroundwater) query = query.filter('cold_baths', 'cs', '[{"is_groundwater":true}]')
       const { data, error } = await query.order('created_at', { ascending: false })
       if (error) throw new Error(`검색에 실패했습니다.`)
       return data as SaunaSummaryDto[]
@@ -93,6 +95,7 @@ export const api = {
   },
 
   reviews: {
+    /** 사우나별 리뷰 목록 */
     getBySaunaId: async (saunaId: string, customClient?: SupabaseClient) => {
       const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
@@ -103,6 +106,19 @@ export const api = {
         .order('created_at', { ascending: false })
         .limit(20)
       if (error) throw new Error(`리뷰를 불러오는데 실패했습니다.`)
+      return data
+    },
+
+    /** 유저별 사활 기록 (마이페이지) */
+    getByUserId: async (userId: string, customClient?: SupabaseClient) => {
+      const supabase = getSupabaseClient(customClient)
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`id, rating, content, visit_date, visit_time, created_at,
+          saunas (id, name, address, sauna_rooms, cold_baths, images)`)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+      if (error) throw new Error(`사활 기록을 불러오는데 실패했습니다.`)
       return data
     },
 
@@ -169,37 +185,23 @@ export const api = {
   },
 
   storage: {
-    /**
-     * Supabase Storage에 이미지 업로드
-     * bucket: sauna-geukrak / path: {saunaId}/{uuid}.{ext}
-     * 반환값: public URL 문자열
-     */
     uploadImage: async (saunaId: string, file: File, accessToken: string): Promise<string> => {
       const supabase = getAuthedClient(accessToken)
       const ext = file.name.split('.').pop() ?? 'jpg'
       const path = `${saunaId}/${crypto.randomUUID()}.${ext}`
-
       const { error } = await supabase.storage
         .from('sauna-geukrak')
         .upload(path, file, { upsert: false, contentType: file.type })
-
       if (error) throw new Error(`이미지 업로드 실패: ${error.message}`)
-
       const { data } = supabase.storage.from('sauna-geukrak').getPublicUrl(path)
       return data.publicUrl
     },
 
-    /**
-     * Supabase Storage에서 이미지 삭제
-     * publicUrl → storage path 역산 후 삭제
-     */
     deleteImage: async (publicUrl: string, accessToken: string): Promise<void> => {
       const supabase = getAuthedClient(accessToken)
-      // publicUrl 형식: https://{project}.supabase.co/storage/v1/object/public/sauna-geukrak/{path}
       const marker = '/sauna-geukrak/'
       const idx = publicUrl.indexOf(marker)
-      if (idx === -1) return // 외부 URL(카카오 등)은 Storage 삭제 스킵
-
+      if (idx === -1) return
       const path = publicUrl.slice(idx + marker.length)
       const { error } = await supabase.storage.from('sauna-geukrak').remove([path])
       if (error) throw new Error(`이미지 삭제 실패: ${error.message}`)

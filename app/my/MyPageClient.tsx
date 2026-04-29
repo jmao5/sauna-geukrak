@@ -6,11 +6,13 @@ import { useRouter } from 'next/navigation'
 import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
+import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api-instance'
 import toast from 'react-hot-toast'
 
 const MENU_ITEMS = [
   { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites' },
-  { icon: BiHistory, label: '방문 기록', desc: '내가 다녀온 사우나 목록', href: '/my/history' },
+  { icon: BiHistory, label: '사활 기록', desc: '내가 다녀온 사우나 방문 기록', href: '/my/records' },
   { icon: BiBell, label: '알림 설정', desc: '키워드 알림 및 공지사항', href: '/my/notifications' },
   { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings' },
 ]
@@ -19,10 +21,23 @@ export default function MyPageClient() {
   const router = useRouter()
   const { user, isLoading, clearSession } = useUserStore()
 
-  // Google user_metadata에서 프로필 정보 추출
   const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? '사우나 매니아'
   const avatarUrl = user?.user_metadata?.avatar_url ?? null
   const email = user?.email ?? null
+
+  // 찜 개수
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['favorites', user?.id],
+    queryFn: () => api.favorites.getByUserId(user!.id),
+    enabled: !!user,
+  })
+
+  // 사활 기록 개수
+  const { data: records = [] } = useQuery({
+    queryKey: ['my-records', user?.id],
+    queryFn: () => api.reviews.getByUserId(user!.id),
+    enabled: !!user,
+  })
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -32,7 +47,6 @@ export default function MyPageClient() {
     router.replace('/')
   }
 
-  // ── 비로그인 상태 ──
   if (!isLoading && !user) {
     return (
       <div className="flex h-full flex-col bg-bg-main">
@@ -49,7 +63,6 @@ export default function MyPageClient() {
             로그인 / 회원가입
           </Link>
         </div>
-
         <div className="flex-1 flex items-center justify-center">
           <p className="text-[12px] text-text-muted">로그인 후 이용 가능합니다</p>
         </div>
@@ -57,7 +70,6 @@ export default function MyPageClient() {
     )
   }
 
-  // ── 로딩 ──
   if (isLoading) {
     return (
       <div className="flex h-full flex-col bg-bg-main animate-pulse">
@@ -70,21 +82,13 @@ export default function MyPageClient() {
     )
   }
 
-  // ── 로그인 상태 ──
   return (
     <div className="flex h-full flex-col bg-bg-main">
-
       {/* 프로필 헤더 */}
       <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
         <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main">
           {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={displayName}
-              width={80}
-              height={80}
-              className="h-full w-full object-cover"
-            />
+            <Image src={avatarUrl} alt={displayName} width={80} height={80} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-bg-main text-3xl">🧖</div>
           )}
@@ -95,19 +99,15 @@ export default function MyPageClient() {
       </div>
 
       {/* 통계 요약 */}
-      <div className="mx-4 -mt-4 mb-4 grid grid-cols-3 gap-0 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card">
-        <div className="py-3 text-center">
+      <div className="mx-4 -mt-4 mb-4 grid grid-cols-2 gap-0 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card">
+        <Link href="/my/favorites" className="py-3 text-center transition active:bg-bg-sub rounded-l-2xl">
           <p className="text-[10px] font-bold text-text-muted">찜</p>
-          <p className="text-lg font-black text-text-main">—</p>
-        </div>
-        <div className="py-3 text-center">
-          <p className="text-[10px] font-bold text-text-muted">방문</p>
-          <p className="text-lg font-black text-text-main">—</p>
-        </div>
-        <div className="py-3 text-center">
-          <p className="text-[10px] font-bold text-text-muted">리뷰</p>
-          <p className="text-lg font-black text-text-main">—</p>
-        </div>
+          <p className="text-lg font-black text-text-main">{favorites.length}</p>
+        </Link>
+        <Link href="/my/records" className="py-3 text-center transition active:bg-bg-sub rounded-r-2xl">
+          <p className="text-[10px] font-bold text-text-muted">사활</p>
+          <p className="text-lg font-black text-text-main">{records.length}</p>
+        </Link>
       </div>
 
       {/* 사우나 등록 버튼 */}

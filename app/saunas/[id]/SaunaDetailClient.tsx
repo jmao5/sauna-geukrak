@@ -16,6 +16,7 @@ import {
   BiShare,
   BiStar,
   BiX,
+  BiUser,
 } from 'react-icons/bi'
 
 // ── 온도 히어로 ──────────────────────────────────────────────
@@ -112,6 +113,121 @@ function DetailSkeleton() {
   )
 }
 
+// ── 별점 표시 ─────────────────────────────────────────────────
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <BiStar
+          key={n}
+          size={13}
+          className={n <= rating ? 'text-gold' : 'text-border-main'}
+          style={{ fill: n <= rating ? 'currentColor' : 'none' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── 리뷰 목록 ─────────────────────────────────────────────────
+const VISIT_TIME_LABELS: Record<string, string> = {
+  morning: '🌅 아침',
+  afternoon: '☀️ 오후',
+  evening: '🌆 저녁',
+  night: '🌙 야간',
+}
+
+function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void }) {
+  const { data: reviews = [], isLoading } = useQuery({
+    queryKey: ['reviews', saunaId],
+    queryFn: () => api.reviews.getBySaunaId(saunaId),
+  })
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3 p-4">
+        {[0, 1].map((i) => (
+          <div key={i} className="animate-pulse rounded-2xl border border-border-subtle bg-bg-main p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-bg-sub" />
+              <div className="h-3 w-24 rounded bg-bg-sub" />
+            </div>
+            <div className="h-3 w-32 rounded bg-bg-sub" />
+            <div className="h-3 w-full rounded bg-bg-sub" />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (reviews.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-10 text-center">
+        <span className="text-4xl">🔥</span>
+        <p className="text-[13px] font-bold text-text-sub">아직 사활 기록이 없어요</p>
+        <p className="text-[11px] text-text-muted">첫 번째 사활을 남겨보세요!</p>
+        <button
+          onClick={onWrite}
+          className="mt-1 rounded-full bg-point px-5 py-2 text-[12px] font-black text-white transition active:scale-95"
+        >
+          사활 기록하기
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="divide-y divide-border-subtle">
+      {reviews.map((review: any) => {
+        const user = review.users as { nickname?: string; avatar_url?: string } | null
+        const displayName = user?.nickname ?? '익명'
+        const avatar = user?.avatar_url ?? null
+        const dateStr = review.visit_date
+          ? new Date(review.visit_date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+          : null
+
+        return (
+          <div key={review.id} className="px-4 py-4">
+            {/* 유저 정보 + 별점 */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 overflow-hidden rounded-full bg-bg-main border border-border-subtle flex-shrink-0">
+                  {avatar ? (
+                    <img src={avatar} alt={displayName} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <BiUser size={16} className="text-text-muted" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-[12px] font-black text-text-main">{displayName}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <StarRow rating={review.rating} />
+                    {dateStr && (
+                      <span className="text-[10px] text-text-muted">{dateStr}</span>
+                    )}
+                    {review.visit_time && (
+                      <span className="text-[10px] text-text-muted">
+                        · {VISIT_TIME_LABELS[review.visit_time] ?? review.visit_time}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 내용 */}
+            {review.content && (
+              <p className="text-[12px] leading-relaxed text-text-sub mt-1">{review.content}</p>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── 사활 기록 바텀시트 ────────────────────────────────────────
 function ReviewBottomSheet({
   sauna,
@@ -150,7 +266,7 @@ function ReviewBottomSheet({
           visit_date: visitDate,
           visit_time: visitTime,
         },
-        token  // accessToken 방식으로 통일 (customClient 제거)
+        token
       )
     },
     onSuccess: () => {
@@ -189,7 +305,6 @@ function ReviewBottomSheet({
         className="w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-bg-card border-t border-border-main"
         onClick={e => e.stopPropagation()}
       >
-        {/* 핸들 + 헤더 */}
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3.5">
           <div>
             <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Review</p>
@@ -201,7 +316,6 @@ function ReviewBottomSheet({
         </div>
 
         <div className="p-4 space-y-5">
-          {/* 별점 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Rating</p>
             <div className="flex gap-2">
@@ -222,7 +336,6 @@ function ReviewBottomSheet({
             </div>
           </div>
 
-          {/* 방문 날짜 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Visit Date</p>
             <input
@@ -234,7 +347,6 @@ function ReviewBottomSheet({
             />
           </div>
 
-          {/* 방문 시간대 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Time</p>
             <div className="grid grid-cols-4 gap-2">
@@ -243,8 +355,8 @@ function ReviewBottomSheet({
                   key={id}
                   onClick={() => setVisitTime(id)}
                   className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${visitTime === id
-                      ? 'border-point bg-point/5 text-point'
-                      : 'border-border-main bg-bg-main text-text-sub'
+                    ? 'border-point bg-point/5 text-point'
+                    : 'border-border-main bg-bg-main text-text-sub'
                     }`}
                 >
                   <span className="text-base">{emoji}</span>
@@ -254,7 +366,6 @@ function ReviewBottomSheet({
             </div>
           </div>
 
-          {/* 한줄 기록 */}
           <div>
             <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Memo (선택)</p>
             <textarea
@@ -268,7 +379,6 @@ function ReviewBottomSheet({
             <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/200</p>
           </div>
 
-          {/* 제출 */}
           <button
             onClick={() => mutation.mutate()}
             disabled={rating === 0 || mutation.isPending}
@@ -293,7 +403,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
   const { user } = useUserStore()
   const [showReview, setShowReview] = useState(false)
 
-  // 찜 상태
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
     queryFn: () => user ? api.favorites.check(user.id, id) : Promise.resolve(false),
@@ -317,9 +426,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
       queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
     },
     onError: (error) => {
-      if (error.message !== 'not_logged_in') {
-        toast.error('잠시 후 다시 시도해주세요')
-      }
+      if (error.message !== 'not_logged_in') toast.error('잠시 후 다시 시도해주세요')
     },
   })
 
@@ -334,7 +441,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
     enabled: !!id,
   })
 
-  // DB 이미지가 없으면 카카오맵에서 폴백 이미지 가져옴
   const [kakaoImage, setKakaoImage] = useState<string | null>(null)
   useEffect(() => {
     if (!sauna || sauna.images?.[0]) return
@@ -387,7 +493,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
             </button>
           </div>
           <div className="absolute right-4 top-4 z-10 flex gap-2">
-            {/* 수정 버튼 — 로그인한 유저에게만 표시 */}
             {user && (
               <button
                 onClick={() => router.push(`/saunas/${id}/edit`)}
@@ -397,12 +502,10 @@ export function SaunaDetailClient({ id }: { id: string }) {
                 <BiEdit size={16} />
               </button>
             )}
-            {/* 찜 버튼 — 실제 동작 */}
             <button
               onClick={toggleFav}
               disabled={favMutation.isPending}
-              className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 disabled:opacity-50 ${isFav ? 'bg-point text-white' : 'bg-black/40 text-white'
-                }`}
+              className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 disabled:opacity-50 ${isFav ? 'bg-point text-white' : 'bg-black/40 text-white'}`}
             >
               {favMutation.isPending ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -430,8 +533,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
         <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-bg-card border-b border-border-subtle">
           <button
             onClick={toggleFav}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[13px] font-black transition active:scale-[0.97] ${isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-main'
-              }`}
+            className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[13px] font-black transition active:scale-[0.97] ${isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-main'}`}
           >
             {isFav ? '❤️ 찜됨' : '🤍 극락가고싶다'}
           </button>
@@ -552,10 +654,15 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <InfoRow label="주차" value={sauna.parking ? '가능' : '불가'} />
         </Section>
 
+        {/* ── 사활 기록 섹션 ── */}
+        <div className="section-divider" />
+        <Section title="사활 기록">
+          <ReviewList saunaId={id} onWrite={() => setShowReview(true)} />
+        </Section>
+
         <div className="h-8" />
       </div>
 
-      {/* 사활 기록 바텀시트 */}
       {showReview && <ReviewBottomSheet sauna={sauna} onClose={() => setShowReview(false)} />}
     </div>
   )
