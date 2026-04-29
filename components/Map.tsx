@@ -36,7 +36,7 @@ export default function SaunaMap() {
       <div className="w-full h-[calc(100vh-140px)] flex flex-col items-center justify-center bg-red-50 rounded-xl p-4 text-center">
         <p className="text-red-600 font-bold mb-2">지도를 불러올 수 없습니다 😢</p>
         <p className="text-sm text-red-500">
-          브라우저의 <b>추적 방지(Tracking Prevention)</b> 기능이나 <b>광고 차단 확장 프로그램</b>, 또는 <b>시크릿 모드</b> 때문에 카카오맵이 차단되었을 수 있습니다.<br/>설정을 해제하고 새로고침 해주세요.
+          브라우저의 <b>추적 방지(Tracking Prevention)</b> 기능이나 <b>광고 차단 확장 프로그램</b>, 또는 <b>시크릿 모드</b> 때문에 카카오맵이 차단되었을 수 있습니다.<br />설정을 해제하고 새로고침 해주세요.
         </p>
       </div>
     )
@@ -45,7 +45,7 @@ export default function SaunaMap() {
   if (!isLoaded || isLoading) {
     return (
       <div className="w-full h-[calc(100vh-140px)] flex items-center justify-center bg-gray-100 rounded-xl">
-        <Loading fullScreen={false} message="지도를 불러오는 중입니다..." messageDelay={0} imageSize={80} />
+        <Loading />
       </div>
     )
   }
