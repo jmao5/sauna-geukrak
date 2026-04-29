@@ -78,19 +78,21 @@ export default function SaunaMap() {
               onMouseOut={() => setHoveredMarkerId(null)}
               onClick={() => handleMarkerClick(sauna)}
             />
-            {hoveredMarkerId === sauna.id && (
-              <CustomOverlayMap
-                position={{ lat: sauna.latitude, lng: sauna.longitude }}
-                yAnchor={2.2}
-                xAnchor={0.5}
-                zIndex={10}
-              >
-                <div className="relative px-3 py-2 rounded-lg shadow-md border bg-white border-gray-200 text-gray-800 text-sm font-bold whitespace-nowrap -mt-1 cursor-default">
-                  {sauna.name}
-                  <div className="absolute w-2.5 h-2.5 border-b border-r transform rotate-45 left-1/2 -bottom-[6px] -translate-x-1/2 rounded-sm z-0 bg-white border-gray-200"></div>
-                </div>
-              </CustomOverlayMap>
-            )}
+            <CustomOverlayMap
+              position={{ lat: sauna.latitude, lng: sauna.longitude }}
+              yAnchor={2.2}
+              xAnchor={0.5}
+              zIndex={hoveredMarkerId === sauna.id ? 20 : 10}
+            >
+              <div className={`relative px-3 py-2 rounded-lg shadow-md border bg-white border-gray-200 text-gray-800 text-sm font-bold whitespace-nowrap -mt-1 cursor-default transition-opacity duration-200 ${
+                hoveredMarkerId === sauna.id
+                  ? 'opacity-100'
+                  : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none'
+              }`}>
+                {sauna.name}
+                <div className="absolute w-2.5 h-2.5 border-b border-r transform rotate-45 left-1/2 -bottom-[6px] -translate-x-1/2 rounded-sm z-0 bg-white border-gray-200"></div>
+              </div>
+            </CustomOverlayMap>
           </div>
         ))}
       </Map>

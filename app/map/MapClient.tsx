@@ -101,29 +101,30 @@ export default function MapClient() {
                   onMouseOut={() => setHoveredMarkerId(null)}
                   onClick={() => router.push(`/saunas/${sauna.id}`)}
                 />
-                {hoveredMarkerId === sauna.id && (
-                  <CustomOverlayMap
-                    position={{ lat: sauna.latitude, lng: sauna.longitude }}
-                    yAnchor={2.5}
-                    xAnchor={0.5}
-                    zIndex={10}
-                  >
-                    <div className="relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card">
-                      {sauna.name}
-                      {sauna.sauna_rooms?.length > 0 && (
-                        <span className="ml-1.5 text-sauna">
-                          {Math.max(...sauna.sauna_rooms.map((r) => r.temp))}°
-                        </span>
-                      )}
-                      {sauna.cold_baths?.length > 0 && (
-                        <span className="ml-1 text-cold">
-                          {Math.min(...sauna.cold_baths.map((b) => b.temp))}°
-                        </span>
-                      )}
-                      <div className="absolute bottom-[-5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-border-main bg-bg-sub" />
-                    </div>
-                  </CustomOverlayMap>
-                )}
+                <CustomOverlayMap
+                  position={{ lat: sauna.latitude, lng: sauna.longitude }}
+                  yAnchor={2.2}
+                  xAnchor={0.5}
+                  zIndex={hoveredMarkerId === sauna.id ? 20 : 10}
+                >
+                  <div className={`relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card transition-opacity duration-200 ${hoveredMarkerId === sauna.id
+                    ? 'opacity-100'
+                    : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none'
+                    }`}>
+                    {sauna.name}
+                    {sauna.sauna_rooms?.length > 0 && (
+                      <span className="ml-1.5 text-sauna">
+                        {Math.max(...sauna.sauna_rooms.map((r) => r.temp))}°
+                      </span>
+                    )}
+                    {sauna.cold_baths?.length > 0 && (
+                      <span className="ml-1 text-cold">
+                        {Math.min(...sauna.cold_baths.map((b) => b.temp))}°
+                      </span>
+                    )}
+                    <div className="absolute bottom-[-5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-border-main bg-bg-sub" />
+                  </div>
+                </CustomOverlayMap>
               </div>
             ))}
           </Map>
