@@ -9,6 +9,7 @@ import Skeleton from '@/components/ui/Skeleton'
 import Link from 'next/link'
 import Image from 'next/image'
 import { BiSearch, BiMap } from 'react-icons/bi'
+import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 
 type Filter = 'all' | 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female'
 
@@ -54,6 +55,13 @@ export default function HomeClient() {
       }
     })
   }, [allSaunas, activeFilter])
+
+  const featured = filteredSaunas[0]
+  const { data: featuredKakaoImage } = useKakaoSaunaImage(
+    featured?.name ?? '',
+    featured?.address,
+    featured?.images?.[0]
+  )
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
@@ -123,9 +131,9 @@ export default function HomeClient() {
               <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Editor's Pick</p>
             </div>
             <Link href={`/saunas/${filteredSaunas[0].id}`} className="block relative h-44 w-full rounded-2xl overflow-hidden mb-1">
-              {filteredSaunas[0].images?.[0] ? (
+              {(filteredSaunas[0].images?.[0] || featuredKakaoImage) ? (
                 <Image
-                  src={filteredSaunas[0].images[0]}
+                  src={filteredSaunas[0].images?.[0] ?? featuredKakaoImage!}
                   alt={filteredSaunas[0].name}
                   fill
                   className="object-cover"

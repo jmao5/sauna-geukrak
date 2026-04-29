@@ -10,6 +10,7 @@ import {
   BiChevronLeft, BiShare, BiBookmark, BiMap, BiX, BiStar,
 } from 'react-icons/bi'
 import toast from 'react-hot-toast'
+import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 
 // ── 온도 히어로 ──────────────────────────────────────────────
 function TempHero({ sauna }: { sauna: SaunaDto }) {
@@ -310,6 +311,8 @@ export function SaunaDetailClient({ id }: { id: string }) {
     enabled: !!id,
   })
 
+  const { data: kakaoImage } = useKakaoSaunaImage(sauna?.name ?? '', sauna?.address, sauna?.images?.[0])
+
   if (isLoading) return <DetailSkeleton />
   if (isError || !sauna) {
     return (
@@ -323,7 +326,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
     )
   }
 
-  const thumbnail = sauna.images?.[0]
+  const thumbnail = sauna.images?.[0] ?? kakaoImage
 
   return (
     <div className="flex h-full flex-col bg-bg-main">

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiChevronRight } from 'react-icons/bi'
+import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 
 interface SaunaCardProps {
   sauna: SaunaSummaryDto & { images?: string[]; rules?: any; kr_specific?: any; pricing?: any }
@@ -43,6 +44,9 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
   if (sauna.rules?.female_allowed) features.push('여성가능')
 
   const thumbnail = sauna.images?.[0]
+
+  const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail)
+  const displayImage = thumbnail ?? kakaoImage
   const price = sauna.pricing?.adult_day
 
   if (variant === 'row') {
@@ -50,8 +54,8 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
       <Link href={`/saunas/${sauna.id}`} className={`sauna-row flex items-center gap-3 px-4 py-3.5 ${className}`}>
         {/* 썸네일 */}
         <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl">
-          {thumbnail ? (
-            <img src={thumbnail} alt={sauna.name} className="h-full w-full object-cover" />
+          {displayImage ? (
+            <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
               <span className="text-xl opacity-30">🧖</span>
@@ -84,8 +88,8 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
     <Link href={`/saunas/${sauna.id}`} className={`sauna-card block overflow-hidden ${className}`}>
       {/* 이미지 */}
       <div className="relative h-32 w-full overflow-hidden">
-        {thumbnail ? (
-          <img src={thumbnail} alt={sauna.name} className="h-full w-full object-cover" />
+        {displayImage ? (
+          <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
             <span className="text-3xl opacity-20">🧖</span>

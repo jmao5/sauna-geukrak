@@ -186,7 +186,7 @@ export const api = {
         .select('user_id')
         .eq('user_id', userId)
         .eq('sauna_id', saunaId)
-        .single()
+        .maybeSingle()  // .single()은 0행이면 406 에러 → maybeSingle()은 0행이면 null 반환
 
       if (error) return false
       return !!data
