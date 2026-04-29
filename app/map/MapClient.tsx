@@ -110,7 +110,7 @@ export default function MapClient() {
                 >
                   <div className={`relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card transition-opacity duration-200 ${hoveredMarkerId === sauna.id
                     ? 'opacity-100'
-                    : 'opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:pointer-events-none'
+                    : 'opacity-100 md:opacity-0 md:pointer-events-none'
                     }`}>
                     {sauna.name}
                     {sauna.sauna_rooms?.length > 0 && (
