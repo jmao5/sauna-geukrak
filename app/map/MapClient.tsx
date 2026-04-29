@@ -35,6 +35,7 @@ export default function MapClient() {
   const { data: saunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
     queryKey: ['saunas'],
     queryFn: () => api.saunas.getAll(),
+    staleTime: 1000 * 60 * 5, // SSR prefetch 코드와 동일한 캐시 전략
   })
 
   useEffect(() => {

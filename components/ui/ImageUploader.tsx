@@ -1,212 +1,221 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { BiPlus, BiX, BiImage } from 'react-icons/bi'
-import { createClient } from '@/lib/supabase/client'
+/**
+ * ImageUploader
+ *
+ * SaunaNewClient / SaunaEditClient에서 공통으로 사용하는 이미지 업로드 컴포넌트.
+ *
+ * Props:
+ *   - images     : 현재 이미지 URL 배열 (form.images)
+ *   - onChange   : 이미지 URL 배열이 바뀔 때 호출 (urls => void)
+ *   - saunaId    : Storage 경로에 쓸 사우나 ID — 등록 시엔 없을 수 있어 optional
+ *   - accessToken: Storage 업로드/삭제에 필요한 Supabase access token
+ *   - maxCount   : 최대 업로드 개수 (기본 5)
+ *
+ * 동작:
+ *   - 파일 선택 → 즉시 Supabase Storage 업로드 → public URL을 images 배열에 추가
+ *   - X 버튼 → Storage에서 삭제 + images 배열에서 제거
+ *   - 드래그로 순서 변경 (HTML5 drag-and-drop)
+ *   - 업로드 중인 파일은 로컬 preview(ObjectURL)로 미리 보여주고 완료 후 교체
+ */
+
+import { useRef, useState } from 'react'
+import { BiPlus, BiX, BiImageAlt } from 'react-icons/bi'
+import { MdDragIndicator } from 'react-icons/md'
+import { api } from '@/lib/api-instance'
 import toast from 'react-hot-toast'
 
-interface ImageUploaderProps {
+interface Props {
   images: string[]
   onChange: (urls: string[]) => void
+  saunaId?: string
+  accessToken?: string
   maxCount?: number
 }
 
-const BUCKET = 'sauna-geukrak'
-const MAX_INPUT_SIZE_MB = 10   // 이 크기 초과면 아예 거부
-const TARGET_SIZE_KB = 500     // 목표 압축 크기 (KB)
-const MAX_DIMENSION = 1920     // 최대 가로/세로 픽셀
-
-/**
- * Canvas API로 이미지를 리사이즈 + JPEG 압축
- * - 긴 쪽이 MAX_DIMENSION을 넘으면 축소
- * - quality를 이진 탐색으로 조정해 TARGET_SIZE_KB 이하로 맞춤
- */
-async function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const objectUrl = URL.createObjectURL(file)
-
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl)
-
-      // 1. 리사이즈 비율 계산
-      let { width, height } = img
-      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
-        const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height)
-        width = Math.round(width * ratio)
-        height = Math.round(height * ratio)
-      }
-
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(img, 0, 0, width, height)
-
-      // 2. quality 이진 탐색으로 TARGET_SIZE_KB 이하 맞추기
-      const targetBytes = TARGET_SIZE_KB * 1024
-      let lo = 0.1, hi = 0.92, bestBlob: Blob | null = null
-      let iterations = 0
-
-      const tryQuality = (q: number) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) { reject(new Error('압축 실패')); return }
-
-            if (blob.size <= targetBytes) {
-              bestBlob = blob
-              // 더 높은 품질로 올려볼 수 있으면 시도
-              if (hi - lo > 0.05 && iterations < 8) {
-                iterations++
-                lo = q
-                tryQuality((lo + hi) / 2)
-              } else {
-                resolve(bestBlob!)
-              }
-            } else {
-              // 크면 품질 낮추기
-              if (hi - lo > 0.05 && iterations < 8) {
-                iterations++
-                hi = q
-                tryQuality((lo + hi) / 2)
-              } else {
-                // 목표 못 맞춰도 최소 품질로 결과 반환
-                canvas.toBlob((b) => resolve(b!), 'image/jpeg', lo)
-              }
-            }
-          },
-          'image/jpeg',
-          q,
-        )
-      }
-
-      tryQuality((lo + hi) / 2)
-    }
-
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl)
-      reject(new Error('이미지를 읽을 수 없습니다'))
-    }
-
-    img.src = objectUrl
-  })
+interface PendingItem {
+  previewUrl: string  // ObjectURL — 업로드 완료 전 미리보기용
+  uploading: boolean
 }
 
-export default function ImageUploader({ images, onChange, maxCount = 5 }: ImageUploaderProps) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [uploadingCount, setUploadingCount] = useState(0)
+export default function ImageUploader({
+  images,
+  onChange,
+  saunaId = 'temp',
+  accessToken,
+  maxCount = 5,
+}: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  // 업로드 진행 중인 항목 (아직 URL 확정 전)
+  const [pending, setPending] = useState<PendingItem[]>([])
+  // 드래그 중인 인덱스
+  const dragIndex = useRef<number | null>(null)
+
+  const canAdd = images.length + pending.length < maxCount
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return
 
-    const remaining = maxCount - images.length
-    const toUpload = Array.from(files).slice(0, remaining)
-
-    if (toUpload.length === 0) {
+    const slots = Math.min(files.length, maxCount - images.length - pending.length)
+    if (slots <= 0) {
       toast.error(`최대 ${maxCount}장까지 업로드할 수 있어요`)
       return
     }
 
-    setUploadingCount(toUpload.length)
-    const supabase = createClient()
-    const uploadedUrls: string[] = []
+    const selected = Array.from(files).slice(0, slots)
 
-    for (const file of toUpload) {
-      // 포맷 체크
-      if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'].includes(file.type)) {
-        toast.error(`${file.name}: 지원하지 않는 형식이에요`)
-        setUploadingCount((n) => n - 1)
+    // 동적 임포트로 브라우저 환경에서만 로드
+    const imageCompression = (await import('browser-image-compression')).default
+
+    // 각 파일마다 preview 슬롯 추가 후 순차 업로드
+    for (const file of selected) {
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name}은 이미지 파일이 아닙니다`)
         continue
       }
 
-      // 너무 큰 파일 거부
-      if (file.size > MAX_INPUT_SIZE_MB * 1024 * 1024) {
-        toast.error(`${file.name}: ${MAX_INPUT_SIZE_MB}MB 이하 파일만 업로드 가능해요`)
-        setUploadingCount((n) => n - 1)
-        continue
-      }
+      // 1. 임시 미리보기 추가
+      const previewUrl = URL.createObjectURL(file)
+      const item: PendingItem = { previewUrl, uploading: true }
+      setPending((prev) => [...prev, item])
 
       try {
-        // 압축
-        const compressed = await compressImage(file)
-        const savedKB = Math.round((file.size - compressed.size) / 1024)
-        const finalKB = Math.round(compressed.size / 1024)
+        // 2. 이미지 압축 (목표 500KB)
+        const options = {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        }
+        
+        let compressedFile: File = file
+        try {
+          compressedFile = await imageCompression(file, options)
+        } catch (error) {
+          console.error('이미지 압축 실패:', error)
+          // 실패 시 원본 그대로 사용
+        }
 
-        // 파일명
-        const filename = `saunas/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
-
-        const { error } = await supabase.storage
-          .from(BUCKET)
-          .upload(filename, compressed, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false })
-
-        if (error) {
-          toast.error(`업로드 실패: ${error.message}`)
+        if (compressedFile.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name}이 압축 후에도 10MB를 초과합니다`)
+          URL.revokeObjectURL(previewUrl)
+          setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
           continue
         }
 
-        const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename)
-        uploadedUrls.push(data.publicUrl)
+        let publicUrl: string
 
-        // 압축 결과 토스트 (원본보다 많이 줄었을 때만)
-        if (savedKB > 50) {
-          toast.success(`${finalKB}KB로 압축됨 (${savedKB}KB 절약)`, { duration: 2000 })
+        if (accessToken) {
+          // accessToken이 있으면 Supabase Storage에 실제 업로드
+          publicUrl = await api.storage.uploadImage(saunaId, compressedFile, accessToken)
+        } else {
+          // 등록 폼처럼 accessToken이 아직 없는 경우 — ObjectURL을 임시로 사용
+          // (실제 제출 시 별도 처리 필요 — 현재 new 폼은 이 경로)
+          // ⚠️ 압축된 파일에 대해 새로운 ObjectURL을 생성
+          publicUrl = URL.createObjectURL(compressedFile)
         }
-      } catch (err: any) {
-        toast.error(err.message || '처리 중 오류 발생')
-      } finally {
-        setUploadingCount((n) => Math.max(0, n - 1))
+
+        URL.revokeObjectURL(previewUrl)
+        setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
+        onChange([...images, publicUrl])
+      } catch (e) {
+        URL.revokeObjectURL(previewUrl)
+        setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
+        toast.error(e instanceof Error ? e.message : '업로드 중 오류가 발생했습니다')
       }
     }
+  }
 
-    if (uploadedUrls.length > 0) {
-      onChange([...images, ...uploadedUrls])
+  /* ── 이미지 삭제 ─────────────────────────────────────── */
+  const handleDelete = async (url: string, index: number) => {
+    // UI에서 먼저 제거 (낙관적 업데이트)
+    onChange(images.filter((_, i) => i !== index))
+
+    // Storage에서도 삭제 (외부 URL이면 스킵)
+    if (accessToken && url.includes('supabase')) {
+      try {
+        await api.storage.deleteImage(url, accessToken)
+      } catch {
+        // 삭제 실패해도 UI는 유지 (이미 제거됨)
+        // 고아 파일은 추후 Storage 정리로 처리
+      }
     }
-    setUploadingCount(0)
   }
 
-  const handleRemove = async (url: string, idx: number) => {
-    try {
-      const supabase = createClient()
-      const path = url.split(`/${BUCKET}/`)[1]
-      if (path) await supabase.storage.from(BUCKET).remove([path])
-    } catch { /* 무시 */ }
-    onChange(images.filter((_, i) => i !== idx))
+  /* ── 드래그 순서 변경 ────────────────────────────────── */
+  const handleDragStart = (index: number) => {
+    dragIndex.current = index
   }
 
-  const canAdd = images.length < maxCount && uploadingCount === 0
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    if (dragIndex.current === null || dragIndex.current === index) return
+    const reordered = [...images]
+    const [moved] = reordered.splice(dragIndex.current, 1)
+    reordered.splice(index, 0, moved)
+    dragIndex.current = index
+    onChange(reordered)
+  }
+
+  const handleDragEnd = () => {
+    dragIndex.current = null
+  }
 
   return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Photos</p>
-        <p className="text-[10px] text-text-muted">{images.length}/{maxCount}</p>
-      </div>
+    <div className="space-y-3">
+      {/* 이미지 그리드 */}
+      <div className="grid grid-cols-3 gap-2">
 
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {/* 업로드된 이미지 */}
-        {images.map((url, idx) => (
-          <div key={url} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border border-border-main">
-            <img src={url} alt={`사진 ${idx + 1}`} className="h-full w-full object-cover" />
+        {/* 확정된 이미지들 */}
+        {images.map((url, i) => (
+          <div
+            key={url}
+            draggable
+            onDragStart={() => handleDragStart(i)}
+            onDragOver={(e) => handleDragOver(e, i)}
+            onDragEnd={handleDragEnd}
+            className="group relative aspect-square overflow-hidden rounded-xl border border-border-main bg-bg-main"
+          >
+            {/* 대표 이미지 뱃지 */}
+            {i === 0 && (
+              <div className="absolute left-1.5 top-1.5 z-10 rounded-full bg-point px-1.5 py-0.5 text-[9px] font-black text-white">
+                대표
+              </div>
+            )}
+            {/* 드래그 핸들 */}
+            <div className="absolute right-1.5 top-1.5 z-10 rounded-full bg-black/40 p-0.5 text-white opacity-0 transition group-hover:opacity-100">
+              <MdDragIndicator size={12} />
+            </div>
+            <img
+              src={url}
+              alt={`사우나 이미지 ${i + 1}`}
+              className="h-full w-full object-cover"
+              referrerPolicy="no-referrer"
+            />
+            {/* 삭제 버튼 */}
             <button
               type="button"
-              onClick={() => handleRemove(url, idx)}
-              className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white"
+              onClick={() => handleDelete(url, i)}
+              className="absolute bottom-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition active:scale-90"
             >
-              <BiX size={12} />
+              <BiX size={14} />
             </button>
-            {idx === 0 && (
-              <span className="absolute bottom-1 left-1 rounded-sm bg-black/60 px-1 py-0.5 text-[8px] font-black text-white">
-                대표
-              </span>
-            )}
           </div>
         ))}
 
-        {/* 압축·업로드 중 플레이스홀더 */}
-        {Array.from({ length: uploadingCount }).map((_, i) => (
-          <div key={`uploading-${i}`} className="flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border border-border-main bg-bg-main">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-border-main border-t-point" />
-            <span className="text-[8px] font-bold text-text-muted">압축 중</span>
+        {/* 업로드 중인 항목들 */}
+        {pending.map((item) => (
+          <div
+            key={item.previewUrl}
+            className="relative aspect-square overflow-hidden rounded-xl border border-border-main bg-bg-main"
+          >
+            <img
+              src={item.previewUrl}
+              alt="업로드 중"
+              className="h-full w-full object-cover opacity-50"
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            </div>
           </div>
         ))}
 
@@ -214,27 +223,33 @@ export default function ImageUploader({ images, onChange, maxCount = 5 }: ImageU
         {canAdd && (
           <button
             type="button"
-            onClick={() => inputRef.current?.click()}
-            className="flex h-20 w-20 flex-shrink-0 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border-main bg-bg-main text-text-muted transition active:scale-95"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border-main bg-bg-main transition active:scale-[0.97] hover:border-point/40 hover:bg-point/5"
           >
-            <BiPlus size={20} />
-            <span className="text-[9px] font-bold">추가</span>
+            <BiPlus size={20} className="text-text-muted" />
+            <span className="text-[10px] font-bold text-text-muted">추가</span>
           </button>
         )}
       </div>
 
-      <p className="mt-2 flex items-center gap-1 text-[10px] text-text-muted">
-        <BiImage size={11} />
-        업로드 전 자동 압축 (목표 500KB) · 최대 {maxCount}장
-      </p>
+      {/* 안내 문구 */}
+      <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+        <BiImageAlt size={13} />
+        <span>
+          {images.length + pending.length}/{maxCount}장 · 첫 번째 사진이 대표 이미지 · 드래그로 순서 변경
+        </span>
+      </div>
 
+      {/* 숨겨진 파일 input */}
       <input
-        ref={inputRef}
+        ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        accept="image/*"
         multiple
         className="hidden"
-        onChange={(e) => { handleFiles(e.target.files); e.target.value = '' }}
+        onChange={(e) => handleFiles(e.target.files)}
+        // 같은 파일 재선택 허용
+        onClick={(e) => { (e.target as HTMLInputElement).value = '' }}
       />
     </div>
   )

@@ -167,4 +167,42 @@ export const api = {
       } catch { return null }
     },
   },
+
+  storage: {
+    /**
+     * Supabase Storage에 이미지 업로드
+     * bucket: sauna-geukrak / path: {saunaId}/{uuid}.{ext}
+     * 반환값: public URL 문자열
+     */
+    uploadImage: async (saunaId: string, file: File, accessToken: string): Promise<string> => {
+      const supabase = getAuthedClient(accessToken)
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${saunaId}/${crypto.randomUUID()}.${ext}`
+
+      const { error } = await supabase.storage
+        .from('sauna-geukrak')
+        .upload(path, file, { upsert: false, contentType: file.type })
+
+      if (error) throw new Error(`이미지 업로드 실패: ${error.message}`)
+
+      const { data } = supabase.storage.from('sauna-geukrak').getPublicUrl(path)
+      return data.publicUrl
+    },
+
+    /**
+     * Supabase Storage에서 이미지 삭제
+     * publicUrl → storage path 역산 후 삭제
+     */
+    deleteImage: async (publicUrl: string, accessToken: string): Promise<void> => {
+      const supabase = getAuthedClient(accessToken)
+      // publicUrl 형식: https://{project}.supabase.co/storage/v1/object/public/sauna-geukrak/{path}
+      const marker = '/sauna-geukrak/'
+      const idx = publicUrl.indexOf(marker)
+      if (idx === -1) return // 외부 URL(카카오 등)은 Storage 삭제 스킵
+
+      const path = publicUrl.slice(idx + marker.length)
+      const { error } = await supabase.storage.from('sauna-geukrak').remove([path])
+      if (error) throw new Error(`이미지 삭제 실패: ${error.message}`)
+    },
+  },
 }

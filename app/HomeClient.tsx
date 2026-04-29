@@ -39,7 +39,10 @@ export default function HomeClient() {
 
   const { data: allSaunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
     queryKey: ['saunas'],
+    // SSR에서 prefetchQuery로 이미 채워진 캐시를 사용.
+    // queryFn은 캐시 miss 시 클라이언트 fallback으로만 실행됨.
     queryFn: () => api.saunas.getAll(),
+    staleTime: 1000 * 60 * 5, // 5분간 fresh 유지 → 불필요한 재요청 방지
   })
 
   const filteredSaunas = useMemo(() => {

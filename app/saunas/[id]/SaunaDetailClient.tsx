@@ -7,9 +7,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
+import Image from 'next/image'
 import {
   BiBookmark,
   BiChevronLeft,
+  BiEdit,
   BiMap,
   BiShare,
   BiStar,
@@ -148,7 +150,7 @@ function ReviewBottomSheet({
           visit_date: visitDate,
           visit_time: visitTime,
         },
-        token
+        token  // accessToken 방식으로 통일 (customClient 제거)
       )
     },
     onSuccess: () => {
@@ -361,7 +363,14 @@ export function SaunaDetailClient({ id }: { id: string }) {
         {/* 히어로 이미지 */}
         <div className="relative h-56 w-full flex-shrink-0">
           {thumbnail ? (
-            <img src={thumbnail} alt={sauna.name} className="h-full w-full object-cover" />
+            <Image
+              src={thumbnail}
+              alt={sauna.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 680px"
+              priority
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg via-bg-main to-cold-bg">
               <span className="text-6xl opacity-10">🧖</span>
@@ -378,6 +387,16 @@ export function SaunaDetailClient({ id }: { id: string }) {
             </button>
           </div>
           <div className="absolute right-4 top-4 z-10 flex gap-2">
+            {/* 수정 버튼 — 로그인한 유저에게만 표시 */}
+            {user && (
+              <button
+                onClick={() => router.push(`/saunas/${id}/edit`)}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
+                aria-label="사우나 정보 수정"
+              >
+                <BiEdit size={16} />
+              </button>
+            )}
             {/* 찜 버튼 — 실제 동작 */}
             <button
               onClick={toggleFav}

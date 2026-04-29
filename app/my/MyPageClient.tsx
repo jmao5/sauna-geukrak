@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
@@ -77,7 +78,13 @@ export default function MyPageClient() {
       <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
         <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main">
           {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+            <Image
+              src={avatarUrl}
+              alt={displayName}
+              width={80}
+              height={80}
+              className="h-full w-full object-cover"
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-bg-main text-3xl">🧖</div>
           )}
