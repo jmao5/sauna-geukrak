@@ -417,18 +417,33 @@ export function SaunaDetailClient({ id }: { id: string }) {
         return 'added'
       }
     },
+    onMutate: async () => {
+      // optimistic update: 서버 응답 기다리지 않고 즉시 UI 반영
+      await queryClient.cancelQueries({ queryKey: ['favorite', id, user?.id] })
+      const prev = queryClient.getQueryData(['favorite', id, user?.id])
+      queryClient.setQueryData(['favorite', id, user?.id], !isFav)
+      return { prev }
+    },
     onSuccess: (status) => {
       if (status === 'removed') toast.success('찜 목록에서 제거했어요')
       if (status === 'added') toast.success('찜 목록에 추가했어요 ❤️')
-      queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
     },
-    onError: (error) => {
+    onError: (error, _, ctx) => {
+      // 실패시 이전 상태로 롤백
+      if (ctx?.prev !== undefined) {
+        queryClient.setQueryData(['favorite', id, user?.id], ctx.prev)
+      }
       if (error.message !== 'not_logged_in') toast.error('잠시 후 다시 시도해주세요')
+    },
+    onSettled: () => {
+      // 성공/실패 상관없이 서버와 동기화
+      queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
     },
   })
 
   const toggleFav = () => {
     if (!user) { router.push('/login'); return }
+    if (favMutation.isPending) return  // 중복 호출 방지
     favMutation.mutate()
   }
 

@@ -125,4 +125,5 @@ create policy "리뷰 삭제는 작성자 본인만" on public.reviews for delet
 -- favorites: 본인 것만 CRUD
 create policy "찜 조회는 본인 것만" on public.favorites for select using (auth.uid() = user_id);
 create policy "찜 생성은 본인 이름으로만" on public.favorites for insert with check (auth.uid() = user_id);
+create policy "찜 업데이트는 본인 것만" on public.favorites for update using (auth.uid() = user_id);
 create policy "찜 삭제는 본인 것만" on public.favorites for delete using (auth.uid() = user_id);

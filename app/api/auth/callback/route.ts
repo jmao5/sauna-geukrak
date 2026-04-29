@@ -51,12 +51,28 @@ export async function GET(request: NextRequest) {
   )
 
   // code를 세션으로 교환 — Supabase가 자동으로 쿠키에 access_token / refresh_token 저장
-  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+  const { data: sessionData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (exchangeError) {
     const redirectUrl = new URL('/login', origin)
     redirectUrl.searchParams.set('error', exchangeError.message)
     return NextResponse.redirect(redirectUrl)
+  }
+
+  // public.users 레코드 보장 — 트리거가 실패했을 경우를 대비해 직접 upsert
+  const authUser = sessionData?.user
+  if (authUser) {
+    const nickname =
+      authUser.user_metadata?.name ??
+      authUser.user_metadata?.full_name ??
+      authUser.email?.split('@')[0] ??
+      '익명'
+    const avatar_url = authUser.user_metadata?.avatar_url ?? null
+
+    await supabase.from('users').upsert(
+      { id: authUser.id, nickname, avatar_url },
+      { onConflict: 'id', ignoreDuplicates: false }
+    )
   }
 
   // oauth_redirect_next 쿠키 삭제
