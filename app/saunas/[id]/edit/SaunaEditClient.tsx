@@ -71,10 +71,16 @@ export default function SaunaEditClient({ id }: { id: string }) {
     }
   }, [sauna, isInitialized, setForm])
 
-  // 비로그인 차단
+  const { isAdmin } = useUserStore()
+
+  // 비로그인 및 비관리자 차단
   useEffect(() => {
     if (!user) router.replace(`/login?next=/saunas/${id}/edit`)
-  }, [user, router, id])
+    else if (!isAdmin()) {
+      toast.error('관리자만 사우나를 수정할 수 있습니다.')
+      router.replace(`/saunas/${id}`)
+    }
+  }, [user, isAdmin, router, id])
 
   const mutation = useMutation({
     mutationFn: (payload: FormState) => {

@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
+import { useState } from 'react'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiChevronRight } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
+import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 
 interface SaunaCardProps {
   sauna: SaunaSummaryDto
@@ -24,34 +26,6 @@ function TempPill({ type, temp }: { type: 'sauna' | 'cold'; temp: number }) {
   )
 }
 
-/**
- * 뷰포트에 진입한 순간 한 번만 true로 바뀌는 훅.
- * 카드가 화면에 보일 때만 카카오 이미지를 fetch하기 위해 사용.
- */
-function useIsVisible(rootMargin = '100px') {
-  const ref = useRef<HTMLAnchorElement>(null)
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el || isVisible) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.disconnect() // 한 번 진입하면 더 이상 감시 불필요
-        }
-      },
-      { rootMargin }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [isVisible, rootMargin])
-
-  return { ref, isVisible }
-}
-
 export default function SaunaCard({ sauna, className = '', variant = 'grid' }: SaunaCardProps) {
   const maxSaunaTemp =
     sauna.sauna_rooms?.length > 0 ? Math.max(...sauna.sauna_rooms.map((r) => r.temp)) : null
@@ -67,22 +41,28 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
 
   const thumbnail = sauna.images?.[0]
   const price = sauna.pricing?.adult_day
+  const avgRating = sauna.avg_rating
+  const reviewCount = sauna.review_count
 
-  // 뷰포트 진입 전까지 카카오 이미지 fetch 지연
-  const { ref, isVisible } = useIsVisible()
+  // 뷰포트 진입 전까지 카카오 이미지 fetch 지연 (기존 useIsVisible 인라인 훅 → 공용 훅으로 교체)
+  const [isVisible, setIsVisible] = useState(false)
+  const observerRef = useIntersectionObserver({
+    rootMargin: '100px',
+    onObserve: () => setIsVisible(true),
+    enabled: !isVisible, // 한 번 진입하면 비활성화
+  })
   const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail, isVisible)
   const displayImage = thumbnail ?? kakaoImage
 
   if (variant === 'row') {
     return (
       <Link
-        ref={ref}
         href={`/saunas/${sauna.id}`}
         className={`flex items-center gap-3 px-4 py-3.5 border-b border-border-subtle transition active:bg-bg-sub ${className}`}
       >
-        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-bg-main">
+        <div ref={observerRef} className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-bg-main">
           {displayImage ? (
-            <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
+            <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="64px" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
               <span className="text-xl opacity-30">🧖</span>
@@ -98,6 +78,9 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             {price != null && price > 0 && (
               <span className="text-[11px] text-text-muted">{price.toLocaleString()}원~</span>
             )}
+            {avgRating != null && (
+              <span className="ml-auto text-[11px] font-bold text-yellow-500">⭐ {avgRating.toFixed(1)}</span>
+            )}
           </div>
         </div>
         <BiChevronRight size={18} className="flex-shrink-0 text-text-muted" />
@@ -108,13 +91,12 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
   // grid variant
   return (
     <Link
-      ref={ref}
       href={`/saunas/${sauna.id}`}
       className={`sauna-card block overflow-hidden ${className}`}
     >
-      <div className="relative h-32 w-full overflow-hidden bg-bg-main">
+      <div ref={observerRef} className="relative h-32 w-full overflow-hidden bg-bg-main">
         {displayImage ? (
-          <img src={displayImage} alt={sauna.name} className="h-full w-full object-cover" />
+          <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 340px" />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
             <span className="text-3xl opacity-20">🧖</span>
@@ -142,6 +124,14 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
               </span>
             ))}
           </div>
+        )}
+        {avgRating != null && (
+          <p className="mt-1.5 text-[10px] font-bold text-yellow-500">
+            ⭐ {avgRating.toFixed(1)}
+            {reviewCount != null && reviewCount > 0 && (
+              <span className="ml-0.5 font-normal text-text-muted">({reviewCount})</span>
+            )}
+          </p>
         )}
       </div>
     </Link>

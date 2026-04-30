@@ -30,7 +30,7 @@ export default function SearchClient() {
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="사우나 이름으로 검색..."
+              placeholder="사우나 이름, 주소로 검색..."
               className="w-full rounded-xl border border-border-main bg-bg-main py-3 pl-10 pr-10 text-sm font-bold text-text-main outline-none focus:border-point-ring"
               autoFocus
             />

@@ -49,6 +49,13 @@ export interface Pricing {
 }
 
 /** 리뷰 작성자 */
+export interface Session {
+  type: 'sauna' | 'cold' | 'rest'
+  duration_minutes: number
+  temp?: number
+  note?: string
+}
+
 export interface ReviewUser {
   id: string
   nickname: string
@@ -63,6 +70,7 @@ export interface ReviewDto {
   visit_date: string | null
   visit_time: string | null
   congestion: string | null
+  sessions: Session[]
   images: string[]
   created_at: string
   users: ReviewUser | null
@@ -118,4 +126,9 @@ export interface SaunaSummaryDto {
   rules?: Rules
   kr_specific?: KrSpecific
   images?: string[]
+  /** 평점 집계 (트리거 자동 갱신) */
+  avg_rating?: number | null
+  review_count?: number
+  /** Editor's Pick 큐레이션 플래그 */
+  is_featured?: boolean
 }

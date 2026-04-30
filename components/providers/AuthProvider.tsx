@@ -14,26 +14,37 @@ import { useUserStore } from '@/stores/userStore'
  * getUser()는 서버에 실제 검증 요청을 보내고 토큰을 자동 갱신합니다.
  */
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setSession, clearSession } = useUserStore()
+  const { setSession, setRole, clearSession } = useUserStore()
+
+  const loadRole = async (userId: string) => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', userId)
+      .single()
+    setRole((data?.role as 'user' | 'admin') ?? 'user')
+  }
 
   useEffect(() => {
     const supabase = createClient()
 
-    // getSession()으로 빠르게 초기 세션 확인 (캐시 사용)
-    // 토큰 유효성 검증은 onAuthStateChange의 TOKEN_REFRESHED 이벤트가 처리
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session?.user) loadRole(session.user.id)
     })
 
-    // 이후 인증 상태 변화 구독 (로그인/로그아웃/토큰 갱신 등)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (session?.user) loadRole(session.user.id)
+      else setRole(null)
     })
 
     return () => subscription.unsubscribe()
-  }, [setSession, clearSession])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Zustand setter는 안정적(stable)이므로 의존성 불필요 — 탭 전환 시 재구독 방지
 
   return <>{children}</>
 }

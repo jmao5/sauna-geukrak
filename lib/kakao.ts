@@ -12,7 +12,7 @@
  * └──────────────────────────────────────────────────────────┘
  */
 
-const REST_API_KEY = process.env.NEXT_PUBLIC_KAKAO_REST_API_KEY!
+const REST_API_KEY = process.env.KAKAO_REST_API_KEY!
 
 // ── 타입 ─────────────────────────────────────────────────────
 
@@ -57,6 +57,8 @@ async function searchPlaceId(name: string, address?: string): Promise<string | n
 
 /**
  * place_id로 카카오맵 장소 페이지의 og:image URL을 추출합니다.
+ * HTML 파싱에 의존하기 때문에 카카오 마크업 변경 시 조용히 실패할 수 있습니다.
+ * 실패 시는 null을 반환하며 캡으로 처리하세요.
  */
 async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
   const res = await fetch(
@@ -103,8 +105,12 @@ export async function getKakaoPlaceImage(
   name: string,
   address?: string
 ): Promise<string | null> {
-  const placeId = await searchPlaceId(name, address)
-  if (!placeId) return null
-
-  return fetchPlaceOgImage(placeId)
+  try {
+    const placeId = await searchPlaceId(name, address)
+    if (!placeId) return null
+    return await fetchPlaceOgImage(placeId)
+  } catch {
+    // 네트워크 오류나 마크업 변경 등으로 실패시 placeholder 처리
+    return null
+  }
 }

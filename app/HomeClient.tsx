@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useCallback } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api-instance'
 import { SaunaSummaryDto } from '@/types/sauna'
 import SaunaCard from '@/components/sauna/SaunaCard'
@@ -10,6 +10,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { BiSearch, BiMap } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
+import useIntersectionObserver from '@/hooks/useIntersectionObserver'
+import Loading from '@/components/ui/Loading'
 
 type Filter = 'all' | 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female'
 
@@ -21,6 +23,8 @@ const FILTER_OPTIONS: { id: Filter; label: string; emoji: string }[] = [
   { id: 'tattoo', label: '타투OK', emoji: '🖋️' },
   { id: 'female', label: '여성가능', emoji: '👩' },
 ]
+
+const PAGE_SIZE = 20
 
 function CardSkeleton() {
   return (
@@ -37,34 +41,70 @@ function CardSkeleton() {
 export default function HomeClient() {
   const [activeFilter, setActiveFilter] = useState<Filter>('all')
 
-  const { data: allSaunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas'],
-    // SSR에서 prefetchQuery로 이미 채워진 캐시를 사용.
-    // queryFn은 캐시 miss 시 클라이언트 fallback으로만 실행됨.
-    queryFn: () => api.saunas.getAll(),
-    staleTime: 1000 * 60 * 5, // 5분간 fresh 유지 → 불필요한 재요청 방지
+  const {
+    data,
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ['saunas', 'infinite'],
+    queryFn: async ({ pageParam }: { pageParam: number }) => {
+      const result = await api.saunas.getAll(undefined, pageParam, PAGE_SIZE)
+      // 항상 배열을 반환 — undefined/null 방어
+      return (Array.isArray(result) ? result : []) as SaunaSummaryDto[]
+    },
+    initialPageParam: 0,
+    // lastPage는 queryFn이 항상 SaunaSummaryDto[]를 반환하므로 절대 undefined가 되지 않음
+    getNextPageParam: (lastPage: SaunaSummaryDto[], allPages: SaunaSummaryDto[][]) =>
+      lastPage.length === PAGE_SIZE ? allPages.length : undefined,
+    // gcTime을 0으로 설정 — 컴포넌트 언마운트 즉시 캐시 제거
+    // → 탭 전환 후 재마운트 시 손상된 pages 캐시를 읽지 않음
+    gcTime: 0,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const allSaunas = useMemo(
+    () => (data?.pages ?? []).flat() as SaunaSummaryDto[],
+    [data]
+  )
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) fetchNextPage()
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const sentinelRef = useIntersectionObserver({
+    rootMargin: '200px',
+    onObserve: loadMore,
+    enabled: !!hasNextPage && !isFetchingNextPage,
   })
 
   const filteredSaunas = useMemo(() => {
     if (activeFilter === 'all') return allSaunas
     return allSaunas.filter((s) => {
       switch (activeFilter) {
-        case 'autoloyly': return s.sauna_rooms?.some((r) => r.has_auto_loyly)
+        case 'autoloyly':   return s.sauna_rooms?.some((r) => r.has_auto_loyly)
         case 'groundwater': return s.cold_baths?.some((b) => b.is_groundwater)
         case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
-        case 'tattoo': return s.rules?.tattoo_allowed
-        case 'female': return s.rules?.female_allowed
-        default: return true
+        case 'tattoo':      return s.rules?.tattoo_allowed
+        case 'female':      return s.rules?.female_allowed
+        default:            return true
       }
     })
   }, [allSaunas, activeFilter])
 
-  const featured = filteredSaunas[0]
+  const featured = useMemo(() => {
+    if (activeFilter !== 'all') return null
+    return allSaunas.find((s) => s.is_featured)
+      ?? [...allSaunas].sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0))[0]
+      ?? null
+  }, [allSaunas, activeFilter])
+
   const { data: featuredKakaoImage } = useKakaoSaunaImage(
     featured?.name ?? '',
     featured?.address,
     featured?.images?.[0],
-    activeFilter === 'all', // EDITOR'S PICK은 'all' 필터일 때만 렌더되므로 그때만 fetch
+    activeFilter === 'all' && !!featured,
   )
 
   return (
@@ -73,7 +113,6 @@ export default function HomeClient() {
       {/* ── 헤더 ── */}
       <div className="flex-shrink-0 bg-bg-sub border-b border-border-main">
         <div className="px-4 pt-4 pb-3">
-          {/* 로고 + 지도 */}
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h1 className="font-juache text-[22px] font-bold tracking-tight text-text-main leading-none">
@@ -92,7 +131,6 @@ export default function HomeClient() {
             </Link>
           </div>
 
-          {/* 검색창 */}
           <Link
             href="/search"
             className="flex w-full items-center gap-2.5 rounded-xl border border-border-main bg-bg-main px-3.5 py-2.5 transition active:scale-[0.99]"
@@ -102,7 +140,6 @@ export default function HomeClient() {
           </Link>
         </div>
 
-        {/* 필터 탭 */}
         <div className="flex overflow-x-auto scrollbar-hide px-4 pb-3 gap-2">
           {FILTER_OPTIONS.map((opt) => {
             const isActive = activeFilter === opt.id
@@ -128,17 +165,20 @@ export default function HomeClient() {
       {/* ── 목록 ── */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-        {/* 픽업 배너 */}
-        {!isLoading && activeFilter === 'all' && filteredSaunas.length > 0 && (
+        {/* Editor's Pick */}
+        {!isLoading && activeFilter === 'all' && featured && (
           <div className="px-4 pt-4 pb-3">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Editor's Pick</p>
+              {featured.is_featured && (
+                <span className="text-[9px] font-bold text-point">CURATED</span>
+              )}
             </div>
-            <Link href={`/saunas/${filteredSaunas[0].id}`} className="block relative h-44 w-full rounded-2xl overflow-hidden mb-1">
-              {(filteredSaunas[0].images?.[0] || featuredKakaoImage) ? (
+            <Link href={`/saunas/${featured.id}`} className="block relative h-44 w-full rounded-2xl overflow-hidden mb-1">
+              {(featured.images?.[0] || featuredKakaoImage) ? (
                 <Image
-                  src={filteredSaunas[0].images?.[0] ?? featuredKakaoImage!}
-                  alt={filteredSaunas[0].name}
+                  src={featured.images?.[0] ?? featuredKakaoImage!}
+                  alt={featured.name}
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 680px"
@@ -150,16 +190,21 @@ export default function HomeClient() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <p className="text-[10px] font-bold text-white/60 mb-1 tracking-widest uppercase">Featured</p>
-                <p className="text-lg font-black text-white leading-tight">{filteredSaunas[0].name}</p>
+                <p className="text-lg font-black text-white leading-tight">{featured.name}</p>
                 <div className="mt-1.5 flex items-center gap-2">
-                  {filteredSaunas[0].sauna_rooms && filteredSaunas[0].sauna_rooms.length > 0 && (
+                  {featured.sauna_rooms && featured.sauna_rooms.length > 0 && (
                     <span className="text-[12px] font-black text-orange-300">
-                      🔥 {Math.max(...filteredSaunas[0].sauna_rooms.map((r) => r.temp))}°C
+                      🔥 {Math.max(...featured.sauna_rooms.map((r) => r.temp))}°C
                     </span>
                   )}
-                  {filteredSaunas[0].cold_baths && filteredSaunas[0].cold_baths.length > 0 && (
+                  {featured.cold_baths && featured.cold_baths.length > 0 && (
                     <span className="text-[12px] font-black text-blue-300">
-                      ❄️ {Math.min(...filteredSaunas[0].cold_baths.map((b) => b.temp))}°C
+                      ❄️ {Math.min(...featured.cold_baths.map((b) => b.temp))}°C
+                    </span>
+                  )}
+                  {featured.avg_rating != null && (
+                    <span className="text-[12px] font-black text-yellow-300">
+                      ⭐ {featured.avg_rating.toFixed(1)}
                     </span>
                   )}
                 </div>
@@ -168,7 +213,7 @@ export default function HomeClient() {
           </div>
         )}
 
-        {/* 섹션 구분 */}
+        {/* 섹션 헤더 */}
         {!isLoading && (
           <div className="flex items-center justify-between px-4 pb-2.5">
             <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">
@@ -184,9 +229,11 @@ export default function HomeClient() {
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
               : filteredSaunas.length > 0
-                ? filteredSaunas.slice(activeFilter === 'all' ? 1 : 0).map((sauna) => (
-                    <SaunaCard key={sauna.id} sauna={sauna} variant="grid" />
-                  ))
+                ? filteredSaunas
+                    .filter((s) => !(activeFilter === 'all' && featured && s.id === featured.id))
+                    .map((sauna) => (
+                      <SaunaCard key={sauna.id} sauna={sauna} variant="grid" />
+                    ))
                 : (
                   <div className="col-span-2 flex flex-col items-center justify-center gap-3 py-16 text-center">
                     <span className="text-4xl">🧖</span>
@@ -203,7 +250,12 @@ export default function HomeClient() {
           </div>
         </div>
 
-        <div className="h-6" />
+        <div className="h-4" />
+
+        {/* 무한 스크롤 sentinel */}
+          {isFetchingNextPage && (
+            <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
+          )}
       </div>
     </div>
   )

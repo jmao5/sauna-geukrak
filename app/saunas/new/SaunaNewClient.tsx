@@ -390,7 +390,7 @@ function DetailFormStep({
 ──────────────────────────────────────────────────────────── */
 export default function SaunaNewClient() {
   const router = useRouter()
-  const { user } = useUserStore()
+  const { user, isAdmin } = useUserStore()
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
   const {
@@ -403,6 +403,10 @@ export default function SaunaNewClient() {
 
   useEffect(() => {
     if (!user) router.replace('/login?next=/saunas/new')
+    else if (!isAdmin()) {
+      toast.error('관리자만 사우나를 등록할 수 있습니다.')
+      router.replace('/')
+    }
   }, [user, router])
 
   const handlePlaceSelect = (place: KakaoPlace) => {

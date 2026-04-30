@@ -64,53 +64,46 @@ export default function ImageUploader({
     // 동적 임포트로 브라우저 환경에서만 로드
     const imageCompression = (await import('browser-image-compression')).default
 
-    // 각 파일마다 preview 슬롯 추가 후 순차 업로드
-    for (const file of selected) {
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name}은 이미지 파일이 아닙니다`)
-        continue
+    // 압축 후 병렬 업로드 (2장 이상일 때 성능 개선)
+    const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1920, useWebWorker: true }
+
+    // 임시 미리보기 슬롯 일괄 추가
+    const previews = selected
+      .filter((f) => f.type.startsWith('image/'))
+      .map((file) => ({
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }))
+    if (previews.length === 0) return
+    setPending((prev) => [...prev, ...previews.map((p) => ({ previewUrl: p.previewUrl, uploading: true }))])
+
+    try {
+      // 압축 병렬
+      const compressed = await Promise.all(
+        previews.map(async ({ file }) => {
+          try { return await imageCompression(file, options) }
+          catch { return file }
+        })
+      )
+
+      const oversized = compressed.filter((f) => f.size > 10 * 1024 * 1024)
+      if (oversized.length > 0) {
+        toast.error(`${oversized.length}개 파일이 압축 후에도 10MB를 초과합니다`)
+        previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+        setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
+        return
       }
 
-      // 1. 임시 미리보기 추가
-      const previewUrl = URL.createObjectURL(file)
-      const item: PendingItem = { previewUrl, uploading: true }
-      setPending((prev) => [...prev, item])
+      // 병렬 업로드 (api.storage.uploadImages 활용)
+      const publicUrls = await api.storage.uploadImages(saunaId, compressed)
 
-      try {
-        // 2. 이미지 압축 (목표 500KB)
-        const options = {
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 1920,
-          useWebWorker: true,
-        }
-        
-        let compressedFile: File = file
-        try {
-          compressedFile = await imageCompression(file, options)
-        } catch (error) {
-          console.error('이미지 압축 실패:', error)
-          // 실패 시 원본 그대로 사용
-        }
-
-        if (compressedFile.size > 10 * 1024 * 1024) {
-          toast.error(`${file.name}이 압축 후에도 10MB를 초과합니다`)
-          URL.revokeObjectURL(previewUrl)
-          setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
-          continue
-        }
-
-        // 3. Supabase Storage에 실제 업로드
-        // api-instance에서 브라우저 클라이언트를 통해 인증 정보를 자동으로 포함함
-        const publicUrl = await api.storage.uploadImage(saunaId, compressedFile)
-
-        URL.revokeObjectURL(previewUrl)
-        setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
-        onChange([...images, publicUrl])
-      } catch (e) {
-        URL.revokeObjectURL(previewUrl)
-        setPending((prev) => prev.filter((p) => p.previewUrl !== previewUrl))
-        toast.error(e instanceof Error ? e.message : '업로드 중 오류가 발생했습니다')
-      }
+      previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
+      onChange([...images, ...publicUrls])
+    } catch (e) {
+      previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+      setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
+      toast.error(e instanceof Error ? e.message : '업로드 중 오류가 발생했습니다')
     }
   }
 
