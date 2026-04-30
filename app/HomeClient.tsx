@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
 import { SaunaSummaryDto } from '@/types/sauna'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import Skeleton from '@/components/ui/Skeleton'

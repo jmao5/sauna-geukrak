@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getSaunas } from '@/app/actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
@@ -19,7 +19,7 @@ export default function SaunaMap() {
 
   const { data: saunas = [], isLoading, isError } = useQuery({
     queryKey: ['saunas'],
-    queryFn: () => api.saunas.getAll(),
+    queryFn: () => getSaunas(0, 200), // Map 화면에서는 좀 더 많이 불러오거나 전부 불러와야 할 수 있습니다. (임시로 200개)
   })
 
   useEffect(() => {

@@ -21,7 +21,7 @@
 import { useRef, useState } from 'react'
 import { BiPlus, BiX, BiImageAlt } from 'react-icons/bi'
 import { MdDragIndicator } from 'react-icons/md'
-import { api } from '@/lib/api-instance'
+import { uploadImagesAction, deleteImageAction } from '@/app/actions/storage.actions'
 import toast from 'react-hot-toast'
 
 interface Props {
@@ -94,8 +94,10 @@ export default function ImageUploader({
         return
       }
 
-      // 병렬 업로드 (api.storage.uploadImages 활용)
-      const publicUrls = await api.storage.uploadImages(saunaId, compressed)
+      // 병렬 업로드 (Server Action 활용)
+      const formData = new FormData()
+      compressed.forEach((file) => formData.append('files', file))
+      const publicUrls = await uploadImagesAction(saunaId || 'temp', formData)
 
       previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
       setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
@@ -115,7 +117,7 @@ export default function ImageUploader({
     // Storage에서도 삭제 (외부 URL이면 스킵)
     if (url.includes('supabase')) {
       try {
-        await api.storage.deleteImage(url)
+        await deleteImageAction(url)
       } catch {
         // 삭제 실패해도 UI는 유지 (이미 제거됨)
         // 고아 파일은 추후 Storage 정리로 처리
