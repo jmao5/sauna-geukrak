@@ -1,7 +1,7 @@
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
-import HomeClient from './HomeClient'
 import getQueryClient from '@/lib/getQueryClient'
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
+import { getSaunas } from './actions/sauna.actions'
+import HomeClient from './HomeClient'
 
 const PAGE_SIZE = 20
 
@@ -13,7 +13,7 @@ export default async function HomePage() {
     queryKey: ['saunas', 'infinite'],
     queryFn: async () => {
       // 서버에서 실행되므로 훨씬 빠르게 데이터를 확보합니다.
-      const result = await api.saunas.getAll(undefined, 0, PAGE_SIZE)
+      const result = await getSaunas( 0, PAGE_SIZE)
       return (Array.isArray(result) ? result : [])
     },
     initialPageParam: 0,

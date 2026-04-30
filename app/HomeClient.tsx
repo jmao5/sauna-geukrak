@@ -12,6 +12,7 @@ import { BiSearch, BiMap } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 import Loading from '@/components/ui/Loading'
+import { getSaunas } from './actions/sauna.actions'
 
 type Filter = 'all' | 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female'
 
@@ -50,7 +51,7 @@ export default function HomeClient() {
   } = useInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
-      const result = await api.saunas.getAll(undefined, pageParam, PAGE_SIZE)
+      const result = await getSaunas(pageParam, PAGE_SIZE)
       return (Array.isArray(result) ? result : []) as SaunaSummaryDto[]
     },
     initialPageParam: 0,
