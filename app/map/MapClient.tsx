@@ -40,14 +40,12 @@ export default function MapClient() {
     staleTime: 1000 * 60 * 5, // SSR prefetch 코드와 동일한 캐시 전략
   })
 
-  // Adjust state during render to avoid cascading renders
-  const [prevSaunas, setPrevSaunas] = useState<SaunaSummaryDto[]>([])
-  if (saunas !== prevSaunas) {
-    setPrevSaunas(saunas)
+  // Move centering logic to useEffect to avoid infinite re-render
+  useEffect(() => {
     if (saunas.length > 0) {
       setCenter({ lat: saunas[0].latitude, lng: saunas[0].longitude })
     }
-  }
+  }, [saunas])
 
   const handleLocate = () => {
     if (!navigator.geolocation) return
