@@ -55,3 +55,41 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
     throw new Error('검색에 실패했습니다.')
   }
 }
+
+export async function createSauna(
+  payload: Omit<SaunaDto, 'id' | 'created_at'>
+): Promise<SaunaDto> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('saunas')
+      .insert(payload)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    return data as SaunaDto
+  } catch (error) {
+    console.error('사우나 등록 에러:', error)
+    throw new Error('사우나 등록에 실패했습니다.')
+  }
+}
+
+export async function updateSauna(
+  id: string,
+  payload: Omit<SaunaDto, 'id' | 'created_at'>
+): Promise<SaunaDto> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('saunas')
+      .update(payload)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw new Error(error.message)
+    return data as SaunaDto
+  } catch (error) {
+    console.error('사우나 수정 에러:', error)
+    throw new Error('사우나 수정에 실패했습니다.')
+  }
+}

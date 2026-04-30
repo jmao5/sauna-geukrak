@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
-import { api } from '@/lib/api-instance'
+import { createSauna } from '@/app/actions/sauna.actions'
 import { SaunaRoom, ColdBath } from '@/types/sauna'
 import {
   BiChevronLeft, BiSearch, BiPlus, BiX, BiCheck,
@@ -390,7 +390,7 @@ function DetailFormStep({
 ──────────────────────────────────────────────────────────── */
 export default function SaunaNewClient() {
   const router = useRouter()
-  const { user, isAdmin } = useUserStore()
+  const { user } = useUserStore()
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
   const {
@@ -422,7 +422,7 @@ export default function SaunaNewClient() {
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
       if (!form.name || !form.address) throw new Error('missing_fields')
-      return await api.saunas.create(form)
+      return await createSauna(form)
     },
     onSuccess: (created) => {
       toast.success(`${created.name} 등록 완료! 🎉`)

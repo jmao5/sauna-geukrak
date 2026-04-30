@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useUserStore } from '@/stores/userStore'
-import { api } from '@/lib/api-instance'
+import { getSaunaById, updateSauna } from '@/app/actions/sauna.actions'
 import { SaunaDto, SaunaRoom, ColdBath } from '@/types/sauna'
 import { SectionCard, Toggle, NumberInput, TextInput } from '@/components/sauna/SaunaFormComponents'
 import ImageUploader from '@/components/ui/ImageUploader'
@@ -28,13 +28,12 @@ function EditSkeleton() {
 
 export default function SaunaEditClient({ id }: { id: string }) {
   const router = useRouter()
-  const { user } = useUserStore()
+  const { user, isAdmin } = useUserStore()
   const queryClient = useQueryClient()
 
-  // SSR prefetch 캐시 구독
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
     queryKey: ['sauna', id],
-    queryFn: () => api.saunas.getById(id),
+    queryFn: () => getSaunaById(id),
     staleTime: 1000 * 60 * 5,
     enabled: !!id,
   })
@@ -47,7 +46,6 @@ export default function SaunaEditClient({ id }: { id: string }) {
 
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // sauna 로드 완료 시 폼 초기화 (한 번만)
   useEffect(() => {
     if (sauna && !isInitialized) {
       setForm({
@@ -71,9 +69,6 @@ export default function SaunaEditClient({ id }: { id: string }) {
     }
   }, [sauna, isInitialized, setForm])
 
-  const { isAdmin } = useUserStore()
-
-  // 비로그인 차단
   useEffect(() => {
     if (!user) router.replace(`/login?next=/saunas/${id}/edit`)
   }, [user, router, id])
@@ -81,7 +76,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
   const mutation = useMutation({
     mutationFn: (payload: FormState) => {
       if (!user) throw new Error('로그인이 필요합니다')
-      return api.saunas.update(id, payload)
+      return updateSauna(id, payload)
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(['sauna', id], updated)

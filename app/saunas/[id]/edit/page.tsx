@@ -1,8 +1,7 @@
 import { Metadata } from 'next'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/server'
-import { api } from '@/lib/api-instance'
 import { notFound } from 'next/navigation'
+import { getSaunaById } from '@/app/actions/sauna.actions'
 import SaunaEditClient from './SaunaEditClient'
 
 type Props = { params: Promise<{ id: string }> }
@@ -10,8 +9,7 @@ type Props = { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   try {
-    const supabase = await createClient()
-    const sauna = await api.saunas.getById(id, supabase)
+    const sauna = await getSaunaById(id)
     return { title: `${sauna.name} 수정` }
   } catch {
     return { title: '사우나 수정' }
@@ -25,10 +23,7 @@ export default async function SaunaEditPage({ params }: Props) {
   try {
     await queryClient.prefetchQuery({
       queryKey: ['sauna', id],
-      queryFn: async () => {
-        const supabase = await createClient()
-        return api.saunas.getById(id, supabase)
-      },
+      queryFn: () => getSaunaById(id),
     })
   } catch {
     notFound()
