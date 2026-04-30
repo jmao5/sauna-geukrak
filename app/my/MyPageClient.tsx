@@ -11,10 +11,10 @@ import { api } from '@/lib/api-instance'
 import toast from 'react-hot-toast'
 
 const MENU_ITEMS = [
-  { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites' },
-  { icon: BiHistory, label: '사활 기록', desc: '내가 다녀온 사우나 방문 기록', href: '/my/records' },
-  { icon: BiBell, label: '알림 설정', desc: '키워드 알림 및 공지사항', href: '/my/notifications' },
-  { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings' },
+  { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites', comingSoon: false },
+  { icon: BiHistory, label: '사활 기록', desc: '내가 다녀온 사우나 방문 기록', href: '/my/records', comingSoon: false },
+  { icon: BiBell, label: '알림 설정', desc: '키워드 알림 및 공지사항', href: '/my/notifications', comingSoon: true },
+  { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings', comingSoon: true },
 ]
 
 export default function MyPageClient() {
@@ -126,7 +126,13 @@ export default function MyPageClient() {
         {MENU_ITEMS.map((item) => (
           <button
             key={item.href}
-            onClick={() => router.push(item.href)}
+            onClick={() => {
+              if (item.comingSoon) {
+                toast('준비 중인 기능이에요 🔧', { icon: '🚧' })
+                return
+              }
+              router.push(item.href)
+            }}
             className="flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 transition active:scale-[0.98] active:bg-bg-main"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub">
@@ -136,7 +142,11 @@ export default function MyPageClient() {
               <p className="text-[13px] font-black text-text-main">{item.label}</p>
               <p className="text-[11px] font-medium text-text-muted">{item.desc}</p>
             </div>
-            <span className="text-text-muted text-lg">›</span>
+            {item.comingSoon ? (
+              <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">준비중</span>
+            ) : (
+              <span className="text-text-muted text-lg">›</span>
+            )}
           </button>
         ))}
 

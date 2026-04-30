@@ -48,6 +48,26 @@ export interface Pricing {
   child: number
 }
 
+/** 리뷰 작성자 */
+export interface ReviewUser {
+  id: string
+  nickname: string
+  avatar_url: string | null
+}
+
+/** 사활 기록 DTO (getBySaunaId 응답) */
+export interface ReviewDto {
+  id: string
+  rating: number
+  content: string | null
+  visit_date: string | null
+  visit_time: string | null
+  congestion: string | null
+  images: string[]
+  created_at: string
+  users: ReviewUser | null
+}
+
 /** 전체 사우나 상세 정보 DTO */
 export interface SaunaDto {
   id: string
