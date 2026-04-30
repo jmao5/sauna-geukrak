@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { BiStar, BiSolidStar, BiX } from 'react-icons/bi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { api } from '@/lib/api-instance'
+import { createReview } from '@/app/actions/review.actions'
 import { useUserStore } from '@/stores/userStore'
 import toast from 'react-hot-toast'
 import type { SaunaDto } from '@/types/sauna'
@@ -45,7 +45,7 @@ export function ReviewBottomSheet({
   const mutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error('로그인 필요')
-      return api.reviews.create({
+      return createReview({
         sauna_id: sauna.id,
         user_id: user.id,
         rating,

@@ -1,18 +1,16 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/server'
-import { api } from '@/lib/api-instance'
 import { getKakaoPlaceImage } from '@/lib/kakao'
 import { SaunaDetailClient } from './SaunaDetailClient'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { getSaunaById } from '@/app/actions/sauna.actions'
 
 type Props = { params: Promise<{ id: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   try {
-    const supabase = await createClient()
-    const sauna = await api.saunas.getById(id, supabase)
+    const sauna = await getSaunaById(id)
     return {
       title: sauna.name,
       description: `${sauna.address} · 사우나 극락에서 ${sauna.name}의 온도, 시설 정보와 사활을 확인하세요.`,
@@ -29,10 +27,7 @@ export default async function SaunaDetailPage({ params }: Props) {
   try {
     await queryClient.prefetchQuery({
       queryKey: ['sauna', id],
-      queryFn: async () => {
-        const supabase = await createClient()
-        return api.saunas.getById(id, supabase)
-      },
+      queryFn: () => getSaunaById(id),
     })
   } catch {
     notFound()

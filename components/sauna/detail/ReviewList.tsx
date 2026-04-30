@@ -2,7 +2,7 @@
 
 import { BiStar, BiSolidStar, BiUser } from 'react-icons/bi'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getReviewsBySaunaId } from '@/app/actions/review.actions'
 import type { ReviewDto } from '@/types/sauna'
 
 const VISIT_TIME_LABELS: Record<string, string> = {
@@ -55,7 +55,8 @@ export function ReviewList({
 }) {
   const { data: reviews = [], isLoading } = useQuery<ReviewDto[]>({
     queryKey: ['reviews', saunaId],
-    queryFn: () => api.reviews.getBySaunaId(saunaId),
+    queryFn: () => getReviewsBySaunaId(saunaId),
+    staleTime: 1000 * 60 * 3,
   })
 
   if (isLoading) return <ReviewSkeleton />

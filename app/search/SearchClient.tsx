@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { searchSaunas } from '@/app/actions/sauna.actions'
 import { BiSearch, BiX, BiHistory, BiTrendingUp } from 'react-icons/bi'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import { useRouter } from 'next/navigation'
@@ -15,8 +15,9 @@ export default function SearchClient() {
 
   const { data: searchResults = [], isLoading } = useQuery({
     queryKey: ['search', debouncedKeyword],
-    queryFn: () => api.saunas.search({ query: debouncedKeyword }),
+    queryFn: () => searchSaunas(debouncedKeyword),
     enabled: debouncedKeyword.length > 0,
+    staleTime: 1000 * 60 * 2,
   })
 
   return (

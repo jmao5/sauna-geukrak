@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getReviewsByUserId } from '@/app/actions/review.actions'
 import { useUserStore } from '@/stores/userStore'
 import { BiChevronLeft, BiStar } from 'react-icons/bi'
 import Link from 'next/link'
@@ -36,8 +36,9 @@ export default function RecordsClient() {
 
   const { data = [], isLoading } = useQuery<MyReviewDto[]>({
     queryKey: ['my-records', user?.id],
-    queryFn: () => api.reviews.getByUserId(user!.id),
+    queryFn: () => getReviewsByUserId(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   })
 
   return (

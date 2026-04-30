@@ -9,7 +9,6 @@ import {
   BiBookmark, BiChevronLeft, BiEdit, BiMap,
   BiShare, BiSolidBookmark,
 } from 'react-icons/bi'
-import { api } from '@/lib/api-instance'
 import { useUserStore } from '@/stores/userStore'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import type { SaunaDto } from '@/types/sauna'
@@ -25,6 +24,8 @@ import {
 } from '@/components/sauna/detail/DetailPrimitives'
 import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
+import { getSaunaById } from '@/app/actions/sauna.actions'
+import { checkFavorite, addFavorite, removeFavorite } from '@/app/actions/favorite.actions'
 
 // ── 메인 ─────────────────────────────────────────────────────
 export function SaunaDetailClient({ id }: { id: string }) {
@@ -36,7 +37,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
   // ── 찜 ───────────────────────────────────────────────────
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
-    queryFn: () => (user ? api.favorites.check(user.id, id) : Promise.resolve(false)),
+    queryFn: () => (user ? checkFavorite(user.id, id) : Promise.resolve(false)),
     enabled: !!user && !!id,
   })
 
@@ -44,10 +45,10 @@ export function SaunaDetailClient({ id }: { id: string }) {
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
       if (isFav) {
-        await api.favorites.remove(user.id, id)
+        await removeFavorite(user.id, id)
         return 'removed' as const
       } else {
-        await api.favorites.add(user.id, id)
+        await addFavorite(user.id, id)
         return 'added' as const
       }
     },
@@ -96,8 +97,9 @@ export function SaunaDetailClient({ id }: { id: string }) {
   // ── 데이터 ───────────────────────────────────────────────
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
     queryKey: ['sauna', id],
-    queryFn: () => api.saunas.getById(id),
+    queryFn: () => getSaunaById(id),
     enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   })
 
   const { data: kakaoImage } = useKakaoSaunaImage(

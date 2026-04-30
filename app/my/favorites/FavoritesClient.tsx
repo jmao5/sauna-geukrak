@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getFavoritesByUserId } from '@/app/actions/favorite.actions'
 import { useUserStore } from '@/stores/userStore'
 import { BiChevronLeft } from 'react-icons/bi'
 import SaunaCard from '@/components/sauna/SaunaCard'
@@ -14,8 +14,9 @@ export default function FavoritesClient() {
 
   const { data, isLoading } = useQuery<MyFavoriteDto[]>({
     queryKey: ['favorites', user?.id],
-    queryFn: () => api.favorites.getByUserId(user!.id),
+    queryFn: () => getFavoritesByUserId(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   })
 
   const saunas: SaunaSummaryDto[] = (data ?? [])

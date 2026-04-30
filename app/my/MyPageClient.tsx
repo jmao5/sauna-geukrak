@@ -7,7 +7,8 @@ import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus } 
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getFavoritesByUserId } from '@/app/actions/favorite.actions'
+import { getReviewsByUserId } from '@/app/actions/review.actions'
 import toast from 'react-hot-toast'
 
 const MENU_ITEMS = [
@@ -28,15 +29,16 @@ export default function MyPageClient() {
   // 찜 개수
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
-    queryFn: () => api.favorites.getByUserId(user!.id),
+    queryFn: () => getFavoritesByUserId(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   })
 
-  // 사활 기록 개수
   const { data: records = [] } = useQuery({
     queryKey: ['my-records', user?.id],
-    queryFn: () => api.reviews.getByUserId(user!.id),
+    queryFn: () => getReviewsByUserId(user!.id),
     enabled: !!user,
+    staleTime: 1000 * 60 * 3,
   })
 
   const handleLogout = async () => {

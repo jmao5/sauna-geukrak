@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
-import { api } from '@/lib/api-instance'
+import { getSaunas } from '@/app/actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiCurrentLocation } from 'react-icons/bi'
@@ -35,9 +35,9 @@ export default function MapClient() {
   }, [])
 
   const { data: saunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas'],
-    queryFn: () => api.saunas.getAll(),
-    staleTime: 1000 * 60 * 5, // SSR prefetch 코드와 동일한 캐시 전략
+    queryKey: ['saunas', 'all'],
+    queryFn: () => getSaunas(0, 200),
+    staleTime: 1000 * 60 * 5,
   })
 
   // Move centering logic to useEffect to avoid infinite re-render
