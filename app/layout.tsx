@@ -43,7 +43,11 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)',  color: '#1a1714' },
+  ],
 }
 
 // 2. 글로벌 메타데이터 설정
@@ -87,6 +91,14 @@ export const metadata: Metadata = {
     ],
   },
 
+  manifest: '/manifest.json',
+
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: '사우나 극락',
+  },
+
   formatDetection: {
     telephone: false,
   },
@@ -127,6 +139,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
           strategy="lazyOnload"
         />
+        {/* Service Worker 등록 */}
+        <Script id="sw-register" strategy="afterInteractive">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                  .catch(function(err) { console.warn('SW registration failed:', err) })
+              })
+            }
+          `}
+        </Script>
         <QueryProvider>
           <ThemeProvider>
             <MotionProvider>
