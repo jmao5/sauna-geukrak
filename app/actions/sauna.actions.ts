@@ -46,7 +46,8 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
     const { data, error } = await supabase
       .from('saunas')
       .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count')
-      .or(`name.ilike.%${query}%,address.ilike.%${query}%`)
+      // PostgreSQL의 to_tsquery 문법에 맞게 검색어를 변환 (공백을 &로 치환)
+      .textSearch('search_vector', query.trim().split(/\s+/).join(' & '))
       .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)
     return data as SaunaSummaryDto[]
@@ -61,6 +62,15 @@ export async function createSauna(
 ): Promise<SaunaDto> {
   try {
     const supabase = await createClient()
+    
+    // 1. 세션 검증 (보안)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('로그인이 필요합니다.')
+
+    // 2. 권한 검증 (Admin만 등록 가능)
+    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single()
+    if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
+
     const { data, error } = await supabase
       .from('saunas')
       .insert(payload)
@@ -70,7 +80,7 @@ export async function createSauna(
     return data as SaunaDto
   } catch (error) {
     console.error('사우나 등록 에러:', error)
-    throw new Error('사우나 등록에 실패했습니다.')
+    throw new Error(error instanceof Error ? error.message : '사우나 등록에 실패했습니다.')
   }
 }
 
@@ -80,6 +90,15 @@ export async function updateSauna(
 ): Promise<SaunaDto> {
   try {
     const supabase = await createClient()
+
+    // 1. 세션 검증 (보안)
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('로그인이 필요합니다.')
+
+    // 2. 권한 검증 (Admin만 수정 가능)
+    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single()
+    if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
+
     const { data, error } = await supabase
       .from('saunas')
       .update(payload)
@@ -90,6 +109,6 @@ export async function updateSauna(
     return data as SaunaDto
   } catch (error) {
     console.error('사우나 수정 에러:', error)
-    throw new Error('사우나 수정에 실패했습니다.')
+    throw new Error(error instanceof Error ? error.message : '사우나 수정에 실패했습니다.')
   }
 }

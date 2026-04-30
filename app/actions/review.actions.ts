@@ -57,15 +57,22 @@ export async function createReview(review: {
 }) {
   try {
     const supabase = await createClient()
+
+    // 1. 세션 검증 (보안) - 클라이언트에서 보낸 user_id를 신뢰하지 않음
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) throw new Error('로그인이 필요합니다.')
+    if (user.id !== review.user_id) throw new Error('잘못된 접근입니다.')
+
     const { data, error } = await supabase
       .from('reviews')
-      .insert(review)
+      // 검증된 user.id 사용으로 덮어씌움
+      .insert({ ...review, user_id: user.id })
       .select()
       .single()
     if (error) throw new Error(error.message)
     return data
   } catch (error) {
     console.error('리뷰 작성 에러:', error)
-    throw new Error('리뷰 작성에 실패했습니다.')
+    throw new Error(error instanceof Error ? error.message : '리뷰 작성에 실패했습니다.')
   }
 }
