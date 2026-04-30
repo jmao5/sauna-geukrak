@@ -107,10 +107,10 @@ export const api = {
         .limit(20)
       if (error) throw new Error(`리뷰를 불러오는데 실패했습니다.`)
       
-      return (data as ReviewDto[]).map(row => ({
+      return (data as any[] || []).map(row => ({
         ...row,
-        users: Array.isArray(row.users) ? (row.users as ReviewUser[])[0] : row.users
-      }))
+        users: Array.isArray(row.users) ? row.users[0] : row.users
+      })) as ReviewDto[]
     },
 
     /** 유저별 사활 기록 (마이페이지) */
@@ -118,16 +118,16 @@ export const api = {
       const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('reviews')
-        .select(`id, rating, content, visit_date, visit_time, created_at,
+        .select(`id, rating, content, visit_date, visit_time, sessions, created_at,
           saunas (id, name, address, sauna_rooms, cold_baths, images)`)
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       if (error) throw new Error(`사활 기록을 불러오는데 실패했습니다.`)
       
-      return (data as MyReviewDto[]).map(row => ({
+      return (data as any[] || []).map(row => ({
         ...row,
-        saunas: Array.isArray(row.saunas) ? (row.saunas as SaunaSummaryDto[])[0] : row.saunas
-      }))
+        saunas: Array.isArray(row.saunas) ? row.saunas[0] : row.saunas
+      })) as MyReviewDto[]
     },
 
     create: async (
@@ -159,10 +159,10 @@ export const api = {
         .order('created_at', { ascending: false })
       if (error) throw new Error(`찜 목록을 불러오는데 실패했습니다.`)
       
-      return (data as MyFavoriteDto[]).map(row => ({
+      return (data as any[] || []).map(row => ({
         ...row,
-        saunas: Array.isArray(row.saunas) ? (row.saunas as SaunaSummaryDto[])[0] : row.saunas
-      }))
+        saunas: Array.isArray(row.saunas) ? row.saunas[0] : row.saunas
+      })) as MyFavoriteDto[]
     },
 
     add: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
