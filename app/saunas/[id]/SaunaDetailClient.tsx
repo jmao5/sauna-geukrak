@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 import { SaunaDto } from '@/types/sauna'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
@@ -21,6 +21,7 @@ import {
   BiUser,
   BiSolidBookmark,
 } from 'react-icons/bi'
+import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 
 // ── 온도 히어로 ──────────────────────────────────────────────
 function TempHero({ sauna }: { sauna: SaunaDto }) {
@@ -471,11 +472,11 @@ export function SaunaDetailClient({ id }: { id: string }) {
     enabled: !!id,
   })
 
-  const [kakaoImage, setKakaoImage] = useState<string | null>(null)
-  useEffect(() => {
-    if (!sauna || sauna.images?.[0]) return
-    api.kakao.getPlaceImage(sauna.name, sauna.address).then(setKakaoImage)
-  }, [sauna?.id, sauna?.images?.[0], sauna?.name, sauna?.address])
+  const { data: kakaoImage } = useKakaoSaunaImage(
+    sauna?.name ?? '',
+    sauna?.address,
+    sauna?.images?.[0]
+  )
 
   if (isLoading) return <DetailSkeleton />
   if (isError || !sauna) {

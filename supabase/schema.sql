@@ -84,34 +84,51 @@ create policy "사우나 수정은 관리자만 (추후 role 추가)" on public.
 -- ==========================================
 
 create or replace function public.handle_new_user()
-returns trigger as $$
+returns trigger as $
+declare
+  base_nickname text;
+  final_nickname text;
+  suffix int := 0;
 begin
-  insert into public.users (id, nickname, avatar_url)
-  values (
-    new.id,
-    coalesce(
-      new.raw_user_meta_data->>'name',
-      new.raw_user_meta_data->>'full_name',
-      split_part(new.email, '@', 1)
-    ),
-    new.raw_user_meta_data->>'avatar_url'
-  )
-  on conflict (id) do update
-    set
-      nickname = excluded.nickname,
-      avatar_url = excluded.avatar_url;
+  base_nickname := coalesce(
+    new.raw_user_meta_data->>'name',
+    new.raw_user_meta_data->>'full_name',
+    split_part(new.email, '@', 1),
+    '익명'
+  );
+
+  final_nickname := base_nickname;
+
+  -- nickname unique 충돌 시 숫자 suffix 붙여서 재시도
+  loop
+    begin
+      insert into public.users (id, nickname, avatar_url)
+      values (
+        new.id,
+        final_nickname,
+        new.raw_user_meta_data->>'avatar_url'
+      )
+      on conflict (id) do update
+        set
+          nickname = excluded.nickname,
+          avatar_url = excluded.avatar_url;
+      exit; -- 성공 시 루프 탈출
+    exception when unique_violation then
+      suffix := suffix + 1;
+      final_nickname := base_nickname || suffix::text;
+    end;
+  end loop;
+
   return new;
 end;
-$$ language plpgsql security definer;
+$ language plpgsql security definer;
 
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
 -- users RLS
--- ✅ 로그인한 유저라면 모든 프로필 조회 가능
---    (reviews JOIN 시 닉네임/아바타 표시, favorites FK 검증에 필요)
--- ❌ 기존 "본인만 조회" 정책은 favorites/reviews insert 시 FK 검증 실패를 유발함
+create policy "유저 프로필 본인 생성" on public.users for insert with check (auth.uid() = id);
 create policy "로그인한 유저는 프로필 조회 가능" on public.users
   for select using (auth.uid() is not null);
 create policy "본인 프로필 수정" on public.users for update using (auth.uid() = id);
