@@ -6,6 +6,7 @@ const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'tr
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  reactCompiler: true,
   images: {
     remotePatterns: [
       {
