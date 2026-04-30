@@ -253,9 +253,9 @@ export default function HomeClient() {
         <div className="h-4" />
 
         {/* 무한 스크롤 sentinel */}
-          {isFetchingNextPage && (
-            <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
-          )}
+        {isFetchingNextPage && (
+          <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
+        )}
       </div>
     </div>
   )
