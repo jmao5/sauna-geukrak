@@ -42,13 +42,17 @@ export async function getSaunaById(id: string): Promise<SaunaDto> {
   }
 }
 
+export async function getReviewsBySaunaId(id: string) {
+  const { getReviewsBySaunaId: _get } = await import('@/app/actions/review.actions')
+  return _get(id)
+}
+
 export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('saunas')
       .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count')
-      // PostgreSQL의 to_tsquery 문법에 맞게 검색어를 변환 (공백을 &로 치환)
       .textSearch('search_vector', query.trim().split(/\s+/).join(' & '))
       .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)
@@ -59,49 +63,45 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   }
 }
 
+/**
+ * #4 Fix: auth.getUser() (서버 왕복) → getSession() (로컬 JWT 파싱)
+ * 역할 검증은 DB 조회가 필요하므로 한 번은 유지하되, 인증 확인만 getSession으로 대체.
+ */
 export async function createSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
 ): Promise<SaunaDto> {
   try {
     const supabase = await createClient()
 
-    // 1. 세션 검증
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) throw new Error('로그인이 필요합니다.')
+    // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('로그인이 필요합니다.')
 
-    // 2. 권한 검증
-    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single()
+    // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
+    const { data: userData } = await supabase
+      .from('users').select('role').eq('id', session.user.id).single()
     if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
 
-    // 3. 이미지가 없으면 카카오에서 가져와 Storage에 영구 저장
-    //    - 등록 시 1회만 실행 → 이후 카드/상세 페이지는 CDN URL 직접 사용
+    // 이미지 없으면 카카오 이미지 1회 시도 (등록 시에만 실행)
     let finalImages = payload.images ?? []
-
     if (finalImages.length === 0) {
       try {
         const kakaoImageUrl = await getKakaoPlaceImage(payload.name, payload.address)
-
         if (kakaoImageUrl) {
-          // 임시 UUID로 폴더 경로 생성 (DB INSERT 전이라 id 없음)
           const tempId = crypto.randomUUID()
           const downloaded = await downloadImageBuffer(kakaoImageUrl)
-
           if (downloaded) {
             const storedUrl = await uploadSaunaImage(
-              downloaded.buffer,
-              downloaded.contentType,
-              `saunas/${tempId}`
+              downloaded.buffer, downloaded.contentType, `saunas/${tempId}`
             )
             if (storedUrl) finalImages = [storedUrl]
           }
         }
       } catch (imgErr) {
-        // 이미지 처리 실패는 등록 자체를 막지 않음
         console.warn('[createSauna] 이미지 자동 처리 실패 (무시):', imgErr)
       }
     }
 
-    // 4. DB INSERT
     const { data, error } = await supabase
       .from('saunas')
       .insert({ ...payload, images: finalImages })
@@ -122,12 +122,13 @@ export async function updateSauna(
   try {
     const supabase = await createClient()
 
-    // 1. 세션 검증 (보안)
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) throw new Error('로그인이 필요합니다.')
+    // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('로그인이 필요합니다.')
 
-    // 2. 권한 검증 (Admin만 수정 가능)
-    const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single()
+    // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
+    const { data: userData } = await supabase
+      .from('users').select('role').eq('id', session.user.id).single()
     if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
 
     const { data, error } = await supabase

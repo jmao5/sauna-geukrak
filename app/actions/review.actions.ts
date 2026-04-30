@@ -44,6 +44,15 @@ export async function getReviewsByUserId(userId: string): Promise<MyReviewDto[]>
   }
 }
 
+/**
+ * #4 Fix: auth.getUser() (네트워크 왕복) → getSession() (로컬 JWT 파싱, 왕복 없음)
+ *
+ * 기존: getUser() → Supabase Auth 서버 검증 → INSERT  (2번 왕복)
+ * 개선: getSession() 로컬 파싱 → INSERT, RLS가 DB 레벨 검증  (1번 왕복)
+ *
+ * 보안: INSERT 시 RLS 정책 `auth.uid() = user_id` 가 DB에서 재검증.
+ *       클라이언트가 보낸 review.user_id 대신 session.user.id로 덮어써서 위변조 방지.
+ */
 export async function createReview(review: {
   sauna_id: string
   user_id: string
@@ -58,15 +67,16 @@ export async function createReview(review: {
   try {
     const supabase = await createClient()
 
-    // 1. 세션 검증 (보안) - 클라이언트에서 보낸 user_id를 신뢰하지 않음
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) throw new Error('로그인이 필요합니다.')
-    if (user.id !== review.user_id) throw new Error('잘못된 접근입니다.')
+    // getSession() — 로컬 JWT 파싱, Supabase 서버 왕복 없음
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('로그인이 필요합니다.')
 
     const { data, error } = await supabase
       .from('reviews')
-      // 검증된 user.id 사용으로 덮어씌움
-      .insert({ ...review, user_id: user.id })
+      .insert({
+        ...review,
+        user_id: session.user.id,  // 클라이언트 값을 세션으로 덮어써서 위변조 방지
+      })
       .select()
       .single()
     if (error) throw new Error(error.message)
