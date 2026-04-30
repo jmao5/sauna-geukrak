@@ -68,6 +68,18 @@ export interface ReviewDto {
   users: ReviewUser | null
 }
 
+/** 마이페이지 사활 기록 DTO (reviews.getByUserId 응답) */
+export interface MyReviewDto extends Omit<ReviewDto, 'users' | 'congestion' | 'images'> {
+  saunas: SaunaSummaryDto | null
+}
+
+/** 마이페이지 찜 기록 DTO (favorites.getByUserId 응답) */
+export interface MyFavoriteDto {
+  sauna_id: string
+  created_at: string
+  saunas: SaunaSummaryDto | null
+}
+
 /** 전체 사우나 상세 정보 DTO */
 export interface SaunaDto {
   id: string

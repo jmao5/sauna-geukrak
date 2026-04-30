@@ -6,21 +6,21 @@ import { api } from '@/lib/api-instance'
 import { useUserStore } from '@/stores/userStore'
 import { BiChevronLeft } from 'react-icons/bi'
 import SaunaCard from '@/components/sauna/SaunaCard'
-import { SaunaSummaryDto } from '@/types/sauna'
+import { SaunaSummaryDto, MyFavoriteDto } from '@/types/sauna'
 
 export default function FavoritesClient() {
   const router = useRouter()
   const { user } = useUserStore()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<MyFavoriteDto[]>({
     queryKey: ['favorites', user?.id],
     queryFn: () => api.favorites.getByUserId(user!.id),
     enabled: !!user,
   })
 
   const saunas: SaunaSummaryDto[] = (data ?? [])
-    .map((row: any) => row.saunas)
-    .filter(Boolean)
+    .map((row) => row.saunas)
+    .filter((s): s is SaunaSummaryDto => !!s)
 
   return (
     <div className="flex h-full flex-col bg-bg-main">

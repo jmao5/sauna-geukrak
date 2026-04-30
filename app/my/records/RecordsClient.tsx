@@ -6,7 +6,7 @@ import { api } from '@/lib/api-instance'
 import { useUserStore } from '@/stores/userStore'
 import { BiChevronLeft, BiStar } from 'react-icons/bi'
 import Link from 'next/link'
-import { SaunaSummaryDto } from '@/types/sauna'
+import { SaunaSummaryDto, MyReviewDto } from '@/types/sauna'
 
 const VISIT_TIME_LABELS: Record<string, string> = {
   morning: '🌅 아침',
@@ -34,7 +34,7 @@ export default function RecordsClient() {
   const router = useRouter()
   const { user } = useUserStore()
 
-  const { data = [], isLoading } = useQuery({
+  const { data = [], isLoading } = useQuery<MyReviewDto[]>({
     queryKey: ['my-records', user?.id],
     queryFn: () => api.reviews.getByUserId(user!.id),
     enabled: !!user,
@@ -88,8 +88,8 @@ export default function RecordsClient() {
           </div>
         ) : (
           <div className="space-y-2 p-4">
-            {data.map((record: any) => {
-              const sauna = record.saunas as SaunaSummaryDto | null
+            {data.map((record) => {
+              const sauna = record.saunas
               const dateStr = record.visit_date
                 ? new Date(record.visit_date).toLocaleDateString('ko-KR', {
                     year: 'numeric', month: 'long', day: 'numeric',

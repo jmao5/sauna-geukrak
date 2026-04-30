@@ -1,6 +1,6 @@
 import { createClient as createBrowserClient } from './supabase/client'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
+import { SaunaDto, SaunaSummaryDto, ReviewDto, MyReviewDto, MyFavoriteDto } from '@/types/sauna'
 
 const getSupabaseClient = (customClient?: SupabaseClient): SupabaseClient => {
   return customClient && typeof customClient.from === 'function'
@@ -91,7 +91,7 @@ export const api = {
 
   reviews: {
     /** 사우나별 리뷰 목록 */
-    getBySaunaId: async (saunaId: string, customClient?: SupabaseClient) => {
+    getBySaunaId: async (saunaId: string, customClient?: SupabaseClient): Promise<ReviewDto[]> => {
       const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('reviews')
@@ -101,11 +101,15 @@ export const api = {
         .order('created_at', { ascending: false })
         .limit(20)
       if (error) throw new Error(`리뷰를 불러오는데 실패했습니다.`)
-      return data
+      
+      return (data as any[]).map(row => ({
+        ...row,
+        users: Array.isArray(row.users) ? row.users[0] : row.users
+      })) as ReviewDto[]
     },
 
     /** 유저별 사활 기록 (마이페이지) */
-    getByUserId: async (userId: string, customClient?: SupabaseClient) => {
+    getByUserId: async (userId: string, customClient?: SupabaseClient): Promise<MyReviewDto[]> => {
       const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('reviews')
@@ -114,7 +118,11 @@ export const api = {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       if (error) throw new Error(`사활 기록을 불러오는데 실패했습니다.`)
-      return data
+      
+      return (data as any[]).map(row => ({
+        ...row,
+        saunas: Array.isArray(row.saunas) ? row.saunas[0] : row.saunas
+      })) as MyReviewDto[]
     },
 
     create: async (
@@ -137,7 +145,7 @@ export const api = {
   },
 
   favorites: {
-    getByUserId: async (userId: string, customClient?: SupabaseClient) => {
+    getByUserId: async (userId: string, customClient?: SupabaseClient): Promise<MyFavoriteDto[]> => {
       const supabase = getSupabaseClient(customClient)
       const { data, error } = await supabase
         .from('favorites')
@@ -145,7 +153,11 @@ export const api = {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
       if (error) throw new Error(`찜 목록을 불러오는데 실패했습니다.`)
-      return data
+      
+      return (data as any[]).map(row => ({
+        ...row,
+        saunas: Array.isArray(row.saunas) ? row.saunas[0] : row.saunas
+      })) as MyFavoriteDto[]
     },
 
     add: async (userId: string, saunaId: string, customClient?: SupabaseClient) => {
