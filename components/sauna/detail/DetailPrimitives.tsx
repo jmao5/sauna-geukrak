@@ -1,5 +1,13 @@
 import type { SaunaDto } from '@/types/sauna'
 
+export function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full border border-border-main bg-bg-main px-2.5 py-1 text-[10px] font-bold text-text-sub">
+      {children}
+    </span>
+  )
+}
+
 export function Section({
   title,
   children,

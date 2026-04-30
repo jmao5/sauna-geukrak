@@ -7,7 +7,7 @@ import { BiChevronRight } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 
 interface SaunaCardProps {
-  sauna: SaunaSummaryDto & { images?: string[]; rules?: any; kr_specific?: any; pricing?: any }
+  sauna: SaunaSummaryDto
   className?: string
   /** 'grid' = 카드형(홈), 'row' = 리스트 행(검색) */
   variant?: 'grid' | 'row'

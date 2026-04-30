@@ -5,13 +5,17 @@ import { useMutation } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
 import { api } from '@/lib/api-instance'
-import { SaunaDto, SaunaRoom, ColdBath } from '@/types/sauna'
+import { SaunaRoom, ColdBath } from '@/types/sauna'
 import {
-  BiChevronLeft, BiSearch, BiPlus, BiMinus, BiX, BiCheck,
+  BiChevronLeft, BiSearch, BiPlus, BiX, BiCheck,
 } from 'react-icons/bi'
 import toast from 'react-hot-toast'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
 import ImageUploader from '@/components/ui/ImageUploader'
+import { useSaunaForm, FormState } from '@/hooks/useSaunaForm'
+import {
+  SectionCard, Toggle, NumberInput, TextInput,
+} from '@/components/sauna/SaunaFormComponents'
 
 /* ────────────────────────────────────────────────────────────
    타입
@@ -28,128 +32,6 @@ interface KakaoPlace {
 }
 
 type Step = 'search' | 'detail'
-
-/* ────────────────────────────────────────────────────────────
-   기본값
-──────────────────────────────────────────────────────────── */
-const defaultSaunaRoom = (): SaunaRoom => ({
-  type: '건식',
-  temp: 85,
-  capacity: 10,
-  has_tv: false,
-  has_auto_loyly: false,
-  has_self_loyly: false,
-})
-
-const defaultColdBath = (): ColdBath => ({
-  temp: 15,
-  capacity: 4,
-  is_groundwater: false,
-  depth: 80,
-})
-
-type FormState = Omit<SaunaDto, 'id' | 'created_at'>
-
-const defaultForm = (): FormState => ({
-  name: '',
-  address: '',
-  latitude: 0,
-  longitude: 0,
-  sauna_rooms: [defaultSaunaRoom()],
-  cold_baths: [defaultColdBath()],
-  resting_area: { indoor_seats: 0, outdoor_seats: 0, infinity_chairs: 0, deck_chairs: 0 },
-  amenities: { towel: false, shampoo: false, body_wash: false, hair_dryer: false, water_dispenser: false },
-  rules: { tattoo_allowed: false, female_allowed: true, male_allowed: true },
-  kr_specific: { has_jjimjilbang: false, sesin_price_male: 0, sesin_price_female: 0, food: [] },
-  pricing: { adult_day: 0, adult_night: 0, child: 0 },
-  business_hours: '',
-  contact: '',
-  parking: false,
-  images: [],
-})
-
-/* ────────────────────────────────────────────────────────────
-   공통 UI 컴포넌트
-──────────────────────────────────────────────────────────── */
-function SectionCard({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-border-main bg-bg-card p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <span>{emoji}</span>
-        <h3 className="text-sm font-black text-text-main">{title}</h3>
-      </div>
-      {children}
-    </div>
-  )
-}
-
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={() => onChange(!checked)}
-      className={`flex items-center justify-between w-full rounded-xl border px-3.5 py-3 transition active:scale-[0.98] ${
-        checked ? 'border-point/40 bg-point/5' : 'border-border-main bg-bg-main'
-      }`}
-    >
-      <span className="text-sm font-semibold text-text-main">{label}</span>
-      <div className={`flex h-5 w-9 items-center rounded-full transition-colors ${checked ? 'bg-point justify-end' : 'bg-border-main justify-start'}`}>
-        <div className="m-0.5 h-4 w-4 rounded-full bg-white shadow" />
-      </div>
-    </button>
-  )
-}
-
-function NumberInput({
-  label, value, onChange, min = 0, unit = '',
-}: { label: string; value: number; onChange: (v: number) => void; min?: number; unit?: string }) {
-  return (
-    <div>
-      <label className="mb-1 block text-[10px] font-bold text-text-sub">{label}</label>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => onChange(Math.max(min, value - 1))}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border-main bg-bg-main transition active:scale-90"
-        >
-          <BiMinus size={14} />
-        </button>
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="h-8 w-full rounded-lg border border-border-main bg-bg-main px-2 text-center text-sm font-black text-text-main outline-none focus:border-point"
-          min={min}
-        />
-        {unit && <span className="text-xs text-text-sub flex-shrink-0">{unit}</span>}
-        <button
-          type="button"
-          onClick={() => onChange(value + 1)}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-border-main bg-bg-main transition active:scale-90"
-        >
-          <BiPlus size={14} />
-        </button>
-      </div>
-    </div>
-  )
-}
-
-function TextInput({ label, value, onChange, placeholder, type = 'text' }: {
-  label: string; value: string; onChange: (v: string) => void; placeholder?: string; type?: string
-}) {
-  return (
-    <div>
-      <label className="mb-1 block text-[10px] font-bold text-text-sub">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main placeholder:text-text-muted outline-none focus:border-point"
-      />
-    </div>
-  )
-}
 
 /* ────────────────────────────────────────────────────────────
    STEP 1: 카카오 장소 검색
@@ -276,30 +158,26 @@ function KakaoSearchStep({
 function DetailFormStep({
   form,
   onChange,
+  updateRoom,
+  addRoom,
+  removeRoom,
+  updateBath,
+  addBath,
+  removeBath,
   onSubmit,
   isSubmitting,
 }: {
   form: FormState
   onChange: (updated: Partial<FormState>) => void
+  updateRoom: (i: number, patch: Partial<SaunaRoom>) => void
+  addRoom: () => void
+  removeRoom: (i: number) => void
+  updateBath: (i: number, patch: Partial<ColdBath>) => void
+  addBath: () => void
+  removeBath: (i: number) => void
   onSubmit: () => void
   isSubmitting: boolean
 }) {
-  const updateRoom = (i: number, patch: Partial<SaunaRoom>) => {
-    const rooms = [...form.sauna_rooms]
-    rooms[i] = { ...rooms[i], ...patch }
-    onChange({ sauna_rooms: rooms })
-  }
-  const addRoom = () => onChange({ sauna_rooms: [...form.sauna_rooms, defaultSaunaRoom()] })
-  const removeRoom = (i: number) => onChange({ sauna_rooms: form.sauna_rooms.filter((_, idx) => idx !== i) })
-
-  const updateBath = (i: number, patch: Partial<ColdBath>) => {
-    const baths = [...form.cold_baths]
-    baths[i] = { ...baths[i], ...patch }
-    onChange({ cold_baths: baths })
-  }
-  const addBath = () => onChange({ cold_baths: [...form.cold_baths, defaultColdBath()] })
-  const removeBath = (i: number) => onChange({ cold_baths: form.cold_baths.filter((_, idx) => idx !== i) })
-
   const SAUNA_TYPES = ['건식', '습식', '핀란드식', '한증막', '불가마']
 
   return (
@@ -515,7 +393,11 @@ export default function SaunaNewClient() {
   const { user } = useUserStore()
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
-  const [form, setForm] = useState<FormState>(defaultForm())
+  const {
+    form, setForm, onChange,
+    updateRoom, addRoom, removeRoom,
+    updateBath, addBath, removeBath,
+  } = useSaunaForm()
 
   const { isReady: kakaoReady } = useKakaoReady()
 
@@ -534,10 +416,6 @@ export default function SaunaNewClient() {
       contact: place.phone,
     }))
     setStep('detail')
-  }
-
-  const handleFormChange = (patch: Partial<FormState>) => {
-    setForm((prev) => ({ ...prev, ...patch }))
   }
 
   const createMutation = useMutation({
@@ -602,7 +480,13 @@ export default function SaunaNewClient() {
         ) : (
           <DetailFormStep
             form={form}
-            onChange={handleFormChange}
+            onChange={onChange}
+            updateRoom={updateRoom}
+            addRoom={addRoom}
+            removeRoom={removeRoom}
+            updateBath={updateBath}
+            addBath={addBath}
+            removeBath={removeBath}
             onSubmit={() => createMutation.mutate()}
             isSubmitting={createMutation.isPending}
           />

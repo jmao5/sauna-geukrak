@@ -10,16 +10,7 @@ import { SectionCard, Toggle, NumberInput, TextInput } from '@/components/sauna/
 import ImageUploader from '@/components/ui/ImageUploader'
 import { BiChevronLeft, BiPlus, BiX, BiCheck } from 'react-icons/bi'
 import toast from 'react-hot-toast'
-
-type FormState = Omit<SaunaDto, 'id' | 'created_at'>
-
-const defaultSaunaRoom = (): SaunaRoom => ({
-  type: '건식', temp: 85, capacity: 10,
-  has_tv: false, has_auto_loyly: false, has_self_loyly: false,
-})
-const defaultColdBath = (): ColdBath => ({
-  temp: 15, capacity: 4, is_groundwater: false, depth: 80,
-})
+import { useSaunaForm, FormState, defaultSaunaRoom, defaultColdBath } from '@/hooks/useSaunaForm'
 
 function EditSkeleton() {
   return (
@@ -48,11 +39,17 @@ export default function SaunaEditClient({ id }: { id: string }) {
     enabled: !!id,
   })
 
-  const [form, setForm] = useState<FormState | null>(null)
+  const {
+    form, setForm, onChange,
+    updateRoom, addRoom, removeRoom,
+    updateBath, addBath, removeBath,
+  } = useSaunaForm(null)
+
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // sauna 로드 완료 시 폼 초기화 (한 번만)
   useEffect(() => {
-    if (sauna && !form) {
+    if (sauna && !isInitialized) {
       setForm({
         name: sauna.name,
         address: sauna.address,
@@ -70,8 +67,9 @@ export default function SaunaEditClient({ id }: { id: string }) {
         parking: sauna.parking ?? false,
         images: sauna.images ?? [],
       })
+      setIsInitialized(true)
     }
-  }, [sauna, form])
+  }, [sauna, isInitialized, setForm])
 
   // 비로그인 차단
   useEffect(() => {
@@ -94,29 +92,6 @@ export default function SaunaEditClient({ id }: { id: string }) {
     },
   })
 
-  const onChange = (patch: Partial<FormState>) =>
-    setForm((prev) => prev ? { ...prev, ...patch } : prev)
-
-  /* ── 사우나실 helpers ── */
-  const updateRoom = (i: number, patch: Partial<SaunaRoom>) => {
-    if (!form) return
-    const rooms = [...form.sauna_rooms]
-    rooms[i] = { ...rooms[i], ...patch }
-    onChange({ sauna_rooms: rooms })
-  }
-  const addRoom = () => form && onChange({ sauna_rooms: [...form.sauna_rooms, defaultSaunaRoom()] })
-  const removeRoom = (i: number) => form && onChange({ sauna_rooms: form.sauna_rooms.filter((_, idx) => idx !== i) })
-
-  /* ── 냉탕 helpers ── */
-  const updateBath = (i: number, patch: Partial<ColdBath>) => {
-    if (!form) return
-    const baths = [...form.cold_baths]
-    baths[i] = { ...baths[i], ...patch }
-    onChange({ cold_baths: baths })
-  }
-  const addBath = () => form && onChange({ cold_baths: [...form.cold_baths, defaultColdBath()] })
-  const removeBath = (i: number) => form && onChange({ cold_baths: form.cold_baths.filter((_, idx) => idx !== i) })
-
   const handleSubmit = () => {
     if (!form) return
     if (!form.name || !form.address) { toast.error('시설명과 주소를 입력해주세요'); return }
@@ -124,7 +99,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
   }
 
   if (!user) return null
-  if (isLoading || !form) return <EditSkeleton />
+  if (isLoading || !isInitialized || !form) return <EditSkeleton />
   if (isError) return (
     <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
       <span className="text-4xl">😢</span>

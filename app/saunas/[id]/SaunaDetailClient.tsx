@@ -14,11 +14,14 @@ import { useUserStore } from '@/stores/userStore'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import type { SaunaDto } from '@/types/sauna'
 import { TempHero } from '@/components/sauna/detail/TempHero'
+import { DetailHero } from '@/components/sauna/detail/DetailHero'
+import { DetailActions } from '@/components/sauna/detail/DetailActions'
 import {
   Section,
   InfoRow,
   AmenityGrid,
   DetailSkeleton,
+  Tag,
 } from '@/components/sauna/detail/DetailPrimitives'
 import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
@@ -124,95 +127,25 @@ export function SaunaDetailClient({ id }: { id: string }) {
   return (
     <div className="flex h-full flex-col bg-bg-main">
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-
-        {/* 히어로 이미지 */}
-        <div className="relative h-56 w-full flex-shrink-0">
-          {thumbnail ? (
-            <Image
-              src={thumbnail}
-              alt={sauna.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 680px"
-              priority
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg via-bg-main to-cold-bg">
-              <span className="text-6xl opacity-10">🧖</span>
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-          {/* 상단 버튼 */}
-          <div className="absolute left-4 top-4 z-10">
-            <button
-              onClick={() => router.back()}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
-            >
-              <BiChevronLeft size={22} />
-            </button>
-          </div>
-          <div className="absolute right-4 top-4 z-10 flex gap-2">
-            {user && (
-              <button
-                onClick={() => router.push(`/saunas/${id}/edit`)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
-              >
-                <BiEdit size={16} />
-              </button>
-            )}
-            <button
-              onClick={toggleFav}
-              disabled={favMutation.isPending}
-              className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 disabled:opacity-50 ${
-                isFav ? 'bg-point text-white' : 'bg-black/40 text-white'
-              }`}
-            >
-              {favMutation.isPending ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : isFav ? (
-                <BiSolidBookmark size={16} />
-              ) : (
-                <BiBookmark size={16} />
-              )}
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
-            >
-              <BiShare size={16} />
-            </button>
-          </div>
-
-          {/* 타이틀 */}
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h1 className="text-[22px] font-black text-white leading-tight">{sauna.name}</h1>
-            <p className="mt-0.5 flex items-center gap-1 text-[11px] text-white/70">
-              <BiMap size={11} />
-              {sauna.address}
-            </p>
-          </div>
-        </div>
+        <DetailHero
+          id={id}
+          saunaName={sauna.name}
+          saunaAddress={sauna.address}
+          thumbnail={thumbnail}
+          isFav={isFav}
+          isFavPending={favMutation.isPending}
+          onToggleFav={toggleFav}
+          onShare={handleShare}
+          isUser={!!user}
+        />
 
         <TempHero sauna={sauna} />
 
-        {/* 액션 버튼 */}
-        <div className="grid grid-cols-2 gap-2 px-4 py-3 bg-bg-card border-b border-border-subtle">
-          <button
-            onClick={toggleFav}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-3 text-[13px] font-black transition active:scale-[0.97] ${
-              isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-main'
-            }`}
-          >
-            {isFav ? '❤️ 찜됨' : '🤍 극락가고싶다'}
-          </button>
-          <button
-            onClick={() => setShowReview(true)}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-border-main bg-bg-main py-3 text-[13px] font-black text-text-main transition active:scale-[0.97]"
-          >
-            ✏️ 사활 기록
-          </button>
-        </div>
+        <DetailActions
+          isFav={isFav}
+          onToggleFav={toggleFav}
+          onWriteReview={() => setShowReview(true)}
+        />
 
         {/* 태그 */}
         {sauna.rules && (
@@ -339,14 +272,5 @@ export function SaunaDetailClient({ id }: { id: string }) {
         <ReviewBottomSheet sauna={sauna} onClose={() => setShowReview(false)} />
       )}
     </div>
-  )
-}
-
-// 태그 pill 컴포넌트
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-border-main bg-bg-main px-2.5 py-1 text-[10px] font-bold text-text-sub">
-      {children}
-    </span>
   )
 }

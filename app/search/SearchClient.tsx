@@ -1,22 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/lib/api-instance'
 import { BiSearch, BiX, BiHistory, BiTrendingUp } from 'react-icons/bi'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import { useRouter } from 'next/navigation'
+import { useDebounce } from '@/hooks/useDebounce'
 
 export default function SearchClient() {
   const [keyword, setKeyword] = useState('')
-  const [debouncedKeyword, setDebouncedKeyword] = useState('')
+  const debouncedKeyword = useDebounce(keyword, 300)
   const router = useRouter()
-
-  // 300ms debounce — 키 입력마다 API 호출 방지
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedKeyword(keyword), 300)
-    return () => clearTimeout(timer)
-  }, [keyword])
 
   const { data: searchResults = [], isLoading } = useQuery({
     queryKey: ['search', debouncedKeyword],
