@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/userStore'
 import { SaunaDto } from '@/types/sauna'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
@@ -346,11 +346,10 @@ function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () =>
                   key={id}
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setVisitTime(id) }}
-                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${
-                    visitTime === id
+                  className={`flex flex-col items-center gap-1 rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${visitTime === id
                       ? 'border-point bg-point/5 text-point'
                       : 'border-border-main bg-bg-main text-text-sub'
-                  }`}
+                    }`}
                 >
                   <span className="text-base">{emoji}</span>
                   {label}
