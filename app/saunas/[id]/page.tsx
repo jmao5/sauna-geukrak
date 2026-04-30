@@ -1,6 +1,7 @@
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/server'
 import { api } from '@/lib/api-instance'
+import { getKakaoPlaceImage } from '@/lib/kakao'
 import { SaunaDetailClient } from './SaunaDetailClient'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -37,8 +38,17 @@ export default async function SaunaDetailPage({ params }: Props) {
     notFound()
   }
 
-  const sauna = queryClient.getQueryData(['sauna', id])
+  const sauna = queryClient.getQueryData<{ name: string; address: string; images?: string[] }>(['sauna', id])
   if (!sauna) notFound()
+
+  // DB 이미지가 없으면 SSR 시점에 카카오 이미지도 함께 prefetch
+  // 클라이언트에서 별도 요청 필요 없이 하이드레이션으로 즉시 사용 가능
+  if (!sauna.images?.[0]) {
+    await queryClient.prefetchQuery({
+      queryKey: ['kakao-image', sauna.name, sauna.address],
+      queryFn: () => getKakaoPlaceImage(sauna.name, sauna.address),
+    })
+  }
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

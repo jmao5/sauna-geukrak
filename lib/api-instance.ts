@@ -55,7 +55,11 @@ export const api = {
         .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images')
         .order('created_at', { ascending: false })
       if (error) throw new Error(`사우나 목록을 불러오는데 실패했습니다.`)
-      return data as SaunaSummaryDto[]
+      // 목록에서는 images 첫 번째 항목만 사용하므로 슬라이싱
+      return (data as any[]).map((row) => ({
+        ...row,
+        images: row.images?.slice(0, 1) ?? [],
+      })) as SaunaSummaryDto[]
     },
 
     /** 특정 사우나 상세 정보 (SSR 지원) */
@@ -165,19 +169,6 @@ export const api = {
         .from('favorites').select('user_id').eq('user_id', userId).eq('sauna_id', saunaId).maybeSingle()
       if (error) return false
       return !!data
-    },
-  },
-
-  kakao: {
-    getPlaceImage: async (name: string, address?: string): Promise<string | null> => {
-      try {
-        const params = new URLSearchParams({ name })
-        if (address) params.set('address', address)
-        const res = await fetch(`/api/kakao-image?${params.toString()}`)
-        if (!res.ok) return null
-        const data = await res.json()
-        return data.image ?? null
-      } catch { return null }
     },
   },
 

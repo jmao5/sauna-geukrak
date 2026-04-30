@@ -63,7 +63,8 @@ export default function HomeClient() {
   const { data: featuredKakaoImage } = useKakaoSaunaImage(
     featured?.name ?? '',
     featured?.address,
-    featured?.images?.[0]
+    featured?.images?.[0],
+    activeFilter === 'all', // EDITOR'S PICK은 'all' 필터일 때만 렌더되므로 그때만 fetch
   )
 
   return (
