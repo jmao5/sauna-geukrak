@@ -43,7 +43,7 @@ export default function HomeClient() {
 
   const {
     data,
-    isLoading, // 이제 서버에서 데이터를 넘겨받으므로 초기 로딩 시 거의 true가 되지 않습니다.
+    isLoading,
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -56,8 +56,7 @@ export default function HomeClient() {
     initialPageParam: 0,
     getNextPageParam: (lastPage: SaunaSummaryDto[], allPages: SaunaSummaryDto[][]) =>
       lastPage.length === PAGE_SIZE ? allPages.length : undefined,
-    // 변경점: gcTime: 0 제거 (정상적인 캐싱 기능 활성화)
-    staleTime: 1000 * 60 * 5, // 5분 동안은 데이터를 새로 요청하지 않고 캐시를 믿습니다.
+    staleTime: 1000 * 60 * 5,
   })
 
   const allSaunas = useMemo(
@@ -115,28 +114,29 @@ export default function HomeClient() {
                 사우나 극락
               </h1>
               <p className="mt-0.5 text-[11px] text-text-muted tracking-wide">
-                {/* 필터링된 숫자로 변경하는 것도 좋습니다 */}
                 {isLoading ? '로딩 중...' : `전국 ${allSaunas.length}곳`}
               </p>
             </div>
             <Link
               href="/map"
-              className="flex items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub transition active:scale-95"
+              className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-main px-3.5 py-1.5 text-[11px] font-bold text-text-sub shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
             >
               <BiMap size={13} />
               지도
             </Link>
           </div>
 
+          {/* 검색바 */}
           <Link
             href="/search"
-            className="flex w-full items-center gap-2.5 rounded-xl border border-border-main bg-bg-main px-3.5 py-2.5 transition active:scale-[0.99]"
+            className="group flex w-full items-center gap-2.5 rounded-xl border border-border-main bg-bg-main px-3.5 py-2.5 shadow-sm transition-all duration-200 hover:border-border-strong hover:shadow-md active:scale-[0.99]"
           >
-            <BiSearch size={16} className="flex-shrink-0 text-text-muted" />
+            <BiSearch size={16} className="flex-shrink-0 text-text-muted transition-colors duration-200 group-hover:text-text-sub" />
             <span className="text-[13px] text-text-muted">사우나 이름, 지역으로 검색...</span>
           </Link>
         </div>
 
+        {/* 필터 탭 */}
         <div className="flex overflow-x-auto scrollbar-hide px-4 pb-3 gap-2">
           {FILTER_OPTIONS.map((opt) => {
             const isActive = activeFilter === opt.id
@@ -145,10 +145,10 @@ export default function HomeClient() {
                 key={opt.id}
                 onClick={() => setActiveFilter(opt.id)}
                 aria-pressed={isActive}
-                className={`flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all active:scale-95 ${
+                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-all duration-200 active:scale-95 ${
                   isActive
-                    ? 'bg-point text-white'
-                    : 'border border-border-main bg-bg-main text-text-sub'
+                    ? 'bg-point text-white shadow-sm'
+                    : 'border border-border-main bg-bg-main text-text-sub hover:border-border-strong hover:bg-bg-card'
                 }`}
               >
                 {opt.emoji && <span className="mr-0.5">{opt.emoji}</span>}
@@ -168,16 +168,19 @@ export default function HomeClient() {
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Editor's Pick</p>
               {featured.is_featured && (
-                <span className="text-[9px] font-bold text-point">CURATED</span>
+                <span className="text-[9px] font-bold text-point tracking-wider uppercase">Curated</span>
               )}
             </div>
-            <Link href={`/saunas/${featured.id}`} className="block relative h-44 w-full rounded-2xl overflow-hidden mb-1">
+            <Link
+              href={`/saunas/${featured.id}`}
+              className="group block relative h-44 w-full rounded-2xl overflow-hidden shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.99]"
+            >
               {(featured.images?.[0] || featuredKakaoImage) ? (
                 <Image
                   src={featured.images?.[0] ?? featuredKakaoImage!}
                   alt={featured.name}
                   fill
-                  className="object-cover"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   sizes="(max-width: 768px) 100vw, 680px"
                   priority
                 />
@@ -222,7 +225,7 @@ export default function HomeClient() {
 
         {/* 2열 그리드 */}
         <div className="px-4">
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-3">
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
               : filteredSaunas.length > 0
@@ -237,7 +240,7 @@ export default function HomeClient() {
                     <p className="text-sm font-bold text-text-sub">해당 조건의 사우나가 없어요</p>
                     <button
                       onClick={() => setActiveFilter('all')}
-                      className="rounded-full bg-point px-4 py-2 text-xs font-bold text-white"
+                      className="rounded-full bg-point px-5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
                     >
                       전체 보기
                     </button>
@@ -249,7 +252,7 @@ export default function HomeClient() {
 
         <div className="h-4" />
 
-        {/* 무한 스크롤 sentinel - ref 연결 추가 */}
+        {/* 무한 스크롤 sentinel */}
         <div ref={sentinelRef} className="h-10 flex items-center justify-center">
           {isFetchingNextPage && (
             <Loading variant="dots" fullScreen={false} color="var(--color-point)" />

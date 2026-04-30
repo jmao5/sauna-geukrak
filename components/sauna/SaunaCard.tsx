@@ -44,12 +44,11 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
   const avgRating = sauna.avg_rating
   const reviewCount = sauna.review_count
 
-  // 뷰포트 진입 전까지 카카오 이미지 fetch 지연 (기존 useIsVisible 인라인 훅 → 공용 훅으로 교체)
   const [isVisible, setIsVisible] = useState(false)
   const observerRef = useIntersectionObserver({
     rootMargin: '100px',
     onObserve: () => setIsVisible(true),
-    enabled: !isVisible, // 한 번 진입하면 비활성화
+    enabled: !isVisible,
   })
   const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail, isVisible)
   const displayImage = thumbnail ?? kakaoImage
@@ -58,9 +57,9 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
     return (
       <Link
         href={`/saunas/${sauna.id}`}
-        className={`flex items-center gap-3 px-4 py-3.5 border-b border-border-subtle transition active:bg-bg-sub ${className}`}
+        className={`sauna-row flex items-center gap-3.5 px-4 py-3.5 transition-all duration-200 ${className}`}
       >
-        <div ref={observerRef} className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-bg-main">
+        <div ref={observerRef} className="relative h-[60px] w-[60px] flex-shrink-0 overflow-hidden rounded-xl bg-bg-main shadow-sm">
           {displayImage ? (
             <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="64px" />
           ) : (
@@ -71,7 +70,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
         </div>
         <div className="min-w-0 flex-1">
           <p className="mb-0.5 truncate text-[13px] font-black text-text-main">{sauna.name}</p>
-          <p className="mb-1.5 truncate text-[11px] text-text-sub">{sauna.address}</p>
+          <p className="mb-2 truncate text-[11px] text-text-sub">{sauna.address}</p>
           <div className="flex items-center gap-2">
             {maxSaunaTemp !== null && <TempPill type="sauna" temp={maxSaunaTemp} />}
             {minColdTemp !== null && <TempPill type="cold" temp={minColdTemp} />}
@@ -83,7 +82,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             )}
           </div>
         </div>
-        <BiChevronRight size={18} className="flex-shrink-0 text-text-muted" />
+        <BiChevronRight size={18} className="flex-shrink-0 text-text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5" />
       </Link>
     )
   }
@@ -92,11 +91,17 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
   return (
     <Link
       href={`/saunas/${sauna.id}`}
-      className={`sauna-card block overflow-hidden ${className}`}
+      className={`sauna-card group block overflow-hidden ${className}`}
     >
       <div ref={observerRef} className="relative h-32 w-full overflow-hidden bg-bg-main">
         {displayImage ? (
-          <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="(max-width: 768px) 50vw, 340px" />
+          <Image
+            src={displayImage}
+            alt={sauna.name}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            sizes="(max-width: 768px) 50vw, 340px"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
             <span className="text-3xl opacity-20">🧖</span>
@@ -119,7 +124,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
         {features.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {features.slice(0, 2).map((f) => (
-              <span key={f} className="rounded-sm bg-bg-main px-1.5 py-0.5 text-[9px] font-bold text-text-muted">
+              <span key={f} className="rounded-md bg-bg-main px-1.5 py-0.5 text-[9px] font-bold text-text-muted border border-border-subtle">
                 {f}
               </span>
             ))}

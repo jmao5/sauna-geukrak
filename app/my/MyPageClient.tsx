@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus } from 'react-icons/bi'
+import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus, BiChevronRight } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
@@ -26,7 +26,6 @@ export default function MyPageClient() {
   const avatarUrl = user?.user_metadata?.avatar_url ?? null
   const email = user?.email ?? null
 
-  // 찜 개수
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
     queryFn: () => getFavoritesByUserId(user!.id),
@@ -53,14 +52,14 @@ export default function MyPageClient() {
     return (
       <div className="flex h-full flex-col bg-bg-main">
         <div className="bg-bg-sub px-6 pb-10 pt-12 text-center border-b border-border-subtle">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-bg-main border border-border-main text-4xl">
+          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-bg-main border border-border-main text-4xl shadow-sm">
             🧖
           </div>
           <h1 className="mb-1 text-lg font-black text-text-main">로그인이 필요해요</h1>
           <p className="text-[12px] text-text-sub mb-5">찜 목록과 방문 기록을 저장해보세요</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-3 text-[13px] font-black text-white transition active:scale-[0.97]"
+            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-3 text-[13px] font-black text-white shadow-sm transition-all duration-200 hover:bg-point-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97]"
           >
             로그인 / 회원가입
           </Link>
@@ -76,9 +75,9 @@ export default function MyPageClient() {
     return (
       <div className="flex h-full flex-col bg-bg-main animate-pulse">
         <div className="bg-bg-sub px-6 pb-8 pt-10 text-center">
-          <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-bg-main" />
-          <div className="mx-auto mb-2 h-4 w-32 rounded bg-bg-main" />
-          <div className="mx-auto h-3 w-20 rounded bg-bg-main" />
+          <div className="mx-auto mb-4 h-20 w-20 rounded-full skeleton-shimmer" />
+          <div className="mx-auto mb-2 h-4 w-32 rounded skeleton-shimmer" />
+          <div className="mx-auto h-3 w-20 rounded skeleton-shimmer" />
         </div>
       </div>
     )
@@ -88,7 +87,7 @@ export default function MyPageClient() {
     <div className="flex h-full flex-col bg-bg-main">
       {/* 프로필 헤더 */}
       <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
-        <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main">
+        <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main shadow-md">
           {avatarUrl ? (
             <Image src={avatarUrl} alt={displayName} width={80} height={80} className="h-full w-full object-cover" />
           ) : (
@@ -97,26 +96,36 @@ export default function MyPageClient() {
         </div>
         <h1 className="mb-0.5 text-xl font-black text-text-main">{displayName}</h1>
         {email && <p className="text-[11px] text-text-muted">{email}</p>}
-        <p className="mt-1 text-[11px] font-semibold text-text-sub">오늘도 극락 다녀오셨나요? 🔥</p>
+        <p className="mt-1.5 text-[11px] font-semibold text-text-sub">오늘도 극락 다녀오셨나요? 🔥</p>
       </div>
 
       {/* 통계 요약 */}
-      <div className="mx-4 -mt-4 mb-4 grid grid-cols-2 gap-0 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card">
-        <Link href="/my/favorites" className="py-3 text-center transition active:bg-bg-sub rounded-l-2xl">
-          <p className="text-[10px] font-bold text-text-muted">찜</p>
-          <p className="text-lg font-black text-text-main">{favorites.length}</p>
+      <div className="mx-4 -mt-4 mb-4 grid grid-cols-2 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card overflow-hidden">
+        <Link
+          href="/my/favorites"
+          className="group py-4 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
+        >
+          <p className="text-[10px] font-bold text-text-muted mb-1">찜</p>
+          <p className="text-2xl font-black text-text-main transition-colors duration-200 group-hover:text-point">
+            {favorites.length}
+          </p>
         </Link>
-        <Link href="/my/records" className="py-3 text-center transition active:bg-bg-sub rounded-r-2xl">
-          <p className="text-[10px] font-bold text-text-muted">사활</p>
-          <p className="text-lg font-black text-text-main">{records.length}</p>
+        <Link
+          href="/my/records"
+          className="group py-4 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
+        >
+          <p className="text-[10px] font-bold text-text-muted mb-1">사활</p>
+          <p className="text-2xl font-black text-text-main transition-colors duration-200 group-hover:text-point">
+            {records.length}
+          </p>
         </Link>
       </div>
 
       {/* 사우나 등록 버튼 */}
-      <div className="px-4 mb-3">
+      <div className="px-4 mb-4">
         <Link
           href="/saunas/new"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-3 text-[13px] font-black text-point transition active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-3 text-[13px] font-black text-point transition-all duration-200 hover:bg-point/10 hover:border-point/60 active:scale-[0.98]"
         >
           <BiPlus size={16} />
           새 사우나 등록하기
@@ -135,9 +144,9 @@ export default function MyPageClient() {
               }
               router.push(item.href)
             }}
-            className="flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 transition active:scale-[0.98] active:bg-bg-main"
+            className="group flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:translate-y-0"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub transition-colors duration-200 group-hover:bg-bg-sub">
               <item.icon size={20} />
             </div>
             <div className="flex-1 text-left">
@@ -147,19 +156,19 @@ export default function MyPageClient() {
             {item.comingSoon ? (
               <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">준비중</span>
             ) : (
-              <span className="text-text-muted text-lg">›</span>
+              <BiChevronRight size={18} className="text-text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5" />
             )}
           </button>
         ))}
 
-        <div className="pt-2 pb-4">
-          <button className="flex w-full items-center gap-3 px-4 py-3 text-[13px] font-bold text-text-muted">
+        <div className="pt-2 pb-4 border-t border-border-subtle mt-2">
+          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold text-text-muted transition-colors duration-150 hover:bg-bg-card hover:text-text-sub active:bg-bg-main">
             <BiHelpCircle size={18} />
             도움말 및 문의
           </button>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-4 py-3 text-[13px] font-bold text-danger/70"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold text-danger/60 transition-colors duration-150 hover:bg-danger/5 hover:text-danger active:bg-danger/10"
           >
             <BiLogOut size={18} />
             로그아웃

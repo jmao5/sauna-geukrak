@@ -51,7 +51,7 @@ export function DetailHero({
       <div className="absolute left-4 top-4 z-10">
         <button
           onClick={() => router.back()}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all duration-200 hover:bg-black/60 active:scale-90"
         >
           <BiChevronLeft size={22} />
         </button>
@@ -60,7 +60,7 @@ export function DetailHero({
         {isUser && (
           <button
             onClick={() => router.push(`/saunas/${id}/edit`)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all duration-200 hover:bg-black/60 active:scale-90"
           >
             <BiEdit size={16} />
           </button>
@@ -68,8 +68,10 @@ export function DetailHero({
         <button
           onClick={onToggleFav}
           disabled={isFavPending}
-          className={`flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition active:scale-90 disabled:opacity-50 ${
-            isFav ? 'bg-point text-white' : 'bg-black/40 text-white'
+          className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm transition-all duration-200 active:scale-90 disabled:opacity-50 ${
+            isFav
+              ? 'bg-point text-white hover:bg-point-hover'
+              : 'bg-black/40 text-white hover:bg-black/60'
           }`}
         >
           {isFavPending ? (
@@ -82,7 +84,7 @@ export function DetailHero({
         </button>
         <button
           onClick={onShare}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition-all duration-200 hover:bg-black/60 active:scale-90"
         >
           <BiShare size={16} />
         </button>

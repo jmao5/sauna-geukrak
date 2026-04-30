@@ -53,7 +53,7 @@
   /* Shadows */
   --shadow-nav: 0px -1px 4px 0px rgba(0, 0, 0, 0.08);
   --shadow-card: 0px 1px 3px rgba(0, 0, 0, 0.06), 0px 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0px 4px 20px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0px 6px 24px rgba(0, 0, 0, 0.10), 0px 2px 8px rgba(0, 0, 0, 0.06);
   --shadow-bottom: 0px 1px 0px 0px #e5e7eb;
 
   /* Z-Index */
@@ -196,22 +196,54 @@ body {
   background-color: var(--bg-card);
   border: 1px solid var(--border-main);
   border-radius: 0.875rem;
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+/* 데스크탑: hover 시 살짝 떠오르는 효과 */
+@media (hover: hover) {
+  .sauna-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+}
+
+/* 터치: 눌릴 때 살짝 들어가는 효과 */
 .sauna-card:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  box-shadow: var(--shadow-card);
 }
 
 /* 이키타이 리스트 행 */
 .sauna-row {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
-  transition: background-color 0.1s ease;
+  transition: background-color 0.15s ease;
+}
+
+@media (hover: hover) {
+  .sauna-row:hover {
+    background-color: var(--bg-sub);
+  }
 }
 
 .sauna-row:active {
   background-color: var(--bg-main);
+}
+
+/* 인터랙티브 버튼 공통 — 부드러운 전환 */
+.btn-interactive {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-interactive:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  .btn-interactive:hover {
+    opacity: 0.85;
+  }
 }
 
 /* 앱 레이아웃 */
