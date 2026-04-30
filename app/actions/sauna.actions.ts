@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
+import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
+import { uploadSaunaImage } from '@/lib/supabase/storage'
 
 export async function getSaunas(page = 0, pageSize = 20): Promise<SaunaSummaryDto[]> {
   try {
@@ -62,18 +64,47 @@ export async function createSauna(
 ): Promise<SaunaDto> {
   try {
     const supabase = await createClient()
-    
-    // 1. 세션 검증 (보안)
+
+    // 1. 세션 검증
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) throw new Error('로그인이 필요합니다.')
 
-    // 2. 권한 검증 (Admin만 등록 가능)
+    // 2. 권한 검증
     const { data: userData } = await supabase.from('users').select('role').eq('id', user.id).single()
     if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
 
+    // 3. 이미지가 없으면 카카오에서 가져와 Storage에 영구 저장
+    //    - 등록 시 1회만 실행 → 이후 카드/상세 페이지는 CDN URL 직접 사용
+    let finalImages = payload.images ?? []
+
+    if (finalImages.length === 0) {
+      try {
+        const kakaoImageUrl = await getKakaoPlaceImage(payload.name, payload.address)
+
+        if (kakaoImageUrl) {
+          // 임시 UUID로 폴더 경로 생성 (DB INSERT 전이라 id 없음)
+          const tempId = crypto.randomUUID()
+          const downloaded = await downloadImageBuffer(kakaoImageUrl)
+
+          if (downloaded) {
+            const storedUrl = await uploadSaunaImage(
+              downloaded.buffer,
+              downloaded.contentType,
+              `saunas/${tempId}`
+            )
+            if (storedUrl) finalImages = [storedUrl]
+          }
+        }
+      } catch (imgErr) {
+        // 이미지 처리 실패는 등록 자체를 막지 않음
+        console.warn('[createSauna] 이미지 자동 처리 실패 (무시):', imgErr)
+      }
+    }
+
+    // 4. DB INSERT
     const { data, error } = await supabase
       .from('saunas')
-      .insert(payload)
+      .insert({ ...payload, images: finalImages })
       .select()
       .single()
     if (error) throw new Error(error.message)

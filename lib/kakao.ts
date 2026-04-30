@@ -1,15 +1,14 @@
 /**
  * 카카오 API 서버 사이드 호출 모음 (서버 전용 — 'use client' 금지)
  *
- * CORS 문제로 브라우저에서 직접 호출 불가한 카카오 API를 여기서 관리합니다.
- * 클라이언트는 /api/kakao-image Route Handler를 통해 간접 호출합니다.
+ * 이미지 처리 전략:
+ *   - 등록 시점에 카카오 이미지를 1회 fetch → Supabase Storage 저장
+ *   - 이후 카드/상세 페이지는 Supabase CDN URL만 사용 (실시간 스크래핑 없음)
  *
- * ┌─ 클라이언트 ──────────────────────────────────────────────┐
- * │  useKakaoSaunaImage (hooks)                              │
- * │    → fetchKakaoSaunaImage (utils/kakaoPlaceImage.ts)     │
- * │      → GET /api/kakao-image (route.ts)                   │
- * │          → kakao.getPlaceImage() (lib/kakao.ts) ◀ 여기   │
- * └──────────────────────────────────────────────────────────┘
+ * ┌─ 등록 흐름 ────────────────────────────────────────────────┐
+ * │  createSauna() → getKakaoPlaceImage() → downloadImageBuffer()│
+ * │  → uploadSaunaImage() → images[0]에 CDN URL 저장         │
+ * └───────────────────────────────────────────────────────────┘
  */
 
 const REST_API_KEY = process.env.KAKAO_REST_API_KEY!
@@ -45,7 +44,8 @@ async function searchPlaceId(name: string, address?: string): Promise<string | n
     `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query)}&size=1`,
     {
       headers: { Authorization: `KakaoAK ${REST_API_KEY}` },
-      next: { revalidate: 86400 },
+      // 등록 시점에만 호출하므로 캐시 불필요
+      cache: 'no-store',
     }
   )
 
@@ -57,8 +57,6 @@ async function searchPlaceId(name: string, address?: string): Promise<string | n
 
 /**
  * place_id로 카카오맵 장소 페이지의 og:image URL을 추출합니다.
- * HTML 파싱에 의존하기 때문에 카카오 마크업 변경 시 조용히 실패할 수 있습니다.
- * 실패 시는 null을 반환하며 캡으로 처리하세요.
  */
 async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
   const res = await fetch(
@@ -69,7 +67,7 @@ async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: 'text/html,application/xhtml+xml,*/*',
       },
-      next: { revalidate: 86400 },
+      cache: 'no-store',
     }
   )
 
@@ -84,11 +82,8 @@ async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
   if (!match?.[1]) return null
 
   let url = match[1]
-  if (url.startsWith('//')) {
-    url = `https:${url}`
-  } else if (url.startsWith('http://')) {
-    url = url.replace('http://', 'https://')
-  }
+  if (url.startsWith('//')) url = `https:${url}`
+  else if (url.startsWith('http://')) url = url.replace('http://', 'https://')
 
   return url
 }
@@ -97,9 +92,8 @@ async function fetchPlaceOgImage(placeId: string): Promise<string | null> {
 
 /**
  * 사우나 이름과 주소로 카카오맵 대표 이미지 URL을 반환합니다.
- * place_id 검색 → og:image 추출의 2단계로 동작합니다.
- *
- * @returns 이미지 URL 또는 null (장소 없음 / 이미지 없음)
+ * 등록 시점에 1회 호출하기 위한 함수입니다.
+ * 실시간 카드 렌더링에는 사용하지 마세요.
  */
 export async function getKakaoPlaceImage(
   name: string,
@@ -110,7 +104,41 @@ export async function getKakaoPlaceImage(
     if (!placeId) return null
     return await fetchPlaceOgImage(placeId)
   } catch {
-    // 네트워크 오류나 마크업 변경 등으로 실패시 placeholder 처리
+    return null
+  }
+}
+
+/**
+ * 외부 이미지 URL을 Buffer로 다운로드합니다.
+ * Supabase Storage 업로드 전 단계로 사용합니다.
+ *
+ * @returns { buffer, contentType } 또는 null
+ */
+export async function downloadImageBuffer(
+  url: string
+): Promise<{ buffer: Buffer; contentType: string } | null> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        Referer: 'https://map.kakao.com',
+      },
+      cache: 'no-store',
+    })
+
+    if (!res.ok) return null
+
+    const contentType = res.headers.get('content-type') ?? 'image/jpeg'
+
+    // image/* 가 아닌 응답(HTML 등) 차단
+    if (!contentType.startsWith('image/')) return null
+
+    const arrayBuffer = await res.arrayBuffer()
+    return {
+      buffer: Buffer.from(arrayBuffer),
+      contentType,
+    }
+  } catch {
     return null
   }
 }
