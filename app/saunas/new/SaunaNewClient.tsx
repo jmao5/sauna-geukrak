@@ -34,7 +34,7 @@ interface KakaoPlace {
 type Step = 'search' | 'detail'
 
 /* ────────────────────────────────────────────────────────────
-   STEP 1: 카카오 장소 검색
+   STEP 1: 장소 검색
 ──────────────────────────────────────────────────────────── */
 function KakaoSearchStep({
   isKakaoReady,
@@ -51,7 +51,7 @@ function KakaoSearchStep({
   const handleSearch = () => {
     if (!query.trim()) return
     if (!isKakaoReady) {
-      toast.error('카카오 지도 서비스를 로드하는 중입니다. 잠시 후 다시 시도해주세요.')
+      toast.error('지도 서비스를 로드하는 중입니다. 잠시 후 다시 시도해주세요.')
       return
     }
 
@@ -79,7 +79,7 @@ function KakaoSearchStep({
     <div className="flex flex-col gap-4">
       <div className="rounded-2xl border border-sauna/20 bg-sauna-bg p-4">
         <p className="text-xs font-bold text-sauna-text">
-          🔍 카카오 장소 검색으로 사우나를 선택하면
+          🔍 장소 검색으로 사우나를 선택하면
         </p>
         <p className="mt-0.5 text-[11px] text-sauna-text/80">
           이름, 주소, 연락처 등 기본 정보가 자동으로 입력됩니다
@@ -472,7 +472,7 @@ export default function SaunaNewClient() {
             {!kakaoReady && (
               <div className="mb-3 flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-warning/30 border-t-warning flex-shrink-0" />
-                <p className="text-xs font-semibold text-warning">카카오 지도 서비스 로드 중...</p>
+                <p className="text-xs font-semibold text-warning">지도 서비스 로드 중...</p>
               </div>
             )}
             <KakaoSearchStep isKakaoReady={kakaoReady} onSelect={handlePlaceSelect} />
