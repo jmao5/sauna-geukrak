@@ -43,7 +43,7 @@ export default function HomeClient() {
 
   const {
     data,
-    isLoading,
+    isLoading, // 이제 서버에서 데이터를 넘겨받으므로 초기 로딩 시 거의 true가 되지 않습니다.
     isFetchingNextPage,
     hasNextPage,
     fetchNextPage,
@@ -51,17 +51,13 @@ export default function HomeClient() {
     queryKey: ['saunas', 'infinite'],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
       const result = await api.saunas.getAll(undefined, pageParam, PAGE_SIZE)
-      // 항상 배열을 반환 — undefined/null 방어
       return (Array.isArray(result) ? result : []) as SaunaSummaryDto[]
     },
     initialPageParam: 0,
-    // lastPage는 queryFn이 항상 SaunaSummaryDto[]를 반환하므로 절대 undefined가 되지 않음
     getNextPageParam: (lastPage: SaunaSummaryDto[], allPages: SaunaSummaryDto[][]) =>
       lastPage.length === PAGE_SIZE ? allPages.length : undefined,
-    // gcTime을 0으로 설정 — 컴포넌트 언마운트 즉시 캐시 제거
-    // → 탭 전환 후 재마운트 시 손상된 pages 캐시를 읽지 않음
-    gcTime: 0,
-    staleTime: 1000 * 60 * 5,
+    // 변경점: gcTime: 0 제거 (정상적인 캐싱 기능 활성화)
+    staleTime: 1000 * 60 * 5, // 5분 동안은 데이터를 새로 요청하지 않고 캐시를 믿습니다.
   })
 
   const allSaunas = useMemo(
@@ -119,6 +115,7 @@ export default function HomeClient() {
                 사우나 극락
               </h1>
               <p className="mt-0.5 text-[11px] text-text-muted tracking-wide">
+                {/* 필터링된 숫자로 변경하는 것도 좋습니다 */}
                 {isLoading ? '로딩 중...' : `전국 ${allSaunas.length}곳`}
               </p>
             </div>
@@ -252,10 +249,12 @@ export default function HomeClient() {
 
         <div className="h-4" />
 
-        {/* 무한 스크롤 sentinel */}
-        {isFetchingNextPage && (
-          <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
-        )}
+        {/* 무한 스크롤 sentinel - ref 연결 추가 */}
+        <div ref={sentinelRef} className="h-10 flex items-center justify-center">
+          {isFetchingNextPage && (
+            <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
+          )}
+        </div>
       </div>
     </div>
   )
