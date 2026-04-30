@@ -45,10 +45,10 @@ export function SaunaDetailClient({ id }: { id: string }) {
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
       if (isFav) {
-        await removeFavorite(user.id, id)
+        await removeFavorite(id)
         return 'removed' as const
       } else {
-        await addFavorite(user.id, id)
+        await addFavorite(id)
         return 'added' as const
       }
     },
