@@ -26,6 +26,92 @@ import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { getSaunaById } from '@/app/actions/sauna.actions'
 import { checkFavorite, addFavorite, removeFavorite } from '@/app/actions/favorite.actions'
+import type { InstagramMedia } from '@/types/sauna'
+
+// ── 내부 모형도 섹션 ─────────────────────────────────────────
+function FloorPlanSection({ images }: { images: string[] }) {
+  const [fullscreenUrl, setFullscreenUrl] = useState<string | null>(null)
+
+  return (
+    <>
+      <div className="space-y-2 p-4">
+        {images.map((url, i) => (
+          <div
+            key={url}
+            className="relative overflow-hidden rounded-xl border border-border-main bg-bg-main cursor-pointer"
+            onClick={() => setFullscreenUrl(url)}
+          >
+            <div className="absolute left-2 top-2 z-10 rounded-full bg-black/50 px-2 py-0.5">
+              <span className="text-[10px] font-black text-white">모형도 {i + 1}</span>
+            </div>
+            <img
+              src={url}
+              alt={`모형도 ${i + 1}`}
+              className="w-full object-contain"
+              style={{ maxHeight: '260px' }}
+            />
+            <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5">
+              <span className="text-[9px] text-white">눌러서 전체보기</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      {fullscreenUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setFullscreenUrl(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setFullscreenUrl(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 text-xl font-bold"
+          >
+            ✕
+          </button>
+          <img
+            src={fullscreenUrl}
+            alt="모형도 전체보기"
+            className="max-h-full max-w-full rounded-xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
+  )
+}
+
+// ── 인스타그램 섹션 ──────────────────────────────────────────
+function InstagramSection({ media }: { media: InstagramMedia[] }) {
+  return (
+    <div className="space-y-4 p-4">
+      {media.map((item, i) => {
+        // /reel/XXXX/ 또는 /p/XXXX/ 형태에서 임베드 URL 생성
+        const embedUrl = item.url.replace(/\/?$/, '/embed')
+        return (
+          <div key={i} className="overflow-hidden rounded-xl border border-border-main bg-bg-main">
+            <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2">
+              <span className="text-[10px] font-black tracking-wide text-text-muted uppercase">
+                {item.type === 'reel' ? '🎬 Reels' : '📷 Post'}
+              </span>
+              {item.caption && (
+                <span className="truncate text-[10px] text-text-sub">{item.caption}</span>
+              )}
+            </div>
+            <div className="relative w-full" style={{ paddingBottom: item.type === 'reel' ? '177.7%' : '120%' }}>
+              <iframe
+                src={embedUrl}
+                className="absolute inset-0 h-full w-full"
+                allowFullScreen
+                scrolling="no"
+                frameBorder="0"
+              />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 // ── 메인 ─────────────────────────────────────────────────────
 export function SaunaDetailClient({ id }: { id: string }) {
@@ -259,6 +345,26 @@ export function SaunaDetailClient({ id }: { id: string }) {
           )}
           <InfoRow label="주차" value={sauna.parking ? '가능' : '불가'} />
         </Section>
+
+        {/* 내부 모형도 */}
+        {sauna.floor_plan_images?.length > 0 && (
+          <>
+            <div className="section-divider" />
+            <Section title="Floor Plan">
+              <FloorPlanSection images={sauna.floor_plan_images} />
+            </Section>
+          </>
+        )}
+
+        {/* 인스타그램 미디어 */}
+        {sauna.instagram_media?.length > 0 && (
+          <>
+            <div className="section-divider" />
+            <Section title="Instagram">
+              <InstagramSection media={sauna.instagram_media} />
+            </Section>
+          </>
+        )}
 
         <div className="section-divider" />
 
