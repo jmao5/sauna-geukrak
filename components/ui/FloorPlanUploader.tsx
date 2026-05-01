@@ -84,7 +84,7 @@ export default function FloorPlanUploader({
     if (selected.length === 0) return
 
     const imageCompression = (await import('browser-image-compression')).default
-    const options = { maxSizeMB: 1, maxWidthOrHeight: 3000, useWebWorker: true }
+    const options = { maxSizeMB: 0.5, maxWidthOrHeight: 3000, useWebWorker: true }
 
     const previews = selected.map((file) => ({
       file,
