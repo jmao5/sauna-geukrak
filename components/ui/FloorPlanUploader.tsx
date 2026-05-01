@@ -104,6 +104,14 @@ export default function FloorPlanUploader({
         })
       )
 
+      const oversized = compressed.filter((f) => f.size > 10 * 1024 * 1024)
+      if (oversized.length > 0) {
+        toast.error(`${oversized.length}개 파일이 압축 후에도 10MB를 초과합니다`)
+        previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
+        setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
+        return
+      }
+
       // 도면 이미지는 floor-plans 경로로 업로드
       const formData = new FormData()
       compressed.forEach((f) => formData.append('files', f))
