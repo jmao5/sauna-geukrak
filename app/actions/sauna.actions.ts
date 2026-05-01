@@ -63,24 +63,30 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   }
 }
 
+// ── 결과 타입 ──────────────────────────────────────────────
+type ActionResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: string }
+
 /**
- * #4 Fix: auth.getUser() (서버 왕복) → getSession() (로컬 JWT 파싱)
- * 역할 검증은 DB 조회가 필요하므로 한 번은 유지하되, 인증 확인만 getSession으로 대체.
+ * Server Action에서 throw 대신 결과 객체를 반환합니다.
+ * Next.js 프로덕션 빌드에서 throw된 에러는 보안상 메시지가 제거되므로,
+ * 클라이언트에 에러 내용을 전달하려면 반드시 이 패턴을 사용해야 합니다.
  */
 export async function createSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
-): Promise<SaunaDto> {
+): Promise<ActionResult<SaunaDto>> {
   try {
     const supabase = await createClient()
 
     // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
     // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
     const { data: userData } = await supabase
       .from('users').select('role').eq('id', session.user.id).single()
-    if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
+    if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
 
     // 이미지 없으면 카카오 이미지 1회 시도 (등록 시에만 실행)
     let finalImages = payload.images ?? []
@@ -107,29 +113,37 @@ export async function createSauna(
       .insert({ ...payload, images: finalImages })
       .select()
       .single()
-    if (error) throw new Error(error.message)
-    return data as SaunaDto
+
+    if (error) {
+      console.error('사우나 등록 DB 에러:', error)
+      return { ok: false, error: error.message }
+    }
+
+    return { ok: true, data: data as SaunaDto }
   } catch (error) {
     console.error('사우나 등록 에러:', error)
-    throw new Error(error instanceof Error ? error.message : '사우나 등록에 실패했습니다.')
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : '사우나 등록에 실패했습니다.',
+    }
   }
 }
 
 export async function updateSauna(
   id: string,
   payload: Omit<SaunaDto, 'id' | 'created_at'>
-): Promise<SaunaDto> {
+): Promise<ActionResult<SaunaDto>> {
   try {
     const supabase = await createClient()
 
     // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
     // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
     const { data: userData } = await supabase
       .from('users').select('role').eq('id', session.user.id).single()
-    if (userData?.role !== 'admin') throw new Error('관리자 권한이 필요합니다.')
+    if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
 
     const { data, error } = await supabase
       .from('saunas')
@@ -137,10 +151,18 @@ export async function updateSauna(
       .eq('id', id)
       .select()
       .single()
-    if (error) throw new Error(error.message)
-    return data as SaunaDto
+
+    if (error) {
+      console.error('사우나 수정 DB 에러:', error)
+      return { ok: false, error: error.message }
+    }
+
+    return { ok: true, data: data as SaunaDto }
   } catch (error) {
     console.error('사우나 수정 에러:', error)
-    throw new Error(error instanceof Error ? error.message : '사우나 수정에 실패했습니다.')
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : '사우나 수정에 실패했습니다.',
+    }
   }
 }

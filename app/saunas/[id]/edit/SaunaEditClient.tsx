@@ -74,9 +74,12 @@ export default function SaunaEditClient({ id }: { id: string }) {
   }, [user, router, id])
 
   const mutation = useMutation({
-    mutationFn: (payload: FormState) => {
+    mutationFn: async (payload: FormState) => {
       if (!user) throw new Error('로그인이 필요합니다')
-      return updateSauna(id, payload)
+      const result = await updateSauna(id, payload)
+      // Server Action은 throw 대신 결과 객체를 반환 — 에러 시 여기서 throw
+      if (!result.ok) throw new Error(result.error)
+      return result.data
     },
     onSuccess: (updated) => {
       queryClient.setQueryData(['sauna', id], updated)

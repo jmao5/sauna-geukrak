@@ -420,18 +420,19 @@ export default function SaunaNewClient() {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error('not_logged_in')
-      if (!form.name || !form.address) throw new Error('missing_fields')
-      return await createSauna(form)
+      if (!user) throw new Error('로그인이 필요합니다')
+      if (!form.name || !form.address) throw new Error('시설명과 주소를 입력해주세요')
+      const result = await createSauna(form)
+      // Server Action은 throw 대신 결과 객체를 반환 — 에러 시 여기서 throw
+      if (!result.ok) throw new Error(result.error)
+      return result.data
     },
     onSuccess: (created) => {
       toast.success(`${created.name} 등록 완료! 🎉`)
       router.push(`/saunas/${created.id}`)
     },
     onError: (error) => {
-      if (error.message === 'not_logged_in') toast.error('로그인이 필요합니다')
-      else if (error.message === 'missing_fields') toast.error('시설명과 주소를 입력해주세요')
-      else toast.error(error.message || '등록 중 오류가 발생했습니다')
+      toast.error(error.message || '등록 중 오류가 발생했습니다')
     },
   })
 
