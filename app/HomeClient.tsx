@@ -7,7 +7,7 @@ import SaunaCard from '@/components/sauna/SaunaCard'
 import Skeleton from '@/components/ui/Skeleton'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BiSearch, BiMap } from 'react-icons/bi'
+import { BiSearch, BiMap, BiChevronRight } from 'react-icons/bi'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 import Loading from '@/components/ui/Loading'
@@ -29,10 +29,10 @@ const PAGE_SIZE = 20
 function CardSkeleton() {
   return (
     <div className="sauna-card overflow-hidden">
-      <Skeleton className="skeleton-shimmer h-32 w-full rounded-none" />
-      <div className="p-3 space-y-2">
-        <Skeleton className="skeleton-shimmer h-3 w-3/4 rounded" />
-        <Skeleton className="skeleton-shimmer h-2.5 w-1/2 rounded" />
+      <Skeleton className="skeleton-shimmer h-36 w-full rounded-none" />
+      <div className="p-3.5 space-y-2">
+        <Skeleton className="skeleton-shimmer h-3 w-3/4 rounded-full" />
+        <Skeleton className="skeleton-shimmer h-2.5 w-1/2 rounded-full" />
       </div>
     </div>
   )
@@ -105,39 +105,96 @@ export default function HomeClient() {
   return (
     <div className="flex h-full flex-col bg-bg-main">
 
-      {/* ── 헤더 ── */}
-      <div className="flex-shrink-0 bg-bg-sub border-b border-border-main">
-        <div className="px-4 pt-4 pb-3">
-          <div className="mb-3 flex items-center justify-between">
+      {/* ── 헤더: 포카리 감성 ── */}
+      <div className="flex-shrink-0 relative overflow-hidden">
+        {/* 배경 그라디언트 */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(160deg, #e0f2fe 0%, #f0f9ff 60%, #ffffff 100%)',
+          }}
+        />
+        {/* 장식용 블러 원 */}
+        <div
+          className="absolute -top-8 -right-8 w-40 h-40 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(14,165,233,0.15) 0%, transparent 70%)',
+            filter: 'blur(20px)',
+          }}
+        />
+        <div
+          className="absolute top-4 -left-10 w-32 h-32 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(56,189,248,0.10) 0%, transparent 70%)',
+            filter: 'blur(16px)',
+          }}
+        />
+
+        <div className="relative px-5 pt-5 pb-4">
+          {/* 상단 로고 + 지도 버튼 */}
+          <div className="mb-4 flex items-center justify-between">
             <div>
-              <h1 className="font-juache text-[22px] font-bold tracking-tight text-text-main leading-none">
-                사우나 극락
-              </h1>
-              <p className="mt-0.5 text-[11px] text-text-muted tracking-wide">
-                {isLoading ? '로딩 중...' : `전국 ${allSaunas.length}곳`}
+              <div className="flex items-baseline gap-2">
+                <h1
+                  className="font-juache tracking-tight leading-none"
+                  style={{
+                    fontSize: '26px',
+                    background: 'linear-gradient(135deg, #0c1a2e 0%, #0369a1 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  사우나 극락
+                </h1>
+                <span
+                  className="text-[10px] font-bold tracking-widest uppercase"
+                  style={{ color: '#7dd3fc' }}
+                >
+                  KOREA
+                </span>
+              </div>
+              <p className="mt-1 text-[11px] tracking-wide" style={{ color: '#7ba4c7' }}>
+                {isLoading ? '로딩 중...' : `전국 ${allSaunas.length}곳의 사우나`}
               </p>
             </div>
+
             <Link
               href="/map"
-              className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-main px-3.5 py-1.5 text-[11px] font-bold text-text-sub shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+              className="flex items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-bold transition-all duration-200 active:scale-95"
+              style={{
+                background: 'rgba(255,255,255,0.8)',
+                border: '1.5px solid #bae6fd',
+                color: '#0ea5e9',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 2px 12px rgba(14,165,233,0.12)',
+              }}
             >
-              <BiMap size={13} />
-              지도
+              <BiMap size={14} />
+              지도 보기
             </Link>
           </div>
 
-          {/* 검색바 */}
+          {/* 검색바 — 포카리 글래스 스타일 */}
           <Link
             href="/search"
-            className="group flex w-full items-center gap-2.5 rounded-xl border border-border-main bg-bg-main px-3.5 py-2.5 shadow-sm transition-all duration-200 hover:border-border-strong hover:shadow-md active:scale-[0.99]"
+            className="group flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 transition-all duration-200 active:scale-[0.99]"
+            style={{
+              background: 'rgba(255,255,255,0.9)',
+              border: '1.5px solid #bae6fd',
+              backdropFilter: 'blur(12px)',
+              boxShadow: '0 2px 16px rgba(14,165,233,0.08)',
+            }}
           >
-            <BiSearch size={16} className="flex-shrink-0 text-text-muted transition-colors duration-200 group-hover:text-text-sub" />
-            <span className="text-[13px] text-text-muted">사우나 이름, 지역으로 검색...</span>
+            <BiSearch size={17} style={{ color: '#7dd3fc', flexShrink: 0 }} />
+            <span className="text-[13px]" style={{ color: '#7ba4c7' }}>
+              사우나 이름, 지역으로 검색...
+            </span>
           </Link>
         </div>
 
-        {/* 필터 탭 */}
-        <div className="flex overflow-x-auto scrollbar-hide px-4 pb-3 gap-2">
+        {/* 필터 탭 — 수평 스크롤 */}
+        <div className="flex overflow-x-auto scrollbar-hide px-5 pb-4 gap-2">
           {FILTER_OPTIONS.map((opt) => {
             const isActive = activeFilter === opt.id
             return (
@@ -145,68 +202,166 @@ export default function HomeClient() {
                 key={opt.id}
                 onClick={() => setActiveFilter(opt.id)}
                 aria-pressed={isActive}
-                className={`flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-bold transition-all duration-200 active:scale-95 ${
+                className="flex-shrink-0 rounded-full px-4 py-1.5 text-[11px] font-bold transition-all duration-200 active:scale-95"
+                style={
                   isActive
-                    ? 'bg-point text-white shadow-sm'
-                    : 'border border-border-main bg-bg-main text-text-sub hover:border-border-strong hover:bg-bg-card'
-                }`}
+                    ? {
+                        background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                        color: '#fff',
+                        boxShadow: '0 3px 12px rgba(14,165,233,0.35)',
+                        border: '1.5px solid transparent',
+                      }
+                    : {
+                        background: 'rgba(255,255,255,0.75)',
+                        border: '1.5px solid #bae6fd',
+                        color: '#334e68',
+                        backdropFilter: 'blur(6px)',
+                      }
+                }
               >
-                {opt.emoji && <span className="mr-0.5">{opt.emoji}</span>}
+                {opt.emoji && <span className="mr-1">{opt.emoji}</span>}
                 {opt.label}
               </button>
             )
           })}
         </div>
+
+        {/* 헤더 하단 구분선 */}
+        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, #bae6fd, transparent)' }} />
       </div>
 
       {/* ── 목록 ── */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-        {/* Editor's Pick */}
+        {/* Editor's Pick — 포카리 히어로 카드 */}
         {!isLoading && activeFilter === 'all' && featured && (
-          <div className="px-4 pt-4 pb-3">
-            <div className="flex items-center justify-between mb-2.5">
-              <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Editor's Pick</p>
+          <div className="px-4 pt-5 pb-2">
+            <div className="flex items-center justify-between mb-3">
+              <p
+                className="text-[10px] font-black tracking-widest uppercase"
+                style={{ color: '#7ba4c7', letterSpacing: '0.15em' }}
+              >
+                ✦ Editor's Pick
+              </p>
               {featured.is_featured && (
-                <span className="text-[9px] font-bold text-point tracking-wider uppercase">Curated</span>
+                <span
+                  className="text-[9px] font-bold tracking-widest uppercase rounded-full px-2 py-0.5"
+                  style={{
+                    background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)',
+                    color: '#0369a1',
+                  }}
+                >
+                  Curated
+                </span>
               )}
             </div>
+
             <Link
               href={`/saunas/${featured.id}`}
-              className="group block relative h-44 w-full rounded-2xl overflow-hidden shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover active:scale-[0.99]"
+              className="group block relative h-52 w-full overflow-hidden transition-all duration-300 active:scale-[0.99]"
+              style={{ borderRadius: '1.25rem', boxShadow: '0 8px 32px rgba(14,165,233,0.18)' }}
             >
               {(featured.images?.[0] || featuredKakaoImage) ? (
                 <Image
                   src={featured.images?.[0] ?? featuredKakaoImage!}
                   alt={featured.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                   sizes="(max-width: 768px) 100vw, 680px"
                   priority
                 />
               ) : (
-                <div className="h-full w-full bg-gradient-to-br from-sauna-bg via-bg-main to-cold-bg" />
+                <div
+                  className="h-full w-full"
+                  style={{
+                    background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%)',
+                  }}
+                />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+
+              {/* 하단 그라디언트 오버레이 */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(to top, rgba(4,13,26,0.82) 0%, rgba(4,13,26,0.15) 55%, transparent 100%)',
+                }}
+              />
+
+              {/* 상단 뱃지 */}
+              <div className="absolute top-3.5 left-3.5">
+                <span
+                  className="text-[9px] font-black tracking-widest uppercase px-2.5 py-1 rounded-full"
+                  style={{
+                    background: 'rgba(255,255,255,0.18)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    color: 'rgba(255,255,255,0.9)',
+                  }}
+                >
+                  FEATURED
+                </span>
+              </div>
+
+              {/* 정보 영역 */}
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="text-[10px] font-bold text-white/60 mb-1 tracking-widest uppercase">Featured</p>
-                <p className="text-lg font-black text-white leading-tight">{featured.name}</p>
-                <div className="mt-1.5 flex items-center gap-2">
+                <p
+                  className="text-[18px] font-black text-white leading-tight mb-2"
+                  style={{ textShadow: '0 1px 8px rgba(0,0,0,0.4)' }}
+                >
+                  {featured.name}
+                </p>
+                <div className="flex items-center gap-2.5">
                   {featured.sauna_rooms && featured.sauna_rooms.length > 0 && (
-                    <span className="text-[12px] font-black text-orange-300">
+                    <span
+                      className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full"
+                      style={{
+                        background: 'rgba(249,115,22,0.25)',
+                        backdropFilter: 'blur(6px)',
+                        border: '1px solid rgba(249,115,22,0.4)',
+                        color: '#fed7aa',
+                      }}
+                    >
                       🔥 {Math.max(...featured.sauna_rooms.map((r) => r.temp))}°C
                     </span>
                   )}
                   {featured.cold_baths && featured.cold_baths.length > 0 && (
-                    <span className="text-[12px] font-black text-blue-300">
+                    <span
+                      className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full"
+                      style={{
+                        background: 'rgba(14,165,233,0.25)',
+                        backdropFilter: 'blur(6px)',
+                        border: '1px solid rgba(14,165,233,0.4)',
+                        color: '#bae6fd',
+                      }}
+                    >
                       ❄️ {Math.min(...featured.cold_baths.map((b) => b.temp))}°C
                     </span>
                   )}
                   {featured.avg_rating != null && (
-                    <span className="text-[12px] font-black text-yellow-300">
+                    <span
+                      className="flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full ml-auto"
+                      style={{
+                        background: 'rgba(245,158,11,0.25)',
+                        backdropFilter: 'blur(6px)',
+                        border: '1px solid rgba(245,158,11,0.3)',
+                        color: '#fde68a',
+                      }}
+                    >
                       ⭐ {featured.avg_rating.toFixed(1)}
                     </span>
                   )}
+                </div>
+              </div>
+
+              {/* 호버 시 오른쪽 화살표 */}
+              <div
+                className="absolute top-1/2 right-4 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              >
+                <div
+                  className="flex items-center justify-center w-8 h-8 rounded-full"
+                  style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(8px)' }}
+                >
+                  <BiChevronRight size={18} className="text-white" />
                 </div>
               </div>
             </Link>
@@ -215,16 +370,19 @@ export default function HomeClient() {
 
         {/* 섹션 헤더 */}
         {!isLoading && (
-          <div className="flex items-center justify-between px-4 pb-2.5">
-            <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">
-              {activeFilter === 'all' ? 'All Saunas' : FILTER_OPTIONS.find(f => f.id === activeFilter)?.label}
+          <div className="flex items-center justify-between px-5 py-3">
+            <p
+              className="text-[10px] font-black tracking-widest uppercase"
+              style={{ color: '#7ba4c7', letterSpacing: '0.15em' }}
+            >
+              {activeFilter === 'all' ? '✦ All Saunas' : FILTER_OPTIONS.find(f => f.id === activeFilter)?.label}
             </p>
-            <p className="text-[11px] text-text-muted">{filteredSaunas.length}곳</p>
+            <p className="text-[11px]" style={{ color: '#7ba4c7' }}>{filteredSaunas.length}곳</p>
           </div>
         )}
 
         {/* 2열 그리드 */}
-        <div className="px-4">
+        <div className="px-4 pb-2">
           <div className="grid grid-cols-2 gap-3">
             {isLoading
               ? Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)
@@ -237,10 +395,16 @@ export default function HomeClient() {
                 : (
                   <div className="col-span-2 flex flex-col items-center justify-center gap-3 py-16 text-center">
                     <span className="text-4xl">🧖</span>
-                    <p className="text-sm font-bold text-text-sub">해당 조건의 사우나가 없어요</p>
+                    <p className="text-sm font-bold" style={{ color: '#334e68' }}>
+                      해당 조건의 사우나가 없어요
+                    </p>
                     <button
                       onClick={() => setActiveFilter('all')}
-                      className="rounded-full bg-point px-5 py-2 text-xs font-bold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95"
+                      className="rounded-full px-5 py-2 text-xs font-bold text-white transition-all duration-200 active:scale-95"
+                      style={{
+                        background: 'linear-gradient(135deg, #0ea5e9, #0284c7)',
+                        boxShadow: '0 4px 16px rgba(14,165,233,0.35)',
+                      }}
                     >
                       전체 보기
                     </button>

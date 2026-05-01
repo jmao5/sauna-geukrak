@@ -11,15 +11,31 @@ import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 interface SaunaCardProps {
   sauna: SaunaSummaryDto
   className?: string
-  /** 'grid' = 카드형(홈), 'row' = 리스트 행(검색) */
   variant?: 'grid' | 'row'
 }
 
 function TempPill({ type, temp }: { type: 'sauna' | 'cold'; temp: number }) {
+  const isSauna = type === 'sauna'
   return (
-    <span className="flex items-center gap-0.5">
-      <span className="text-[10px]">{type === 'sauna' ? '🔥' : '❄️'}</span>
-      <span className={`temp-number text-[13px] font-black ${type === 'sauna' ? 'text-sauna' : 'text-cold'}`}>
+    <span
+      className="flex items-center gap-0.5 rounded-full px-1.5 py-0.5"
+      style={
+        isSauna
+          ? {
+              background: 'rgba(249,115,22,0.12)',
+              border: '1px solid rgba(249,115,22,0.2)',
+            }
+          : {
+              background: 'rgba(14,165,233,0.10)',
+              border: '1px solid rgba(14,165,233,0.2)',
+            }
+      }
+    >
+      <span className="text-[9px]">{isSauna ? '🔥' : '❄️'}</span>
+      <span
+        className="temp-number text-[11px]"
+        style={{ color: isSauna ? '#f97316' : '#0ea5e9' }}
+      >
         {temp}°
       </span>
     </span>
@@ -57,32 +73,57 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
     return (
       <Link
         href={`/saunas/${sauna.id}`}
-        className={`sauna-row flex items-center gap-3.5 px-4 py-3.5 transition-all duration-200 ${className}`}
+        className={`sauna-row flex items-center gap-4 px-5 py-4 transition-all duration-200 ${className}`}
       >
-        <div ref={observerRef} className="relative h-[60px] w-[60px] flex-shrink-0 overflow-hidden rounded-xl bg-bg-main shadow-sm">
+        {/* 썸네일 */}
+        <div
+          ref={observerRef}
+          className="relative flex-shrink-0 overflow-hidden"
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: '0.875rem',
+            border: '1px solid #e0f2fe',
+            boxShadow: '0 2px 8px rgba(14,165,233,0.08)',
+          }}
+        >
           {displayImage ? (
             <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="64px" />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
-              <span className="text-xl opacity-30">🧖</span>
+            <div
+              className="flex h-full w-full items-center justify-center"
+              style={{ background: 'linear-gradient(135deg, #e0f2fe, #bae6fd)' }}
+            >
+              <span className="text-xl" style={{ opacity: 0.4 }}>🧖</span>
             </div>
           )}
         </div>
+
+        {/* 텍스트 */}
         <div className="min-w-0 flex-1">
-          <p className="mb-0.5 truncate text-[13px] font-black text-text-main">{sauna.name}</p>
-          <p className="mb-2 truncate text-[11px] text-text-sub">{sauna.address}</p>
-          <div className="flex items-center gap-2">
+          <p className="mb-0.5 truncate text-[13px] font-black" style={{ color: '#0c1a2e' }}>
+            {sauna.name}
+          </p>
+          <p className="mb-2 truncate text-[11px]" style={{ color: '#7ba4c7' }}>
+            {sauna.address}
+          </p>
+          <div className="flex items-center gap-1.5 flex-wrap">
             {maxSaunaTemp !== null && <TempPill type="sauna" temp={maxSaunaTemp} />}
             {minColdTemp !== null && <TempPill type="cold" temp={minColdTemp} />}
             {price != null && price > 0 && (
-              <span className="text-[11px] text-text-muted">{price.toLocaleString()}원~</span>
+              <span className="text-[10px]" style={{ color: '#7ba4c7' }}>
+                {price.toLocaleString()}원~
+              </span>
             )}
             {avgRating != null && (
-              <span className="ml-auto text-[11px] font-bold text-yellow-500">⭐ {avgRating.toFixed(1)}</span>
+              <span className="ml-auto text-[10px] font-bold" style={{ color: '#f59e0b' }}>
+                ⭐ {avgRating.toFixed(1)}
+              </span>
             )}
           </div>
         </div>
-        <BiChevronRight size={18} className="flex-shrink-0 text-text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5" />
+
+        <BiChevronRight size={18} style={{ color: '#bae6fd', flexShrink: 0 }} />
       </Link>
     )
   }
@@ -93,48 +134,95 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
       href={`/saunas/${sauna.id}`}
       className={`sauna-card group block overflow-hidden ${className}`}
     >
-      <div ref={observerRef} className="relative h-32 w-full overflow-hidden bg-bg-main">
+      {/* 이미지 영역 */}
+      <div ref={observerRef} className="relative h-36 w-full overflow-hidden">
         {displayImage ? (
           <Image
             src={displayImage}
             alt={sauna.name}
             fill
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
             sizes="(max-width: 768px) 50vw, 340px"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
-            <span className="text-3xl opacity-20">🧖</span>
+          <div
+            className="flex h-full w-full items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 60%, #7dd3fc 100%)',
+            }}
+          >
+            <span className="text-3xl" style={{ opacity: 0.2 }}>🧖</span>
           </div>
         )}
+
+        {/* 온도 배지 */}
         {(maxSaunaTemp !== null || minColdTemp !== null) && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 backdrop-blur-sm">
-            {maxSaunaTemp !== null && <TempPill type="sauna" temp={maxSaunaTemp} />}
-            {maxSaunaTemp !== null && minColdTemp !== null && (
-              <span className="text-[10px] text-white/40">·</span>
+          <div
+            className="absolute bottom-2 right-2 flex items-center gap-1"
+            style={{
+              background: 'rgba(4,13,26,0.55)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: '999px',
+              padding: '3px 8px',
+              border: '1px solid rgba(186,230,253,0.15)',
+            }}
+          >
+            {maxSaunaTemp !== null && (
+              <span className="temp-number text-[11px]" style={{ color: '#fed7aa' }}>
+                🔥{maxSaunaTemp}°
+              </span>
             )}
-            {minColdTemp !== null && <TempPill type="cold" temp={minColdTemp} />}
+            {maxSaunaTemp !== null && minColdTemp !== null && (
+              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10 }}>·</span>
+            )}
+            {minColdTemp !== null && (
+              <span className="temp-number text-[11px]" style={{ color: '#bae6fd' }}>
+                ❄️{minColdTemp}°
+              </span>
+            )}
           </div>
         )}
       </div>
 
+      {/* 카드 바디 */}
       <div className="p-3">
-        <p className="mb-0.5 truncate text-[12px] font-black text-text-main">{sauna.name}</p>
-        <p className="truncate text-[10px] text-text-sub">{sauna.address}</p>
+        <p
+          className="mb-0.5 truncate text-[12px] font-black leading-tight"
+          style={{ color: '#0c1a2e' }}
+        >
+          {sauna.name}
+        </p>
+        <p className="truncate text-[10px]" style={{ color: '#7ba4c7' }}>
+          {sauna.address}
+        </p>
+
+        {/* 특징 태그 */}
         {features.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
+          <div className="mt-1.5 flex flex-wrap gap-1">
             {features.slice(0, 2).map((f) => (
-              <span key={f} className="rounded-md bg-bg-main px-1.5 py-0.5 text-[9px] font-bold text-text-muted border border-border-subtle">
+              <span
+                key={f}
+                className="text-[9px] font-bold rounded-md px-1.5 py-0.5"
+                style={{
+                  background: '#e0f2fe',
+                  color: '#0369a1',
+                  border: '1px solid #bae6fd',
+                }}
+              >
                 {f}
               </span>
             ))}
           </div>
         )}
+
+        {/* 별점 */}
         {avgRating != null && (
-          <p className="mt-1.5 text-[10px] font-bold text-yellow-500">
+          <p className="mt-1.5 text-[10px] font-bold" style={{ color: '#f59e0b' }}>
             ⭐ {avgRating.toFixed(1)}
             {reviewCount != null && reviewCount > 0 && (
-              <span className="ml-0.5 font-normal text-text-muted">({reviewCount})</span>
+              <span className="ml-0.5 font-normal" style={{ color: '#7ba4c7' }}>
+                ({reviewCount})
+              </span>
             )}
           </p>
         )}
