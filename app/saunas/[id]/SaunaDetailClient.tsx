@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -30,50 +30,133 @@ import type { InstagramMedia } from '@/types/sauna'
 
 // ── 내부 모형도 섹션 ─────────────────────────────────────────
 function FloorPlanSection({ images }: { images: string[] }) {
-  const [fullscreenUrl, setFullscreenUrl] = useState<string | null>(null)
+  const [current, setCurrent] = useState(0)
+  const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null)
+  const touchStartX = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
+  const MIN_SWIPE = 40
+
+  const prev = () => setCurrent((i) => (i - 1 + images.length) % images.length)
+  const next = () => setCurrent((i) => (i + 1) % images.length)
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    touchEndX.current = null
+  }
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX
+  }
+  const onTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return
+    const delta = touchStartX.current - touchEndX.current
+    if (Math.abs(delta) >= MIN_SWIPE) delta > 0 ? next() : prev()
+    touchStartX.current = null
+    touchEndX.current = null
+  }
+
+  // 전체화면에서도 스와이프
+  const fsStartX = useRef<number | null>(null)
+  const fsEndX = useRef<number | null>(null)
+  const onFsStart = (e: React.TouchEvent) => { fsStartX.current = e.touches[0].clientX; fsEndX.current = null }
+  const onFsMove  = (e: React.TouchEvent) => { fsEndX.current = e.touches[0].clientX }
+  const onFsEnd   = () => {
+    if (fsStartX.current === null || fsEndX.current === null) return
+    const delta = fsStartX.current - fsEndX.current
+    if (Math.abs(delta) >= MIN_SWIPE) {
+      const next = fullscreenIndex! + (delta > 0 ? 1 : -1)
+      setFullscreenIndex((next + images.length) % images.length)
+    }
+    fsStartX.current = null
+    fsEndX.current = null
+  }
 
   return (
     <>
-      <div className="space-y-2 p-4">
-        {images.map((url, i) => (
-          <div
-            key={url}
-            className="relative overflow-hidden rounded-xl border border-border-main bg-bg-main cursor-pointer"
-            onClick={() => setFullscreenUrl(url)}
-          >
-            <div className="absolute left-2 top-2 z-10 rounded-full bg-black/50 px-2 py-0.5">
-              <span className="text-[10px] font-black text-white">모형도 {i + 1}</span>
-            </div>
-            <img
-              src={url}
-              alt={`모형도 ${i + 1}`}
-              className="w-full object-contain"
-              style={{ maxHeight: '260px' }}
-            />
-            <div className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5">
-              <span className="text-[9px] text-white">눌러서 전체보기</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {fullscreenUrl && (
+      {/* 슬라이더 */}
+      <div className="relative select-none">
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setFullscreenUrl(null)}
+          className="relative overflow-hidden cursor-pointer"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onClick={() => setFullscreenIndex(current)}
         >
+          <img
+            src={images[current]}
+            alt={`모형도 ${current + 1}`}
+            className="w-full object-contain"
+            style={{ maxHeight: '260px' }}
+          />
+          {/* 눌러서 전체보기 힌트 */}
+          <div className="absolute bottom-2 right-2 rounded-full bg-black/40 px-2 py-0.5">
+            <span className="text-[9px] text-white">눌러서 전체보기</span>
+          </div>
+        </div>
+
+        {/* 인디케이터 + 카운트 */}
+        {images.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 py-2.5">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrent(i)}
+                className={`rounded-full transition-all ${
+                  i === current
+                    ? 'w-4 h-1.5 bg-point'
+                    : 'w-1.5 h-1.5 bg-border-strong'
+                }`}
+              />
+            ))}
+            <span className="ml-1 text-[10px] text-text-muted">{current + 1} / {images.length}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 전체화면 모달 */}
+      {fullscreenIndex !== null && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95"
+          onTouchStart={onFsStart}
+          onTouchMove={onFsMove}
+          onTouchEnd={onFsEnd}
+          onClick={() => setFullscreenIndex(null)}
+        >
+          {/* 닫기 */}
           <button
             type="button"
-            onClick={() => setFullscreenUrl(null)}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 text-xl font-bold"
+            onClick={() => setFullscreenIndex(null)}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-xl font-bold"
           >
             ✕
           </button>
+          {/* 카운트 */}
+          {images.length > 1 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1">
+              <span className="text-[11px] font-bold text-white">{fullscreenIndex + 1} / {images.length}</span>
+            </div>
+          )}
           <img
-            src={fullscreenUrl}
-            alt="모형도 전체보기"
-            className="max-h-full max-w-full rounded-xl object-contain"
+            src={images[fullscreenIndex]}
+            alt={`모형도 ${fullscreenIndex + 1}`}
+            className="max-h-full max-w-full object-contain"
             onClick={(e) => e.stopPropagation()}
           />
+          {/* 인디케이터 */}
+          {images.length > 1 && (
+            <div className="absolute bottom-6 flex items-center gap-1.5">
+              {images.map((_, i) => (
+                <div
+                  key={i}
+                  className={`rounded-full transition-all ${
+                    i === fullscreenIndex
+                      ? 'w-4 h-1.5 bg-white'
+                      : 'w-1.5 h-1.5 bg-white/30'
+                  }`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </>
