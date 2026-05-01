@@ -1,5 +1,5 @@
 export interface SaunaRoom {
-  type: '건식' | '습식' | '핀란드식' | string
+  type: '건식' | '습식' | '핀란드식' | '한증막' | '불가마' | string
   temp: number
   capacity: number
   has_tv: boolean
@@ -46,6 +46,13 @@ export interface Pricing {
   adult_day: number
   adult_night: number
   child: number
+}
+
+/** 인스타그램 릴스/피드 미디어 항목 */
+export interface InstagramMedia {
+  url: string          // 인스타그램 게시물 URL
+  type: 'reel' | 'post'
+  caption?: string     // 선택적 설명
 }
 
 /** 리뷰 작성자 */
@@ -106,6 +113,10 @@ export interface SaunaDto {
   contact: string
   parking: boolean
   images: string[]
+  /** 인스타그램 릴스/피드 URL 목록 */
+  instagram_media: InstagramMedia[]
+  /** 사우나 내부 모형도/도면 이미지 URL 목록 */
+  floor_plan_images: string[]
   created_at: string
 }
 

@@ -35,6 +35,8 @@ export const defaultForm = (): FormState => ({
   contact: '',
   parking: false,
   images: [],
+  instagram_media: [],
+  floor_plan_images: [],
 })
 
 export function useSaunaForm(initialData?: FormState | null) {

@@ -12,6 +12,8 @@ import {
 import toast from 'react-hot-toast'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
 import ImageUploader from '@/components/ui/ImageUploader'
+import InstagramMediaUploader from '@/components/ui/InstagramMediaUploader'
+import FloorPlanUploader from '@/components/ui/FloorPlanUploader'
 import { useSaunaForm, FormState } from '@/hooks/useSaunaForm'
 import {
   SectionCard, Toggle, NumberInput, TextInput,
@@ -205,6 +207,24 @@ function DetailFormStep({
         />
       </SectionCard>
 
+      {/* ── 내부 모형도 ── */}
+      <SectionCard title="내부 모형도" emoji="🗺️">
+        <FloorPlanUploader
+          images={form.floor_plan_images}
+          onChange={(urls) => onChange({ floor_plan_images: urls })}
+          maxCount={3}
+        />
+      </SectionCard>
+
+      {/* ── 인스타그램 미디어 ── */}
+      <SectionCard title="인스타그램" emoji="📸">
+        <InstagramMediaUploader
+          media={form.instagram_media}
+          onChange={(media) => onChange({ instagram_media: media })}
+          maxCount={10}
+        />
+      </SectionCard>
+
       {/* ── 사우나실 ── */}
       <SectionCard title="사우나실" emoji="🔥">
         <div className="space-y-3">
@@ -332,7 +352,7 @@ function DetailFormStep({
       <SectionCard title="한국 특화 정보" emoji="🇰🇷">
         <div className="space-y-3">
           <Toggle checked={form.kr_specific.has_jjimjilbang} onChange={(v) => onChange({ kr_specific: { ...form.kr_specific, has_jjimjilbang: v } })} label="🧖 찜질방 있음" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-[10px] font-bold text-text-sub">때밀이 요금 (남)</label>
               <input type="number" value={form.kr_specific.sesin_price_male || ''} onChange={(e) => onChange({ kr_specific: { ...form.kr_specific, sesin_price_male: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
@@ -423,7 +443,6 @@ export default function SaunaNewClient() {
       if (!user) throw new Error('로그인이 필요합니다')
       if (!form.name || !form.address) throw new Error('시설명과 주소를 입력해주세요')
       const result = await createSauna(form)
-      // Server Action은 throw 대신 결과 객체를 반환 — 에러 시 여기서 throw
       if (!result.ok) throw new Error(result.error)
       return result.data
     },

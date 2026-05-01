@@ -8,6 +8,8 @@ import { getSaunaById, updateSauna } from '@/app/actions/sauna.actions'
 import { SaunaDto, SaunaRoom, ColdBath } from '@/types/sauna'
 import { SectionCard, Toggle, NumberInput, TextInput } from '@/components/sauna/SaunaFormComponents'
 import ImageUploader from '@/components/ui/ImageUploader'
+import InstagramMediaUploader from '@/components/ui/InstagramMediaUploader'
+import FloorPlanUploader from '@/components/ui/FloorPlanUploader'
 import { BiChevronLeft, BiPlus, BiX, BiCheck } from 'react-icons/bi'
 import toast from 'react-hot-toast'
 import { useSaunaForm, FormState, defaultSaunaRoom, defaultColdBath } from '@/hooks/useSaunaForm'
@@ -64,6 +66,8 @@ export default function SaunaEditClient({ id }: { id: string }) {
         contact: sauna.contact ?? '',
         parking: sauna.parking ?? false,
         images: sauna.images ?? [],
+        instagram_media: sauna.instagram_media ?? [],
+        floor_plan_images: sauna.floor_plan_images ?? [],
       })
       setIsInitialized(true)
     }
@@ -77,7 +81,6 @@ export default function SaunaEditClient({ id }: { id: string }) {
     mutationFn: async (payload: FormState) => {
       if (!user) throw new Error('로그인이 필요합니다')
       const result = await updateSauna(id, payload)
-      // Server Action은 throw 대신 결과 객체를 반환 — 에러 시 여기서 throw
       if (!result.ok) throw new Error(result.error)
       return result.data
     },
@@ -154,6 +157,25 @@ export default function SaunaEditClient({ id }: { id: string }) {
             onChange={(urls) => onChange({ images: urls })}
             saunaId={id}
             maxCount={5}
+          />
+        </SectionCard>
+
+        {/* 내부 모형도 */}
+        <SectionCard title="내부 모형도" emoji="🗺️">
+          <FloorPlanUploader
+            images={form.floor_plan_images}
+            onChange={(urls) => onChange({ floor_plan_images: urls })}
+            saunaId={id}
+            maxCount={3}
+          />
+        </SectionCard>
+
+        {/* 인스타그램 미디어 */}
+        <SectionCard title="인스타그램" emoji="📸">
+          <InstagramMediaUploader
+            media={form.instagram_media}
+            onChange={(media) => onChange({ instagram_media: media })}
+            maxCount={10}
           />
         </SectionCard>
 
