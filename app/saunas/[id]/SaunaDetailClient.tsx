@@ -34,11 +34,13 @@ function FloorPlanSection({ images }: { images: string[] }) {
   const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null)
   const touchStartX = useRef<number | null>(null)
   const touchEndX = useRef<number | null>(null)
+  const isDragging = useRef(false)
   const MIN_SWIPE = 40
 
   const prev = () => setCurrent((i) => (i - 1 + images.length) % images.length)
   const next = () => setCurrent((i) => (i + 1) % images.length)
 
+  // 터치
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = null
@@ -54,20 +56,23 @@ function FloorPlanSection({ images }: { images: string[] }) {
     touchEndX.current = null
   }
 
-  // 전체화면에서도 스와이프
-  const fsStartX = useRef<number | null>(null)
-  const fsEndX = useRef<number | null>(null)
-  const onFsStart = (e: React.TouchEvent) => { fsStartX.current = e.touches[0].clientX; fsEndX.current = null }
-  const onFsMove  = (e: React.TouchEvent) => { fsEndX.current = e.touches[0].clientX }
-  const onFsEnd   = () => {
-    if (fsStartX.current === null || fsEndX.current === null) return
-    const delta = fsStartX.current - fsEndX.current
-    if (Math.abs(delta) >= MIN_SWIPE) {
-      const next = fullscreenIndex! + (delta > 0 ? 1 : -1)
-      setFullscreenIndex((next + images.length) % images.length)
-    }
-    fsStartX.current = null
-    fsEndX.current = null
+  // 마우스
+  const onMouseDown = (e: React.MouseEvent) => {
+    touchStartX.current = e.clientX
+    touchEndX.current = null
+    isDragging.current = false
+  }
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (touchStartX.current === null) return
+    touchEndX.current = e.clientX
+    if (Math.abs(e.clientX - touchStartX.current) > 5) isDragging.current = true
+  }
+  const onMouseUp = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return
+    const delta = touchStartX.current - touchEndX.current
+    if (Math.abs(delta) >= MIN_SWIPE) delta > 0 ? next() : prev()
+    touchStartX.current = null
+    touchEndX.current = null
   }
 
   return (
@@ -75,11 +80,15 @@ function FloorPlanSection({ images }: { images: string[] }) {
       {/* 슬라이더 */}
       <div className="relative select-none">
         <div
-          className="relative overflow-hidden cursor-pointer"
+          className="relative overflow-hidden cursor-grab active:cursor-grabbing"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          onClick={() => setFullscreenIndex(current)}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+          onClick={() => { if (!isDragging.current) setFullscreenIndex(current) }}
         >
           <img
             src={images[current]}
@@ -116,11 +125,24 @@ function FloorPlanSection({ images }: { images: string[] }) {
       {/* 전체화면 모달 */}
       {fullscreenIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95"
-          onTouchStart={onFsStart}
-          onTouchMove={onFsMove}
-          onTouchEnd={onFsEnd}
-          onClick={() => setFullscreenIndex(null)}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 cursor-grab active:cursor-grabbing select-none"
+          onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; touchEndX.current = null }}
+          onTouchMove={(e) => { touchEndX.current = e.touches[0].clientX }}
+          onTouchEnd={() => {
+            if (touchStartX.current === null || touchEndX.current === null) return
+            const delta = touchStartX.current - touchEndX.current
+            if (Math.abs(delta) >= MIN_SWIPE) setFullscreenIndex((fullscreenIndex + (delta > 0 ? 1 : -1) + images.length) % images.length)
+            touchStartX.current = null; touchEndX.current = null
+          }}
+          onMouseDown={(e) => { touchStartX.current = e.clientX; touchEndX.current = null; isDragging.current = false }}
+          onMouseMove={(e) => { if (touchStartX.current === null) return; touchEndX.current = e.clientX; if (Math.abs(e.clientX - touchStartX.current) > 5) isDragging.current = true }}
+          onMouseUp={() => {
+            if (touchStartX.current === null || touchEndX.current === null) { setFullscreenIndex(null); return }
+            const delta = touchStartX.current - touchEndX.current
+            if (Math.abs(delta) >= MIN_SWIPE) setFullscreenIndex((fullscreenIndex + (delta > 0 ? 1 : -1) + images.length) % images.length)
+            else if (!isDragging.current) setFullscreenIndex(null)
+            touchStartX.current = null; touchEndX.current = null
+          }}
         >
           {/* 닫기 */}
           <button
