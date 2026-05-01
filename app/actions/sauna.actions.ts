@@ -84,9 +84,9 @@ export async function createSauna(
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
     // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
-    const { data: userData } = await supabase
-      .from('users').select('role').eq('id', session.user.id).single()
-    if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
+    // const { data: userData } = await supabase
+    //   .from('users').select('role').eq('id', session.user.id).single()
+    // if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
 
     // 이미지 없으면 카카오 이미지 1회 시도 (등록 시에만 실행)
     let finalImages = payload.images ?? []
@@ -139,11 +139,6 @@ export async function updateSauna(
     // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
-
-    // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
-    const { data: userData } = await supabase
-      .from('users').select('role').eq('id', session.user.id).single()
-    if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
 
     const { data, error } = await supabase
       .from('saunas')
