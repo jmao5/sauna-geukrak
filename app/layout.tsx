@@ -135,10 +135,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased overflow-hidden">
-        <Script
+        {/* <Script
           src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
           strategy="lazyOnload"
-        />
+        /> */}
         {/* Service Worker 등록 */}
         <Script id="sw-register" strategy="afterInteractive">
           {`

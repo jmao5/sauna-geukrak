@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
+// import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
 import { getSaunas } from '@/app/actions/sauna.actions'
 import { useRouter } from 'next/navigation'
@@ -158,8 +158,9 @@ export default function MapClient() {
     let attempts = 0
     const check = setInterval(() => {
       attempts++
-      if (window.kakao?.maps) { window.kakao.maps.load(() => setIsLoaded(true)); clearInterval(check) }
-      else if (attempts > 50) { clearInterval(check); setLoadError(true) }
+      // if (window.kakao?.maps) { window.kakao.maps.load(() => setIsLoaded(true)); clearInterval(check) }
+      // else 
+      if (attempts > 50) { clearInterval(check); setLoadError(true) }
     }, 100)
     return () => clearInterval(check)
   }, [])
@@ -189,7 +190,7 @@ export default function MapClient() {
     return true
   })
 
-  const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
+  const handleCenterChanged = useCallback((map: any) => {
     const lat = map.getCenter().getLat()
     const lng = map.getCenter().getLng()
     setCenter({ lat, lng })
@@ -277,62 +278,8 @@ export default function MapClient() {
       </div>
 
       {/* 지도 */}
-      <div className="absolute inset-0">
-        {(!isLoaded || isLoading) ? (
-          <div className="flex h-full items-center justify-center bg-bg-main">
-            <Loading />
-          </div>
-        ) : (
-          <Map
-            center={center}
-            onCenterChanged={handleCenterChanged}
-            style={{ width: '100%', height: '100%' }}
-            level={6}
-          >
-            {filteredSaunas.map((sauna) => (
-              <div key={sauna.id}>
-                {/* 기존 파비콘 마커 */}
-                <MapMarker
-                  position={{ lat: sauna.latitude, lng: sauna.longitude }}
-                  image={{
-                    src: '/favicon.ico',
-                    size: { width: 26, height: 26 },
-                    options: { offset: { x: 13, y: 26 } },
-                  }}
-                  onMouseOver={() => setHoveredMarkerId(sauna.id)}
-                  onMouseOut={() => setHoveredMarkerId(null)}
-                  onClick={() => handleMarkerClick(sauna)}
-                />
-                {/* 말풍선 — 모바일은 항상 표시, 데스크탑은 hover 시 표시 */}
-                <CustomOverlayMap
-                  position={{ lat: sauna.latitude, lng: sauna.longitude }}
-                  yAnchor={2.2} xAnchor={0.5}
-                  zIndex={hoveredMarkerId === sauna.id || selectedSauna?.id === sauna.id ? 20 : 10}
-                >
-                  <div className={`relative whitespace-nowrap rounded-xl border border-border-main bg-bg-sub px-3 py-2 text-[11px] font-black text-text-main shadow-card transition-opacity duration-200 ${
-                    isMobile || hoveredMarkerId === sauna.id || selectedSauna?.id === sauna.id
-                      ? 'opacity-100'
-                      : 'opacity-0 pointer-events-none'
-                  }`}>
-                    {sauna.name}
-                    {sauna.sauna_rooms?.length > 0 && (
-                      <span className="ml-1.5 text-sauna">
-                        {Math.max(...sauna.sauna_rooms.map((r) => r.temp))}°
-                      </span>
-                    )}
-                    {sauna.cold_baths?.length > 0 && (
-                      <span className="ml-1 text-cold">
-                        {Math.min(...sauna.cold_baths.map((b) => b.temp))}°
-                      </span>
-                    )}
-                    {/* 말풍선 꼬리 */}
-                    <div className="absolute bottom-[-5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-border-main bg-bg-sub" />
-                  </div>
-                </CustomOverlayMap>
-              </div>
-            ))}
-          </Map>
-        )}
+      <div className="absolute inset-0 flex items-center justify-center bg-bg-main">
+        <p className="text-text-muted font-bold">지도 기능이 일시적으로 비활성화 되었습니다.</p>
       </div>
 
       {/* 이 장소에서 재검색 */}

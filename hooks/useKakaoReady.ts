@@ -8,39 +8,39 @@ import { useEffect, useState } from 'react'
  * 이 훅은 그 초기화를 보장하고 완료 여부를 반환합니다.
  */
 export function useKakaoReady(): { isReady: boolean; isError: boolean } {
-  const [isReady, setIsReady] = useState(false)
-  const [isError, setIsError] = useState(false)
+  // const [isReady, setIsReady] = useState(false)
+  // const [isError, setIsError] = useState(false)
 
-  useEffect(() => {
-    // 이미 초기화 완료된 경우 바로 반환
-    if (window.kakao?.maps?.services) {
-      setIsReady(true)
-      return
-    }
+  // useEffect(() => {
+  //   // 이미 초기화 완료된 경우 바로 반환
+  //   if (window.kakao?.maps?.services) {
+  //     setIsReady(true)
+  //     return
+  //   }
 
-    let attempts = 0
-    const MAX_ATTEMPTS = 100 // 최대 10초 대기
+  //   let attempts = 0
+  //   const MAX_ATTEMPTS = 100 // 최대 10초 대기
 
-    const check = setInterval(() => {
-      attempts++
+  //   const check = setInterval(() => {
+  //     attempts++
 
-      if (window.kakao?.maps) {
-        // SDK는 로드됐으나 autoload=false라 아직 초기화 안 된 경우
-        window.kakao.maps.load(() => {
-          setIsReady(true)
-        })
-        clearInterval(check)
-        return
-      }
+  //     if (window.kakao?.maps) {
+  //       // SDK는 로드됐으나 autoload=false라 아직 초기화 안 된 경우
+  //       window.kakao.maps.load(() => {
+  //         setIsReady(true)
+  //       })
+  //       clearInterval(check)
+  //       return
+  //     }
 
-      if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(check)
-        setIsError(true)
-      }
-    }, 100)
+  //     if (attempts >= MAX_ATTEMPTS) {
+  //       clearInterval(check)
+  //       setIsError(true)
+  //     }
+  //   }, 100)
 
-    return () => clearInterval(check)
-  }, [])
+  //   return () => clearInterval(check)
+  // }, [])
 
-  return { isReady, isError }
+  return { isReady: false, isError: true }
 }
