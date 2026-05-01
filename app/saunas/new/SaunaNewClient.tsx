@@ -58,12 +58,6 @@ function KakaoSearchStep({
     setIsSearching(true)
     setNoResult(false)
 
-    // 카카오 지도 API 비활성화
-    setIsSearching(false)
-    setNoResult(true)
-    toast.error('지도 검색 기능이 일시적으로 비활성화되었습니다.')
-
-    /*
     const ps = new window.kakao.maps.services.Places()
     ps.keywordSearch(
       query + ' 사우나',
@@ -79,7 +73,6 @@ function KakaoSearchStep({
       },
       { size: 15 }
     )
-    */
   }
 
   return (
