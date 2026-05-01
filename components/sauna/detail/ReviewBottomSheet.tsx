@@ -186,10 +186,10 @@ export function ReviewBottomSheet({
               onChange={(e) => setContent(e.target.value)}
               placeholder="오늘의 극락 한 줄 기록..."
               rows={3}
-              maxLength={200}
+              maxLength={500}
               className="w-full resize-none rounded-xl border border-border-main bg-bg-main px-3.5 py-3 text-[13px] text-text-main placeholder:text-text-muted outline-none transition-all duration-200 focus:border-point focus:ring-2 focus:ring-point/20"
             />
-            <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/200</p>
+            <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/500</p>
           </div>
 
           {/* 저장 버튼 */}

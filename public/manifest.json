@@ -1,6 +1,6 @@
 {
   "name": "사우나 극락",
-  "short_name": "극락",
+  "short_name": "사우나극락",
   "description": "전국의 사우나·찜질방을 발견하고 기록하는 서비스",
   "start_url": "/",
   "display": "standalone",
