@@ -40,7 +40,7 @@ function FullscreenModal({ url, onClose }: { url: string; onClose: () => void })
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+        className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
       >
         <BiX size={22} />
       </button>
@@ -84,7 +84,7 @@ export default function FloorPlanUploader({
     if (selected.length === 0) return
 
     const imageCompression = (await import('browser-image-compression')).default
-    const options = { maxSizeMB: 0.5, maxWidthOrHeight: 3000, useWebWorker: true }
+    const options = { maxSizeMB: 0.25, maxWidthOrHeight: 3000, useWebWorker: true }
 
     const previews = selected.map((file) => ({
       file,
@@ -99,16 +99,21 @@ export default function FloorPlanUploader({
     try {
       const compressed = await Promise.all(
         previews.map(async ({ file }) => {
-          try { return await imageCompression(file, options) }
-          catch { return file }
-        })
+          try {
+            return await imageCompression(file, options)
+          } catch {
+            return file
+          }
+        }),
       )
 
       const oversized = compressed.filter((f) => f.size > 10 * 1024 * 1024)
       if (oversized.length > 0) {
         toast.error(`${oversized.length}개 파일이 압축 후에도 10MB를 초과합니다`)
         previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
-        setPending((prev) => prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)))
+        setPending((prev) =>
+          prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)),
+        )
         return
       }
 
@@ -119,14 +124,14 @@ export default function FloorPlanUploader({
 
       previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
       setPending((prev) =>
-        prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl))
+        prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)),
       )
       onChange([...images, ...publicUrls])
       toast.success('모형도가 업로드됐어요 🗺️')
     } catch (e) {
       previews.forEach((p) => URL.revokeObjectURL(p.previewUrl))
       setPending((prev) =>
-        prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl))
+        prev.filter((p) => !previews.some((pv) => pv.previewUrl === p.previewUrl)),
       )
       toast.error(e instanceof Error ? e.message : '업로드 중 오류가 발생했습니다')
     }
@@ -135,11 +140,17 @@ export default function FloorPlanUploader({
   const handleDelete = async (url: string, index: number) => {
     onChange(images.filter((_, i) => i !== index))
     if (url.includes('supabase')) {
-      try { await deleteImageAction(url) } catch { /* 고아 파일은 나중에 정리 */ }
+      try {
+        await deleteImageAction(url)
+      } catch {
+        /* 고아 파일은 나중에 정리 */
+      }
     }
   }
 
-  const handleDragStart = (index: number) => { dragIndex.current = index }
+  const handleDragStart = (index: number) => {
+    dragIndex.current = index
+  }
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
     if (dragIndex.current === null || dragIndex.current === index) return
@@ -149,18 +160,19 @@ export default function FloorPlanUploader({
     dragIndex.current = index
     onChange(reordered)
   }
-  const handleDragEnd = () => { dragIndex.current = null }
+  const handleDragEnd = () => {
+    dragIndex.current = null
+  }
 
   return (
     <>
       <div className="space-y-3">
-
         {/* 안내 배너 */}
         <div className="flex items-start gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
-          <MdOutlineMap size={15} className="text-blue-500 flex-shrink-0 mt-0.5" />
+          <MdOutlineMap size={15} className="mt-0.5 flex-shrink-0 text-blue-500" />
           <div>
-            <p className="text-[11px] font-bold text-text-main">내부 모형도 · 도면 등록</p>
-            <p className="mt-0.5 text-[10px] text-text-sub">
+            <p className="text-text-main text-[11px] font-bold">내부 모형도 · 도면 등록</p>
+            <p className="text-text-sub mt-0.5 text-[10px]">
               사우나 내부 구조를 한눈에 볼 수 있는 평면도나 안내도를 등록하세요. 최대 {maxCount}장
             </p>
           </div>
@@ -175,15 +187,15 @@ export default function FloorPlanUploader({
               onDragStart={() => handleDragStart(i)}
               onDragOver={(e) => handleDragOver(e, i)}
               onDragEnd={handleDragEnd}
-              className="group relative overflow-hidden rounded-xl border border-border-main bg-bg-main"
+              className="group border-border-main bg-bg-main relative overflow-hidden rounded-xl border"
             >
               {/* 순서 배지 */}
-              <div className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5">
+              <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5">
                 <span className="text-[10px] font-black text-white">모형도 {i + 1}</span>
               </div>
 
               {/* 드래그 핸들 */}
-              <div className="absolute right-10 top-2 z-10 rounded-full bg-black/40 p-1 text-white opacity-0 transition group-hover:opacity-100">
+              <div className="absolute top-2 right-10 z-10 rounded-full bg-black/40 p-1 text-white opacity-0 transition group-hover:opacity-100">
                 <MdDragIndicator size={14} />
               </div>
 
@@ -191,7 +203,7 @@ export default function FloorPlanUploader({
               <button
                 type="button"
                 onClick={() => setFullscreenUrl(url)}
-                className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70 active:scale-90"
+                className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70 active:scale-90"
               >
                 <BiExpand size={14} />
               </button>
@@ -208,7 +220,7 @@ export default function FloorPlanUploader({
               <button
                 type="button"
                 onClick={() => handleDelete(url, i)}
-                className="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-danger/90 px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-90"
+                className="bg-danger/90 absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold text-white transition active:scale-90"
               >
                 <BiX size={12} />
                 삭제
@@ -220,7 +232,7 @@ export default function FloorPlanUploader({
           {pending.map((item) => (
             <div
               key={item.previewUrl}
-              className="relative overflow-hidden rounded-xl border border-border-main bg-bg-main"
+              className="border-border-main bg-bg-main relative overflow-hidden rounded-xl border"
             >
               <img
                 src={item.previewUrl}
@@ -229,8 +241,8 @@ export default function FloorPlanUploader({
                 style={{ maxHeight: '260px' }}
               />
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-point/30 border-t-point" />
-                <p className="text-[11px] font-bold text-text-sub">업로드 중...</p>
+                <div className="border-point/30 border-t-point h-8 w-8 animate-spin rounded-full border-2" />
+                <p className="text-text-sub text-[11px] font-bold">업로드 중...</p>
               </div>
             </div>
           ))}
@@ -241,7 +253,7 @@ export default function FloorPlanUploader({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-400/40 py-4 text-xs font-bold text-blue-500/80 transition active:scale-[0.98] hover:border-blue-400/60 hover:bg-blue-500/5"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-400/40 py-4 text-xs font-bold text-blue-500/80 transition hover:border-blue-400/60 hover:bg-blue-500/5 active:scale-[0.98]"
           >
             <BiPlus size={18} />
             모형도 이미지 추가
@@ -249,9 +261,11 @@ export default function FloorPlanUploader({
         )}
 
         {/* 카운트 */}
-        <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+        <div className="text-text-muted flex items-center gap-1.5 text-[11px]">
           <BiImageAlt size={13} />
-          <span>{images.length + pending.length}/{maxCount}장 · 드래그로 순서 변경 · 클릭하면 전체보기</span>
+          <span>
+            {images.length + pending.length}/{maxCount}장 · 드래그로 순서 변경 · 클릭하면 전체보기
+          </span>
         </div>
       </div>
 
@@ -268,7 +282,9 @@ export default function FloorPlanUploader({
         multiple
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
-        onClick={(e) => { (e.target as HTMLInputElement).value = '' }}
+        onClick={(e) => {
+          ;(e.target as HTMLInputElement).value = ''
+        }}
       />
     </>
   )
