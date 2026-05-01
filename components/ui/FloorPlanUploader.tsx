@@ -14,7 +14,7 @@
 
 import { useRef, useState } from 'react'
 import { BiPlus, BiX, BiExpand, BiImageAlt } from 'react-icons/bi'
-import { MdDragIndicator, MdOutlineFloorplan } from 'react-icons/md'
+import { MdDragIndicator, MdOutlineMap } from 'react-icons/md'
 import { uploadFloorPlanAction, deleteImageAction } from '@/app/actions/storage.actions'
 import toast from 'react-hot-toast'
 
@@ -149,7 +149,7 @@ export default function FloorPlanUploader({
 
         {/* 안내 배너 */}
         <div className="flex items-start gap-2 rounded-xl border border-blue-500/20 bg-blue-500/5 px-3 py-2.5">
-          <MdOutlineFloorplan size={15} className="text-blue-500 flex-shrink-0 mt-0.5" />
+          <MdOutlineMap size={15} className="text-blue-500 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-[11px] font-bold text-text-main">내부 모형도 · 도면 등록</p>
             <p className="mt-0.5 text-[10px] text-text-sub">
