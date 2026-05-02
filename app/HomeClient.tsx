@@ -29,10 +29,10 @@ const PAGE_SIZE = 20
 function CardSkeleton() {
   return (
     <div className="sauna-card">
-      <Skeleton className="skeleton-shimmer h-36 w-full" style={{ borderRadius: 0 }} />
+      <Skeleton className="skeleton-shimmer w-full" height={120} variant="rect" />
       <div className="p-3 space-y-2">
-        <Skeleton className="skeleton-shimmer h-3 w-3/4 rounded-sm" />
-        <Skeleton className="skeleton-shimmer h-2.5 w-1/2 rounded-sm" />
+        <Skeleton className="skeleton-shimmer h-3 w-3/4" variant="text" />
+        <Skeleton className="skeleton-shimmer h-2.5 w-1/2" variant="text" />
       </div>
     </div>
   )
@@ -108,14 +108,12 @@ export default function HomeClient() {
         {/* 로고 + 지도 */}
         <div className="flex items-end justify-between px-5 pt-7 pb-5">
           <div>
-            {/* 브랜드 라벨 */}
             <p
               className="mb-1.5 text-[9px] font-black tracking-[0.25em] uppercase"
               style={{ color: 'var(--point-color)' }}
             >
               Korea Sauna Guide
             </p>
-            {/* 타이틀 — 크고 무겁게, 장식 없이 */}
             <h1
               className="font-juache leading-none"
               style={{
@@ -160,16 +158,13 @@ export default function HomeClient() {
             }}
           >
             <BiSearch size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-            <span
-              className="text-[13px]"
-              style={{ color: 'var(--text-muted)' }}
-            >
+            <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>
               이름, 지역으로 검색
             </span>
           </Link>
         </div>
 
-        {/* 필터 칩 — 이모지 없이, 타이포만 */}
+        {/* 필터 칩 */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide px-5 pb-4">
           {FILTER_OPTIONS.map((opt) => {
             const isActive = activeFilter === opt.id
@@ -205,7 +200,7 @@ export default function HomeClient() {
           ╚════════════════════════════════════╝ */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
 
-        {/* 피처드 — 큰 사진 + 텍스트, 장식 없음 */}
+        {/* 피처드 */}
         {!isLoading && activeFilter === 'all' && featured && (() => {
           const img = featured.images?.[0] ?? featuredKakaoImage
           const maxTemp = featured.sauna_rooms?.length
@@ -221,7 +216,6 @@ export default function HomeClient() {
               className="group block"
               style={{ borderBottom: '1px solid var(--border-main)' }}
             >
-              {/* 이미지 — 풀블리드 */}
               <div
                 className="relative w-full overflow-hidden"
                 style={{ height: 220, background: 'var(--bg-sub)' }}
@@ -236,15 +230,11 @@ export default function HomeClient() {
                     priority
                   />
                 ) : (
-                  <div
-                    className="h-full w-full flex items-center justify-center"
-                    style={{ background: 'var(--bg-sub)' }}
-                  >
+                  <div className="flex h-full w-full items-center justify-center">
                     <span style={{ fontSize: 48, opacity: 0.08 }}>♨</span>
                   </div>
                 )}
 
-                {/* 오버레이 — 하단만, 최소한으로 */}
                 <div
                   className="absolute inset-x-0 bottom-0"
                   style={{
@@ -253,14 +243,11 @@ export default function HomeClient() {
                   }}
                 />
 
-                {/* 온도 — 이미지 안 좌하단, 심플하게 */}
-                <div
-                  className="absolute bottom-3 left-4 flex items-baseline gap-3"
-                >
+                <div className="absolute bottom-3 left-4 flex items-baseline gap-3">
                   {maxTemp !== null && (
                     <span
                       className="temp-number"
-                      style={{ fontSize: 22, color: '#fff' }}
+                      style={{ fontSize: 22, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                     >
                       {maxTemp}°
                     </span>
@@ -268,7 +255,7 @@ export default function HomeClient() {
                   {minTemp !== null && (
                     <span
                       className="temp-number"
-                      style={{ fontSize: 22, color: 'var(--point-color)', filter: 'brightness(1.8)' }}
+                      style={{ fontSize: 22, color: '#90c8ff', textShadow: '0 1px 4px rgba(0,0,0,0.5)' }}
                     >
                       {minTemp}°
                     </span>
@@ -276,12 +263,11 @@ export default function HomeClient() {
                 </div>
               </div>
 
-              {/* 텍스트 바디 — 깔끔한 여백 */}
               <div className="px-5 py-4" style={{ background: 'var(--bg-card)' }}>
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p
-                      className="text-[18px] font-black leading-tight tracking-tight truncate"
+                      className="text-[18px] font-black leading-tight truncate"
                       style={{ color: 'var(--text-main)', letterSpacing: '-0.02em' }}
                     >
                       {featured.name}
@@ -357,7 +343,6 @@ export default function HomeClient() {
           </div>
         </div>
 
-        {/* 무한 스크롤 */}
         <div ref={sentinelRef} className="h-10 flex items-center justify-center">
           {isFetchingNextPage && (
             <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
