@@ -1,143 +1,137 @@
-/* 1. Tailwind v4 필수 임포트 */
+/* ═══════════════════════════════════════════════════
+   globals.css  —  사우나 극락
+   디자인 철학: 흰 종이 + 먹 + 파랑 하나
+   포카리스웨트 광고처럼: 장식 없음, 여백이 청량함
+═══════════════════════════════════════════════════ */
 @import "tailwindcss";
 
-/* ------------------------------------------------------------ */
-/* 테마 설정 */
-/* ------------------------------------------------------------ */
+/* ── @theme 브리지 ─────────────────────────────── */
 @theme {
   --font-pretendard: var(--font-pretendard);
   --font-juache: var(--font-juache);
 
-  /* Semantic Colors */
-  --color-bg-main: var(--bg-main);
-  --color-bg-sub: var(--bg-sub);
-  --color-bg-card: var(--bg-card);
-  --color-bg-elevated: var(--bg-elevated);
-  --color-text-main: var(--text-main);
-  --color-text-sub: var(--text-sub);
-  --color-text-muted: var(--text-muted);
-  --color-point: var(--point-color);
-  --color-point-hover: var(--point-hover);
-  --color-point-ring: var(--point-ring);
-  --color-border-main: var(--border-main);
+  --color-bg-main:      var(--bg-main);
+  --color-bg-sub:       var(--bg-sub);
+  --color-bg-card:      var(--bg-card);
+  --color-bg-elevated:  var(--bg-elevated);
+
+  --color-text-main:    var(--text-main);
+  --color-text-sub:     var(--text-sub);
+  --color-text-muted:   var(--text-muted);
+
+  --color-point:        var(--point-color);
+  --color-point-hover:  var(--point-hover);
+  --color-point-ring:   var(--point-ring);
+
+  --color-border-main:   var(--border-main);
   --color-border-subtle: var(--border-subtle);
   --color-border-strong: var(--border-strong);
 
-  /* Sauna 도메인 전용 컬러 */
-  --color-sauna: var(--sauna-color);
-  --color-sauna-bg: var(--sauna-bg);
+  --color-sauna:      var(--sauna-color);
+  --color-sauna-bg:   var(--sauna-bg);
   --color-sauna-text: var(--sauna-text);
-  --color-cold: var(--cold-color);
-  --color-cold-bg: var(--cold-bg);
-  --color-cold-text: var(--cold-text);
+  --color-cold:       var(--cold-color);
+  --color-cold-bg:    var(--cold-bg);
+  --color-cold-text:  var(--cold-text);
 
-  /* Colors - Status */
-  --color-danger: #ef4444;
-  --color-danger-hover: #dc2626;
-  --color-danger-ring: #fca5a5;
-  --color-success: #10b981;
-  --color-success-hover: #059669;
-  --color-success-ring: #6ee7b7;
-  --color-warning: #f59e0b;
-  --color-warning-hover: #d97706;
-  --color-warning-ring: #fcd34d;
+  --color-danger:       #d32f2f;
+  --color-danger-hover: #b71c1c;
+  --color-danger-ring:  #ef9a9a;
+  --color-success:      #2e7d32;
+  --color-success-hover:#1b5e20;
+  --color-success-ring: #a5d6a7;
+  --color-warning:      #e65100;
+  --color-warning-hover:#bf360c;
+  --color-warning-ring: #ffcc80;
 
-  /* Colors - Misc */
-  --color-gold: #f59e0b;
-  --color-silver: #94a3b8;
-  --color-bronze: #92400e;
-  --color-disabled: #94a3b8;
-  --color-confirm: #10b981;
-  --color-info: #38bdf8;
+  --color-gold:     #b8860b;
+  --color-silver:   #607d8b;
+  --color-bronze:   #6d4c41;
+  --color-disabled: #9e9e9e;
+  --color-confirm:  #2e7d32;
+  --color-info:     #1565c0;
 
-  /* Shadows — 얕고 투명한 물빛 그림자 */
-  --shadow-nav: 0px -1px 0px 0px rgba(186,230,253,0.5), 0px -8px 24px rgba(14,165,233,0.06);
-  --shadow-card: 0px 2px 8px rgba(14,165,233,0.08), 0px 1px 2px rgba(14,165,233,0.04);
-  --shadow-card-hover: 0px 8px 32px rgba(14,165,233,0.18), 0px 2px 8px rgba(14,165,233,0.10);
-  --shadow-bottom: 0px 1px 0px 0px rgba(186,230,253,0.6);
+  /* 그림자 — 라인만 */
+  --shadow-nav:       0 -1px 0 0 var(--border-main);
+  --shadow-card:      none;
+  --shadow-card-hover:0 0 0 2px var(--point-color);
+  --shadow-bottom:    0 1px 0 0 var(--border-subtle);
 
-  /* Z-Index */
-  --z-index-navbar: 50;
-  --z-index-bottomSheet: 100;
-  --z-index-toast: 110;
-  --z-index-pwaInstallBanner: 120;
+  --z-index-navbar:          50;
+  --z-index-bottomSheet:    100;
+  --z-index-toast:          110;
+  --z-index-pwaInstallBanner:120;
 }
 
-/* ------------------------------------------------------------ */
-/* 전역 변수 — 포카리스웨트 청량 팔레트 */
-/* ------------------------------------------------------------ */
+/* ── 라이트 ─────────────────────────────────────── */
 :root {
-  /* 순백 + 하늘빛 베이스 */
-  --bg-main: #f0f9ff;
-  --bg-sub: #ffffff;
-  --bg-card: #ffffff;
+  /* 순백 종이 */
+  --bg-main:     #ffffff;
+  --bg-sub:      #f5f5f5;
+  --bg-card:     #ffffff;
   --bg-elevated: #ffffff;
 
-  --text-main: #0c1a2e;
-  --text-sub: #334e68;
-  --text-muted: #7ba4c7;
+  /* 먹색 텍스트 */
+  --text-main:  #111111;
+  --text-sub:   #555555;
+  --text-muted: #999999;
 
-  /* 포인트: 선명한 스카이 블루 */
-  --point-color: #0ea5e9;
-  --point-hover: #0284c7;
-  --point-ring: #7dd3fc;
+  /* 포카리 블루 — 이것 하나만 */
+  --point-color: #1055d4;
+  --point-hover: #0d44b0;
+  --point-ring:  #90aef5;
 
-  --border-main: #bae6fd;
-  --border-subtle: #e0f2fe;
-  --border-strong: #7dd3fc;
+  /* 테두리 — 연필 선 */
+  --border-main:   #e0e0e0;
+  --border-subtle: #f0f0f0;
+  --border-strong: #bdbdbd;
 
-  /* 사우나 (따뜻한 오렌지) */
-  --sauna-color: #f97316;
-  --sauna-bg: #fff7ed;
-  --sauna-text: #c2410c;
+  /* 사우나 열기 */
+  --sauna-color: #d84315;
+  --sauna-bg:    #fff3ef;
+  --sauna-text:  #bf360c;
 
-  /* 냉탕 (전기 블루) */
-  --cold-color: #0ea5e9;
-  --cold-bg: #e0f2fe;
-  --cold-text: #0369a1;
+  /* 냉탕 = 포인트 컬러 그대로 */
+  --cold-color: #1055d4;
+  --cold-bg:    #eff4ff;
+  --cold-text:  #0d44b0;
 
-  @media screen and (max-width: 320px) {
-    font-size: 14px;
-  }
+  @media screen and (max-width: 320px) { font-size: 14px; }
 }
 
-/* ------------------------------------------------------------ */
-/* 다크 모드 — 深夜의 수영장 */
-/* ------------------------------------------------------------ */
+/* ── 다크 ─────────────────────────────────────── */
 .dark {
-  --bg-main: #040d1a;
-  --bg-sub: #071425;
-  --bg-card: #0d2137;
-  --bg-elevated: #122840;
+  --bg-main:     #0a0a0a;
+  --bg-sub:      #161616;
+  --bg-card:     #111111;
+  --bg-elevated: #1c1c1c;
 
-  --text-main: #e0f2fe;
-  --text-sub: #7dd3fc;
-  --text-muted: #2d6ea0;
+  --text-main:  #f5f5f5;
+  --text-sub:   #aaaaaa;
+  --text-muted: #555555;
 
-  --point-color: #38bdf8;
-  --point-hover: #7dd3fc;
-  --point-ring: #0ea5e9;
+  --point-color: #4d82f5;
+  --point-hover: #6b99f7;
+  --point-ring:  #1055d4;
 
-  --border-main: #0f3352;
-  --border-subtle: #081e36;
-  --border-strong: #1e5a80;
+  --border-main:   #2a2a2a;
+  --border-subtle: #1e1e1e;
+  --border-strong: #404040;
 
-  --sauna-color: #fb923c;
-  --sauna-bg: #1a0a00;
-  --sauna-text: #fb923c;
+  --sauna-color: #ef6c00;
+  --sauna-bg:    #0f0700;
+  --sauna-text:  #ef6c00;
 
-  --cold-color: #38bdf8;
-  --cold-bg: #020f1e;
-  --cold-text: #7dd3fc;
+  --cold-color: #4d82f5;
+  --cold-bg:    #050c1e;
+  --cold-text:  #90aef5;
 }
 
-/* ------------------------------------------------------------ */
-/* 기본 리셋 & 폰트 */
-/* ------------------------------------------------------------ */
+/* ── 리셋 ──────────────────────────────────────── */
 * {
   font-family: var(--font-pretendard), var(--font-juache), -apple-system, sans-serif;
   font-weight: normal;
-  @apply transition-colors duration-150;
+  @apply transition-colors duration-100;
 }
 
 @layer base {
@@ -150,12 +144,10 @@
     height: 100%;
     width: 100%;
   }
-
   input, textarea, [contenteditable="true"], .selectable {
     -webkit-user-select: text;
     user-select: text;
   }
-
   img {
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
@@ -166,81 +158,63 @@ body {
   width: 100vw;
   height: 100%;
   color: var(--text-main);
-  background-color: #040d1a;
+  background-color: #000;
 }
 
-/* ------------------------------------------------------------ */
-/* 유틸리티 클래스 */
-/* ------------------------------------------------------------ */
-.font-pretendard {
-  font-family: var(--font-pretendard), -apple-system, sans-serif;
-}
+/* ── 폰트 유틸 ─────────────────────────────────── */
+.font-pretendard { font-family: var(--font-pretendard), -apple-system, sans-serif; }
+.font-juache     { font-family: var(--font-juache), sans-serif; }
 
-.font-juache {
-  font-family: var(--font-juache), sans-serif;
-}
-
+/* ── 스크롤바 숨김 ─────────────────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── 온도 숫자 ─────────────────────────────────── */
 .temp-number {
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
   font-family: var(--font-pretendard), -apple-system, sans-serif;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.05em;
 }
 
-/* ─────────────────────────────────────────────
-   사우나 카드 — 포카리 감성: 얇은 보더 + 물빛 글로우
-───────────────────────────────────────────── */
+.temp-display {
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-pretendard), -apple-system, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+/* ── 카드 — 테두리 하나, 그림자 없음 ─────────── */
 .sauna-card {
   background-color: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: 1.125rem;
-  box-shadow: var(--shadow-card);
-  transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+  border: 1px solid var(--border-main);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 @media (hover: hover) {
   .sauna-card:hover {
-    box-shadow: var(--shadow-card-hover);
-    border-color: var(--border-main);
-    transform: translateY(-3px);
+    border-color: var(--point-color);
+    box-shadow: 0 0 0 1px var(--point-color);
   }
 }
-
-.sauna-card:active {
-  transform: scale(0.97);
-  box-shadow: var(--shadow-card);
-}
+.sauna-card:active { opacity: 0.75; }
 
 .sauna-row {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
-  transition: background-color 0.15s ease;
+  transition: background-color 0.1s;
 }
-
 @media (hover: hover) {
   .sauna-row:hover { background-color: var(--bg-sub); }
 }
+.sauna-row:active { opacity: 0.7; }
 
-.sauna-row:active { background-color: var(--bg-main); }
-
-.btn-interactive {
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
-}
-.btn-interactive:active { transform: scale(0.96); }
-@media (hover: hover) {
-  .btn-interactive:hover { opacity: 0.85; }
-}
-
-/* ─────────────────────────────────────────────
-   앱 레이아웃
-───────────────────────────────────────────── */
+/* ── 앱 레이아웃 ───────────────────────────────── */
 .app-container {
   @apply absolute inset-0 m-auto h-full w-full max-w-md sm:max-w-xl;
   background-color: var(--bg-main);
@@ -249,11 +223,11 @@ body {
   @media screen and (min-width: 1524px) {
     right: 40%;
     height: 90%;
-    border-radius: 2rem;
-    border: 0.5rem solid rgba(186,230,253,0.3);
+    border-radius: 24px;
+    border: 1px solid var(--border-main);
     overflow: hidden;
     box-sizing: content-box;
-    box-shadow: 0px 20px 60px rgba(14,165,233,0.2);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.16);
     max-width: 640px;
   }
 }
@@ -263,101 +237,50 @@ body {
   @media screen and (max-width: 1523px) { display: none; }
 }
 
-/* ─────────────────────────────────────────────
-   애니메이션
-───────────────────────────────────────────── */
+/* ── 스켈레톤 ──────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-sub) 25%,
+    var(--border-subtle) 50%,
+    var(--bg-sub) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
 @keyframes twinkle {
-  0% { opacity: 0.3; transform: scale(0.8); }
-  50% { opacity: 1; transform: scale(1.2); }
-  100% { opacity: 0.3; transform: scale(0.8); }
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.7; }
 }
 .animate-twinkle { animation: twinkle 3s infinite ease-in-out; }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.skeleton-shimmer {
-  background: linear-gradient(90deg, var(--bg-main) 25%, #e0f2fe 50%, var(--bg-main) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-@keyframes floatUp {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-.animate-float-up { animation: floatUp 0.5s ease forwards; }
-
-/* ─────────────────────────────────────────────
-   섹션 구분선
-───────────────────────────────────────────── */
+/* ── 섹션 구분 ─────────────────────────────────── */
 .section-divider {
-  height: 6px;
-  background: var(--bg-main);
+  height: 8px;
+  background: var(--bg-sub);
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.temp-display {
-  font-feature-settings: "tnum";
-  font-variant-numeric: tabular-nums;
-  font-family: var(--font-pretendard), -apple-system, sans-serif;
-  font-weight: 900;
-  letter-spacing: -0.05em;
-  line-height: 1;
-}
-
-/* ─────────────────────────────────────────────
-   포카리 글래스모피즘 유틸리티
-───────────────────────────────────────────── */
-.glass-card {
-  background: rgba(255,255,255,0.75);
-  backdrop-filter: blur(16px) saturate(1.8);
-  -webkit-backdrop-filter: blur(16px) saturate(1.8);
-  border: 1px solid rgba(186,230,253,0.6);
-}
-
-.glass-dark {
-  background: rgba(13,33,55,0.75);
-  backdrop-filter: blur(16px) saturate(1.8);
-  -webkit-backdrop-filter: blur(16px) saturate(1.8);
-  border: 1px solid rgba(14,165,233,0.18);
-}
-
-.gradient-text-sky {
-  background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 50%, #7dd3fc 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* 포인트 버튼 */
-.btn-sky {
-  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+/* ── 버튼 두 가지 ───────────────────────────────── */
+.btn-primary {
+  background: var(--point-color);
   color: #fff;
-  box-shadow: 0 4px 16px rgba(14,165,233,0.35);
-  transition: all 0.2s ease;
+  border: 1.5px solid var(--point-color);
+  transition: opacity 0.12s;
 }
-.btn-sky:hover {
-  box-shadow: 0 6px 24px rgba(14,165,233,0.5);
-  transform: translateY(-1px);
-}
-.btn-sky:active {
-  transform: scale(0.97);
-  box-shadow: 0 2px 8px rgba(14,165,233,0.3);
-}
+.btn-primary:active { opacity: 0.8; }
 
-/* 아웃라인 버튼 */
-.btn-outline-sky {
-  border: 1.5px solid var(--border-main);
-  background: rgba(255,255,255,0.65);
-  backdrop-filter: blur(8px);
+.btn-outline {
+  background: transparent;
   color: var(--text-sub);
-  transition: all 0.2s ease;
+  border: 1.5px solid var(--border-main);
+  transition: border-color 0.12s, color 0.12s;
 }
-.btn-outline-sky:hover {
-  background: rgba(255,255,255,0.95);
-  border-color: var(--point-color);
-  color: var(--point-color);
-}
+.btn-outline:hover  { border-color: var(--point-color); color: var(--point-color); }
+.btn-outline:active { opacity: 0.7; }
