@@ -17,8 +17,9 @@ import { DetailSkeleton } from '@/components/sauna/detail/DetailPrimitives'
 import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { CongestionSection } from '@/components/sauna/detail/CongestionSection'
-import { getSaunaById } from '@/app/actions/sauna.actions'
+import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
 import { checkFavorite, addFavorite, removeFavorite, getFavoriteCount } from '@/app/actions/favorite.actions'
+
 
 // ── 탭 타입 ──────────────────────────────────────────────────
 type Tab = 'info' | 'reviews' | 'congestion'
@@ -289,6 +290,14 @@ export function SaunaDetailClient({ id }: { id: string }) {
     staleTime: 1000 * 60 * 5,
   })
 
+  // 사활 수 — 실제 DB 카운트
+  const { data: reviewCount = 0 } = useQuery({
+    queryKey: ['review-count', id],
+    queryFn: () => getReviewCount(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
+  })
+
   const favMutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('not_logged_in')
@@ -359,9 +368,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
   const thumbnail  = sauna.images?.[0] ?? kakaoImage
   const hasMale    = sauna.rules?.male_allowed !== false
   const hasFemale  = sauna.rules?.female_allowed
-  
-  // 사활 수 — DB의 review_count 컬럼 (트리거로 자동 갱신)
-  const reviewCount = sauna.review_count ?? 0
 
   return (
     <div className="flex h-full flex-col bg-bg-main">

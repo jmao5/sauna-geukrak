@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { BiUser, BiChevronDown } from 'react-icons/bi'
 import { useQuery } from '@tanstack/react-query'
-import { getReviewsBySaunaId } from '@/app/actions/review.actions'
+import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
 import type { ReviewDto } from '@/types/sauna'
 
 const VISIT_TIME_LABELS: Record<string, string> = {
@@ -175,6 +175,12 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
     staleTime: 1000 * 60 * 3,
   })
 
+  const { data: totalCount = 0 } = useQuery({
+    queryKey: ['review-count', saunaId],
+    queryFn: () => getReviewCount(saunaId),
+    staleTime: 1000 * 60 * 5,
+  })
+
   if (isLoading) return <ReviewSkeleton />
 
   if (reviews.length === 0) {
@@ -198,7 +204,7 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
       {/* 카운트 */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <p className="text-[12px] font-bold text-text-sub">사활 기록</p>
-        <p className="text-[12px] font-bold text-text-muted tabular-nums">{reviews.length}건</p>
+        <p className="text-[12px] font-bold text-text-muted tabular-nums">{totalCount.toLocaleString()}건</p>
       </div>
 
       {reviews.map((review) => (

@@ -53,6 +53,21 @@ export async function getReviewsByUserId(userId: string): Promise<MyReviewDto[]>
  * 보안: INSERT 시 RLS 정책 `auth.uid() = user_id` 가 DB에서 재검증.
  *       클라이언트가 보낸 review.user_id 대신 session.user.id로 덮어써서 위변조 방지.
  */
+export async function getReviewCount(saunaId: string): Promise<number> {
+  try {
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('sauna_id', saunaId)
+    if (error) throw new Error(error.message)
+    return count ?? 0
+  } catch (error) {
+    console.error('리뷰 카운트 조회 에러:', error)
+    return 0
+  }
+}
+
 export async function createReview(review: {
   sauna_id: string
   user_id: string
