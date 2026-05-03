@@ -142,7 +142,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             {maxSaunaTemp !== null && (
               <div className="flex flex-col items-center">
                 <span className="text-[8px] font-black text-sauna/80 uppercase">♨</span>
-                <span className="temp-number text-[18px] leading-none text-white" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
+                <span className="temp-number text-[18px] leading-none text-sauna" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.7)' }}>
                   {maxSaunaTemp}°
                 </span>
               </div>
