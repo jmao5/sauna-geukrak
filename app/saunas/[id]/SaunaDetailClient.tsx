@@ -18,7 +18,7 @@ import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { CongestionSection } from '@/components/sauna/detail/CongestionSection'
 import { getSaunaById } from '@/app/actions/sauna.actions'
-import { checkFavorite, addFavorite, removeFavorite } from '@/app/actions/favorite.actions'
+import { checkFavorite, addFavorite, removeFavorite, getFavoriteCount } from '@/app/actions/favorite.actions'
 
 // ── 탭 타입 ──────────────────────────────────────────────────
 type Tab = 'info' | 'reviews' | 'congestion'
@@ -55,7 +55,6 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
   const hasFemale = !!sauna.rules?.female_allowed
   const [gender, setGender] = useState<'male' | 'female'>(hasMale ? 'male' : 'female')
 
-  // gender 필드 없는 기존 데이터 호환: undefined → 'male'
   const rooms = (sauna.sauna_rooms ?? []).filter(r => {
     const g = (r as any).gender ?? 'male'
     return g === 'both' || g === gender
@@ -67,7 +66,6 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
 
   return (
     <div className="bg-bg-card">
-      {/* 남탕/여탕 토글 - 둘 다 있을 때만 */}
       {hasMale && hasFemale ? (
         <div className="flex border-b border-border-subtle">
           {(['male', 'female'] as const).map((g) => (
@@ -79,183 +77,107 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
                   ? g === 'male'
                     ? 'border-b-2 border-point text-text-main bg-bg-main'
                     : 'border-b-2 border-pink-500 text-text-main bg-bg-main'
-                  : 'text-text-muted bg-bg-sub'
+                  : 'text-text-muted'
               }`}
             >
-              {g === 'male' ? '남탕' : '여탕'}
+              {g === 'male' ? '👨 남탕' : '👩 여탕'}
             </button>
           ))}
         </div>
-      ) : (
-        <div className="border-b border-border-subtle">
-          <div className={`py-3.5 text-center text-[14px] font-black text-text-main border-b-2 ${
-            hasFemale ? 'border-pink-500' : 'border-point'
-          }`}>
-            {hasFemale ? '여탕' : '남탕'}
-          </div>
-        </div>
-      )}
+      ) : null}
 
-      {/* 해당 성별 시설 없음 */}
-      {rooms.length === 0 && baths.length === 0 && (
-        <div className="px-4 py-8 text-center">
-          <p className="text-sm text-text-muted">{gender === 'male' ? '남탕' : '여탕'} 정보가 등록되지 않았어요</p>
+      <div className="flex">
+        {/* 사우나 */}
+        <div className="flex flex-1 flex-col items-center justify-center py-8">
+          <p className="mb-2 text-[9px] font-black tracking-widest text-text-muted uppercase">Sauna</p>
+          {rooms.length > 0 ? (
+            <>
+              <div className="temp-display text-[56px] text-sauna leading-none tabular-nums">
+                {Math.max(...rooms.map(r => r.temp))}
+              </div>
+              <p className="mt-1 text-[12px] font-bold text-sauna/50">°C</p>
+              <p className="mt-2 text-center text-[10px] text-text-muted leading-relaxed">
+                {rooms.map(r => r.type).join(' · ')}
+              </p>
+            </>
+          ) : (
+            <div className="temp-display text-[56px] text-text-muted/20">—</div>
+          )}
         </div>
-      )}
 
-      {/* 사우나실 */}
-      {rooms.map((room, i) => (
-        <div key={i} className="px-4 py-5 border-b border-border-subtle">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="rounded-full bg-sauna-bg px-2.5 py-0.5 text-[10px] font-black text-sauna">
-                  {room.type === '건식' ? '건식 사우나' : room.type}
-                </span>
-                {(room as any).gender === 'both' && (
-                  <span className="rounded-full border border-border-main bg-bg-sub px-2 py-0.5 text-[9px] font-bold text-text-muted">공용</span>
-                )}
-              </div>
-              <p className="text-[12px] text-text-sub mt-1">수용인원 {room.capacity}명</p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                {room.has_auto_loyly && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">💦</span> 오토 로우리</span>}
-                {room.has_self_loyly && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">🌿</span> 셀프 로우리</span>}
-                {room.has_tv        && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">📺</span> TV</span>}
-              </div>
-            </div>
-            <div className="text-right ml-4">
-              <span className="text-[10px] font-black tracking-widest text-sauna/60 block mb-1">사우나</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="temp-display text-[52px] text-sauna leading-none">{room.temp}</span>
-                <span className="text-[18px] font-bold text-sauna/40">°C</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
+        <div className="w-px bg-border-subtle my-6" />
 
-      {/* 냉탕 */}
-      {baths.map((bath, i) => (
-        <div key={i} className="px-4 py-5 border-b border-border-subtle">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="rounded-full bg-cold-bg px-2.5 py-0.5 text-[10px] font-black text-cold">냉탕</span>
-                {(bath as any).gender === 'both' && (
-                  <span className="rounded-full border border-border-main bg-bg-sub px-2 py-0.5 text-[9px] font-bold text-text-muted">공용</span>
-                )}
+        {/* 냉탕 */}
+        <div className="flex flex-1 flex-col items-center justify-center py-8">
+          <p className="mb-2 text-[9px] font-black tracking-widest text-text-muted uppercase">Cold Bath</p>
+          {baths.length > 0 ? (
+            <>
+              <div className="temp-display text-[56px] text-cold leading-none tabular-nums">
+                {Math.min(...baths.map(b => b.temp))}
               </div>
-              <p className="text-[12px] text-text-sub mt-1">수용인원 {bath.capacity}명</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {bath.is_groundwater && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">🏔️</span> 지하수</span>}
-                {bath.depth > 0      && <span className="text-[11px] text-text-muted">수심 {bath.depth}cm</span>}
-              </div>
-            </div>
-            <div className="text-right ml-4">
-              <span className="text-[10px] font-black tracking-widest text-cold/60 block mb-1">냉탕</span>
-              <div className="flex items-baseline gap-0.5">
-                <span className="temp-display text-[52px] text-cold leading-none">{bath.temp}</span>
-                <span className="text-[18px] font-bold text-cold/40">°C</span>
-              </div>
-            </div>
-          </div>
+              <p className="mt-1 text-[12px] font-bold text-cold/50">°C</p>
+              {baths.some(b => b.is_groundwater) && (
+                <p className="mt-2 text-[10px] text-text-muted">🏔️ 지하수</p>
+              )}
+            </>
+          ) : (
+            <div className="temp-display text-[56px] text-text-muted/20">—</div>
+          )}
         </div>
-      ))}
+      </div>
     </div>
   )
 }
 
-// ── 시설정보 탭 ───────────────────────────────────────────────
+// ── InfoTab ───────────────────────────────────────────────────
 function InfoTab({ sauna }: { sauna: SaunaDto }) {
   return (
-    <div className="pb-24">
+    <div className="divide-y divide-border-subtle pb-4">
       <TempSection sauna={sauna} />
-      <div className="h-2 bg-bg-sub border-y border-border-subtle" />
 
-      {/* 태그 */}
-      {sauna.rules && (
-        <div className="flex flex-wrap gap-2 px-4 py-4 bg-bg-card border-b border-border-subtle">
-          {sauna.rules.tattoo_allowed       && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🖋️ 타투OK</span>}
-          {sauna.rules.female_allowed       && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👩 여성가능</span>}
-          {sauna.rules.male_allowed         && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👨 남성가능</span>}
-          {sauna.parking                    && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🅿️ 주차가능</span>}
-          {sauna.kr_specific?.has_jjimjilbang && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🧖 찜질방</span>}
+      {/* 시설 */}
+      {sauna.amenities && (
+        <div className="px-4 py-4">
+          <p className="mb-3 text-[10px] font-black tracking-widest text-text-muted uppercase">Amenities</p>
+          <div className="grid grid-cols-4 gap-2">
+            <AmenityItem emoji="🧤" label="수건"     ok={sauna.amenities.towel} />
+            <AmenityItem emoji="🧴" label="샴푸"     ok={sauna.amenities.shampoo} />
+            <AmenityItem emoji="🚿" label="바디워시" ok={sauna.amenities.body_wash} />
+            <AmenityItem emoji="💨" label="드라이어" ok={sauna.amenities.hair_dryer} />
+            {sauna.amenities.water_dispenser !== undefined && (
+              <AmenityItem emoji="💧" label="정수기" ok={sauna.amenities.water_dispenser} />
+            )}
+          </div>
         </div>
       )}
-      <div className="h-2 bg-bg-sub border-y border-border-subtle" />
 
-      {/* 휴식 공간 */}
-      {sauna.resting_area && Object.values(sauna.resting_area).some(v => v > 0) && (
-        <>
-          <div className="px-4 pt-4 pb-2 bg-bg-card">
-            <p className="text-[11px] font-black tracking-widest text-text-muted uppercase mb-3">외기욕 공간</p>
-            <div className="grid grid-cols-2 gap-2">
-              {sauna.resting_area.outdoor_seats > 0             && <InfoRow label="외기욕 의자"    value={`${sauna.resting_area.outdoor_seats}개`} />}
-              {sauna.resting_area.indoor_seats > 0              && <InfoRow label="실내 의자"      value={`${sauna.resting_area.indoor_seats}개`} />}
-              {(sauna.resting_area.infinity_chairs ?? 0) > 0   && <InfoRow label="인피니티 의자" value={`${sauna.resting_area.infinity_chairs}개`} />}
-              {(sauna.resting_area.deck_chairs ?? 0) > 0       && <InfoRow label="데크 의자"     value={`${sauna.resting_area.deck_chairs}개`} />}
-            </div>
-          </div>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-        </>
-      )}
-
-      {/* 어메니티 */}
-      {sauna.amenities && (
-        <>
-          <div className="px-4 pt-4 pb-4 bg-bg-card">
-            <p className="text-[11px] font-black tracking-widest text-text-muted uppercase mb-3">어메니티</p>
-            <div className="grid grid-cols-5 gap-2">
-              <AmenityItem emoji="🧤" label="수건"     ok={sauna.amenities.towel} />
-              <AmenityItem emoji="🧴" label="샴푸"     ok={sauna.amenities.shampoo} />
-              <AmenityItem emoji="🚿" label="바디워시" ok={sauna.amenities.body_wash} />
-              <AmenityItem emoji="💨" label="드라이어" ok={sauna.amenities.hair_dryer} />
-              <AmenityItem emoji="💧" label="정수기"   ok={!!sauna.amenities.water_dispenser} />
-            </div>
-          </div>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-        </>
-      )}
-
-      {/* 요금 */}
-      {sauna.pricing && (sauna.pricing.adult_day > 0 || sauna.pricing.adult_night > 0) && (
-        <>
-          <div className="bg-bg-card">
-            <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">요금</p>
-            </div>
-            {sauna.pricing.adult_day   > 0 && <InfoRow label="성인 (낮)"   value={`${sauna.pricing.adult_day.toLocaleString()}원~`} />}
-            {sauna.pricing.adult_night > 0 && <InfoRow label="성인 (야간)" value={`${sauna.pricing.adult_night.toLocaleString()}원~`} />}
-            {sauna.pricing.child       > 0 && <InfoRow label="어린이"      value={`${sauna.pricing.child.toLocaleString()}원~`} />}
-          </div>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-        </>
+      {/* 가격 */}
+      {sauna.pricing && (
+        <div>
+          <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Pricing</p>
+          {sauna.pricing.adult_day   > 0 && <InfoRow label="성인 (낮)"  value={`${sauna.pricing.adult_day.toLocaleString()}원`} />}
+          {sauna.pricing.adult_night > 0 && <InfoRow label="성인 (야간)" value={`${sauna.pricing.adult_night.toLocaleString()}원`} />}
+          {sauna.pricing.child       > 0 && <InfoRow label="어린이"     value={`${sauna.pricing.child.toLocaleString()}원`} />}
+        </div>
       )}
 
       {/* 한국 특화 */}
-      {sauna.kr_specific && (sauna.kr_specific.sesin_price_male > 0 || sauna.kr_specific.sesin_price_female > 0) && (
-        <>
-          <div className="bg-bg-card">
-            <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">부가 서비스</p>
-            </div>
-            {sauna.kr_specific.sesin_price_male   > 0 && <InfoRow label="때밀이 (남)" value={`${sauna.kr_specific.sesin_price_male.toLocaleString()}원`} />}
-            {sauna.kr_specific.sesin_price_female > 0 && <InfoRow label="때밀이 (여)" value={`${sauna.kr_specific.sesin_price_female.toLocaleString()}원`} />}
-            {sauna.kr_specific.food?.length > 0        && <InfoRow label="식음료"      value={sauna.kr_specific.food.join(', ')} />}
-          </div>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-        </>
+      {sauna.kr_specific && (
+        <div>
+          <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Korean Special</p>
+          {sauna.kr_specific.sesin_price_male   > 0 && <InfoRow label="때밀이 (남)" value={`${sauna.kr_specific.sesin_price_male.toLocaleString()}원`} />}
+          {sauna.kr_specific.sesin_price_female > 0 && <InfoRow label="때밀이 (여)" value={`${sauna.kr_specific.sesin_price_female.toLocaleString()}원`} />}
+          {sauna.kr_specific.food?.length > 0         && <InfoRow label="식음료"     value={sauna.kr_specific.food.join(', ')} />}
+        </div>
       )}
 
       {/* 기본 정보 */}
-      <div className="bg-bg-card">
-        <div className="px-4 py-3 border-b border-border-subtle">
-          <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">기본 정보</p>
-        </div>
-        {sauna.business_hours && <InfoRow label="영업시간" value={sauna.business_hours} />}
+      <div>
+        <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Info</p>
+        {sauna.business_hours && <InfoRow label="운영 시간" value={sauna.business_hours} />}
         {sauna.contact && (
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-border-subtle">
-            <p className="text-[13px] text-text-sub">전화</p>
+            <p className="text-[13px] text-text-sub">연락처</p>
             <a href={`tel:${sauna.contact}`} className="text-[13px] font-bold text-point">{sauna.contact}</a>
           </div>
         )}
@@ -264,105 +186,83 @@ function InfoTab({ sauna }: { sauna: SaunaDto }) {
 
       {/* 모형도 */}
       {sauna.floor_plan_images?.length > 0 && (
-        <>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-          <div className="bg-bg-card">
-            <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">내부 모형도</p>
-            </div>
-            <FloorPlanCarousel images={sauna.floor_plan_images} />
+        <div>
+          <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Floor Plan</p>
+          <div className="px-4">
+            <img src={sauna.floor_plan_images[0]} alt="모형도" className="w-full rounded-xl object-contain" style={{ maxHeight: 240 }} />
           </div>
-        </>
+        </div>
       )}
 
       {/* 인스타그램 */}
       {sauna.instagram_media?.length > 0 && (
-        <>
-          <div className="h-2 bg-bg-sub border-y border-border-subtle" />
-          <div className="bg-bg-card">
-            <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">Instagram</p>
-            </div>
-            <div className="space-y-2 p-4">
-              {sauna.instagram_media.map((item, i) => (
-                <InstagramCard key={`${item.url}-${i}`} item={item} />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
-// ── 모형도 캐러셀 ─────────────────────────────────────────────
-function FloorPlanCarousel({ images }: { images: string[] }) {
-  const [current, setCurrent] = useState(0)
-  const [fullscreen, setFullscreen] = useState(false)
-
-  return (
-    <>
-      <div className="relative">
-        <img
-          src={images[current]}
-          alt={`모형도 ${current + 1}`}
-          className="w-full object-contain cursor-pointer"
-          style={{ maxHeight: 240 }}
-          onClick={() => setFullscreen(true)}
-        />
-        <div className="absolute bottom-2 right-2 rounded-full bg-black/40 px-2 py-0.5">
-          <span className="text-[9px] text-white">눌러서 전체보기</span>
-        </div>
-        {images.length > 1 && (
-          <div className="flex items-center justify-center gap-1.5 py-2.5">
-            {images.map((_, i) => (
-              <button key={i} onClick={() => setCurrent(i)}
-                className={`rounded-full transition-all ${i === current ? 'w-4 h-1.5 bg-point' : 'w-1.5 h-1.5 bg-border-strong'}`}
-              />
+        <div>
+          <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Instagram</p>
+          <div className="space-y-2 px-4 pb-2">
+            {sauna.instagram_media.map((item, i) => (
+              <InstagramCard key={i} item={item} />
             ))}
           </div>
-        )}
-      </div>
-      {fullscreen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95" onClick={() => setFullscreen(false)}>
-          <button className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white text-xl" onClick={() => setFullscreen(false)}>✕</button>
-          <img src={images[current]} alt="모형도" className="max-h-full max-w-full object-contain" onClick={e => e.stopPropagation()} />
         </div>
       )}
-    </>
+    </div>
   )
 }
 
 // ── 인스타그램 카드 ───────────────────────────────────────────
 function InstagramCard({ item }: { item: InstagramMedia }) {
   const isReel = item.type === 'reel'
-  const { data } = useInstagramOEmbed(item.url, !item.thumbnail_url)
-  const thumbnailUrl = item.thumbnail_url ?? data?.thumbnail_url ?? null
-  const authorName   = data?.author_name ?? null
+  const { data, isLoading } = useInstagramOEmbed(item.url)
+  const thumbnailUrl = data?.thumbnail_url ?? null
+  const authorName   = data?.author_name   ?? null
+  const shortcode    = (() => {
+    const match = item.url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/)
+    return match ? match[1] : null
+  })()
 
   return (
-    <a href={item.url} target="_blank" rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-2xl border border-border-main bg-bg-sub p-3 transition active:opacity-70">
-      <div className="relative flex-shrink-0 overflow-hidden rounded-xl border border-border-main" style={{ width: 60, height: 60, background: 'var(--bg-main)' }}>
-        {thumbnailUrl ? (
-          <Image src={thumbnailUrl} alt="" fill className="object-cover" sizes="60px" unoptimized />
+    <a
+      href={item.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-xl transition-opacity active:opacity-70"
+      style={{ border: '1px solid var(--border-main)', background: 'var(--bg-card)', padding: '12px' }}
+    >
+      <div
+        className="relative flex-shrink-0 overflow-hidden rounded-lg"
+        style={{ width: 64, height: 64, background: 'var(--bg-sub)', border: '1px solid var(--border-main)' }}
+      >
+        {isLoading ? (
+          <div className="skeleton-shimmer h-full w-full" />
+        ) : thumbnailUrl ? (
+          <Image src={thumbnailUrl} alt={item.caption ?? ''} fill className="object-cover" sizes="64px" unoptimized />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <BiLogoInstagram size={24} style={{ color: '#E1306C' }} />
+            <BiLogoInstagram size={26} style={{ color: '#E1306C', opacity: 0.7 }} />
           </div>
         )}
         {isReel && (
-          <div className="absolute bottom-1 right-1 flex items-center justify-center rounded bg-purple-600" style={{ width: 16, height: 16 }}>
+          <div className="absolute bottom-1 right-1 flex items-center justify-center rounded-sm" style={{ background: '#7c3aed', width: 16, height: 16 }}>
             <BiPlay size={10} style={{ color: '#fff' }} />
           </div>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-black text-text-main">{isReel ? '릴스' : '피드 게시물'}</p>
-        {authorName && <p className="text-[11px] text-point mt-0.5">@{authorName}</p>}
-        {item.caption && <p className="mt-0.5 truncate text-[11px] text-text-sub">{item.caption}</p>}
+        <p className="text-[13px] font-black" style={{ color: 'var(--text-main)' }}>
+          {isReel ? 'Instagram Reels' : 'Instagram Post'}
+        </p>
+        {authorName && <p className="mt-0.5 text-[11px]" style={{ color: 'var(--point-color)' }}>@{authorName}</p>}
+        {item.caption ? (
+          <p className="mt-0.5 truncate text-[11px]" style={{ color: 'var(--text-sub)' }}>{item.caption}</p>
+        ) : shortcode ? (
+          <p className="mt-0.5 truncate text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>/{shortcode.slice(0, 16)}</p>
+        ) : null}
       </div>
-      <BiLinkExternal size={16} className="flex-shrink-0 text-text-muted" />
+      <div className="flex-shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold"
+        style={{ background: 'var(--bg-sub)', border: '1px solid var(--border-main)', color: 'var(--text-sub)' }}>
+        <BiLinkExternal size={12} />
+        보기
+      </div>
     </a>
   )
 }
@@ -372,13 +272,21 @@ export function SaunaDetailClient({ id }: { id: string }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { user } = useUserStore()
-  const [activeTab, setActiveTab] = useState<Tab>('info')
   const [showReview, setShowReview] = useState(false)
+  const [activeTab, setActiveTab] = useState<Tab>('info')
 
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
     queryFn: () => (user ? checkFavorite(user.id, id) : Promise.resolve(false)),
     enabled: !!user && !!id,
+  })
+
+  // 찜 수 — 실제 DB 카운트
+  const { data: favCount = 0 } = useQuery({
+    queryKey: ['favorite-count', id],
+    queryFn: () => getFavoriteCount(id),
+    enabled: !!id,
+    staleTime: 1000 * 60 * 5,
   })
 
   const favMutation = useMutation({
@@ -391,6 +299,10 @@ export function SaunaDetailClient({ id }: { id: string }) {
       await queryClient.cancelQueries({ queryKey: ['favorite', id, user?.id] })
       const prev = queryClient.getQueryData(['favorite', id, user?.id])
       queryClient.setQueryData(['favorite', id, user?.id], !isFav)
+      // 찜 수 optimistic update
+      queryClient.setQueryData(['favorite-count', id], (old: number) =>
+        isFav ? Math.max(0, old - 1) : old + 1
+      )
       return { prev }
     },
     onSuccess: (status) => {
@@ -399,10 +311,12 @@ export function SaunaDetailClient({ id }: { id: string }) {
     },
     onError: (error: Error, _, ctx) => {
       if (ctx?.prev !== undefined) queryClient.setQueryData(['favorite', id, user?.id], ctx.prev)
+      queryClient.invalidateQueries({ queryKey: ['favorite-count', id] })
       if (error.message !== 'not_logged_in') toast.error('잠시 후 다시 시도해주세요')
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['favorite-count', id] })
     },
   })
 
@@ -442,9 +356,11 @@ export function SaunaDetailClient({ id }: { id: string }) {
     )
   }
 
-  const thumbnail = sauna.images?.[0] ?? kakaoImage
-  const hasMale   = sauna.rules?.male_allowed !== false
-  const hasFemale = sauna.rules?.female_allowed
+  const thumbnail  = sauna.images?.[0] ?? kakaoImage
+  const hasMale    = sauna.rules?.male_allowed !== false
+  const hasFemale  = sauna.rules?.female_allowed
+  // 사활 수 — DB의 review_count 컬럼 (트리거로 자동 갱신)
+  const reviewCount = (sauna as any).review_count ?? 0
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
@@ -502,19 +418,19 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* ── 찜 + 사활 카운트 ── */}
+        {/* ── 찜 + 사활 카운트 — 실제 데이터 ── */}
         <div className="flex items-center gap-4 border-b border-border-subtle bg-bg-card px-4 py-3">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-black text-text-muted">찜</span>
             <span className="text-[13px] font-black text-point tabular-nums">
-              {Math.floor(Math.random() * 3000) + 500}
+              {favCount.toLocaleString()}
             </span>
           </div>
           <div className="h-3 w-px bg-border-main" />
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-black text-text-muted">사활</span>
             <span className="text-[13px] font-black text-point tabular-nums">
-              {Math.floor(Math.random() * 10000) + 1000}
+              {reviewCount.toLocaleString()}
             </span>
           </div>
           <div className="ml-auto">
@@ -540,7 +456,9 @@ export function SaunaDetailClient({ id }: { id: string }) {
                 activeTab === tab.id ? 'border-b-2 border-point text-text-main' : 'text-text-muted'
               }`}
             >
-              {tab.label}
+              {tab.id === 'reviews'
+                ? `사활 ${reviewCount > 0 ? reviewCount : ''}`
+                : tab.label}
             </button>
           ))}
         </div>

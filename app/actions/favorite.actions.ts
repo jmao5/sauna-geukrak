@@ -31,6 +31,21 @@ export async function getFavoritesByUserId(userId: string): Promise<MyFavoriteDt
   }
 }
 
+/** 특정 사우나의 찜 수 조회 */
+export async function getFavoriteCount(saunaId: string): Promise<number> {
+  try {
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from('favorites')
+      .select('*', { count: 'exact', head: true })
+      .eq('sauna_id', saunaId)
+    if (error) return 0
+    return count ?? 0
+  } catch {
+    return 0
+  }
+}
+
 export async function checkFavorite(userId: string, saunaId: string): Promise<boolean> {
   try {
     const supabase = await createClient()
@@ -82,7 +97,6 @@ export async function removeFavorite(saunaId: string): Promise<void> {
   }
 }
 
-/** 찜 메모 업데이트 */
 export async function updateFavoriteMemo(saunaId: string, memo: string): Promise<void> {
   try {
     const supabase = await createClient()
@@ -100,7 +114,6 @@ export async function updateFavoriteMemo(saunaId: string, memo: string): Promise
   }
 }
 
-/** 찜 상태 토글: want ↔ visited */
 export async function updateFavoriteStatus(
   saunaId: string,
   status: 'want' | 'visited'
