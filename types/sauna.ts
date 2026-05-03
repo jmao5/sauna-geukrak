@@ -1,6 +1,6 @@
 export interface SaunaRoom {
   type: '건식' | '습식' | '핀란드식' | '한증막' | '불가마' | string
-  gender: 'male' | 'female' | 'both'   // 남탕 전용 / 여탕 전용 / 공용
+  gender: 'male' | 'female' | 'both'
   temp: number
   capacity: number
   has_tv: boolean
@@ -10,7 +10,7 @@ export interface SaunaRoom {
 
 export interface ColdBath {
   temp: number
-  gender: 'male' | 'female' | 'both'   // 남탕 전용 / 여탕 전용 / 공용
+  gender: 'male' | 'female' | 'both'
   capacity: number
   is_groundwater: boolean
   depth: number
@@ -50,12 +50,11 @@ export interface Pricing {
   child: number
 }
 
-/** 인스타그램 릴스/피드 미디어 항목 */
 export interface InstagramMedia {
-  url: string           // 인스타그램 게시물 URL
+  url: string
   type: 'reel' | 'post'
-  caption?: string      // 선택적 설명
-  thumbnail_url?: string // 직접 지정한 썸네일 (없으면 oEmbed 시도)
+  caption?: string
+  thumbnail_url?: string
 }
 
 export interface Session {
@@ -91,6 +90,8 @@ export interface MyReviewDto extends Omit<ReviewDto, 'users' | 'congestion' | 'i
 export interface MyFavoriteDto {
   sauna_id: string
   created_at: string
+  memo?: string | null
+  status?: 'want' | 'visited'
   saunas: SaunaSummaryDto | null
 }
 
