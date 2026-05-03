@@ -49,19 +49,13 @@ function AmenityItem({ emoji, label, ok }: { emoji: string; label: string; ok: b
   )
 }
 
-// ── 온도 히어로 (남탕/여탕 탭) ────────────────────────────────
+// ── 온도 섹션 ────────────────────────────────────────────────
 function TempSection({ sauna }: { sauna: SaunaDto }) {
   const [gender, setGender] = useState<'male' | 'female'>('male')
-
-  const hasMale   = sauna.rules?.male_allowed   !== false
+  const hasMale   = sauna.rules?.male_allowed !== false
   const hasFemale = sauna.rules?.female_allowed
-
-  // 실제로는 gender별 데이터가 있으면 분기, 아니면 공통 데이터 사용
   const rooms = sauna.sauna_rooms ?? []
   const baths = sauna.cold_baths ?? []
-
-  const maxSaunaTemp = rooms.length ? Math.max(...rooms.map((r) => r.temp)) : null
-  const minColdTemp  = baths.length ? Math.min(...baths.map((b) => b.temp)) : null
 
   return (
     <div className="bg-bg-card">
@@ -87,9 +81,7 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
       )}
       {!hasFemale && hasMale && (
         <div className="border-b border-border-subtle">
-          <div className="bg-bg-main py-3.5 text-center text-[14px] font-black text-text-main border-b-2 border-point">
-            남탕
-          </div>
+          <div className="bg-bg-main py-3.5 text-center text-[14px] font-black text-text-main border-b-2 border-point">남탕</div>
         </div>
       )}
 
@@ -98,42 +90,23 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
         <div key={i} className="px-4 py-5 border-b border-border-subtle">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              {/* 종류 + 라벨 */}
               <div className="flex items-center gap-2 mb-1">
                 <span className="rounded-full bg-sauna-bg px-2.5 py-0.5 text-[10px] font-black text-sauna">
-                  {room.type === '건식' ? 'ドライサウナ' : room.type}
+                  {room.type === '건식' ? '건식 사우나' : room.type}
                 </span>
               </div>
-
-              {/* 수용인원 */}
               <p className="text-[12px] text-text-sub mt-1">수용인원 {room.capacity}명</p>
-
-              {/* 특징 */}
               <div className="mt-2 flex flex-wrap gap-1">
-                {room.has_auto_loyly && (
-                  <span className="flex items-center gap-1 text-[11px] text-text-muted">
-                    <span className="text-[12px]">💦</span> 오토 로우리
-                  </span>
-                )}
-                {room.has_self_loyly && (
-                  <span className="flex items-center gap-1 text-[11px] text-text-muted">
-                    <span className="text-[12px]">🌿</span> 셀프 로우리
-                  </span>
-                )}
-                {room.has_tv && (
-                  <span className="flex items-center gap-1 text-[11px] text-text-muted">
-                    <span className="text-[12px]">📺</span> TV
-                  </span>
-                )}
+                {room.has_auto_loyly && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">💦</span> 오토 로우리</span>}
+                {room.has_self_loyly && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">🌿</span> 셀프 로우리</span>}
+                {room.has_tv        && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">📺</span> TV</span>}
               </div>
             </div>
-
-            {/* 온도 */}
             <div className="text-right ml-4">
-              <span className="text-[10px] font-black tracking-widest text-sauna/60 uppercase block mb-1">ドライサウナ</span>
+              <span className="text-[10px] font-black tracking-widest text-sauna/60 block mb-1">사우나</span>
               <div className="flex items-baseline gap-0.5">
                 <span className="temp-display text-[52px] text-sauna leading-none">{room.temp}</span>
-                <span className="text-[18px] font-bold text-sauna/40">度</span>
+                <span className="text-[18px] font-bold text-sauna/40">°C</span>
               </div>
             </div>
           </div>
@@ -146,29 +119,19 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="rounded-full bg-cold-bg px-2.5 py-0.5 text-[10px] font-black text-cold">
-                  水風呂
-                </span>
+                <span className="rounded-full bg-cold-bg px-2.5 py-0.5 text-[10px] font-black text-cold">냉탕</span>
               </div>
               <p className="text-[12px] text-text-sub mt-1">수용인원 {bath.capacity}명</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
-                {bath.is_groundwater && (
-                  <span className="flex items-center gap-1 text-[11px] text-text-muted">
-                    <span className="text-[12px]">🏔️</span> 지하수
-                  </span>
-                )}
-                {bath.depth > 0 && (
-                  <span className="text-[11px] text-text-muted">수심 {bath.depth}cm</span>
-                )}
+                {bath.is_groundwater && <span className="flex items-center gap-1 text-[11px] text-text-muted"><span className="text-[12px]">🏔️</span> 지하수</span>}
+                {bath.depth > 0      && <span className="text-[11px] text-text-muted">수심 {bath.depth}cm</span>}
               </div>
             </div>
-
-            {/* 온도 */}
             <div className="text-right ml-4">
-              <span className="text-[10px] font-black tracking-widest text-cold/60 uppercase block mb-1">水風呂</span>
+              <span className="text-[10px] font-black tracking-widest text-cold/60 block mb-1">냉탕</span>
               <div className="flex items-baseline gap-0.5">
                 <span className="temp-display text-[52px] text-cold leading-none">{bath.temp}</span>
-                <span className="text-[18px] font-bold text-cold/40">度</span>
+                <span className="text-[18px] font-bold text-cold/40">°C</span>
               </div>
             </div>
           </div>
@@ -178,50 +141,35 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
   )
 }
 
-// ── 시설정보 탭 콘텐츠 ────────────────────────────────────────
+// ── 시설정보 탭 ───────────────────────────────────────────────
 function InfoTab({ sauna }: { sauna: SaunaDto }) {
   return (
     <div className="pb-24">
-      {/* 온도 섹션 */}
       <TempSection sauna={sauna} />
-
-      {/* 구분선 */}
       <div className="h-2 bg-bg-sub border-y border-border-subtle" />
 
       {/* 태그 */}
       {sauna.rules && (
         <div className="flex flex-wrap gap-2 px-4 py-4 bg-bg-card border-b border-border-subtle">
-          {sauna.rules.tattoo_allowed && (
-            <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🖋️ 타투OK</span>
-          )}
-          {sauna.rules.female_allowed && (
-            <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👩 여성가능</span>
-          )}
-          {sauna.rules.male_allowed && (
-            <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👨 남성가능</span>
-          )}
-          {sauna.parking && (
-            <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🅿️ 주차가능</span>
-          )}
-          {sauna.kr_specific?.has_jjimjilbang && (
-            <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🧖 찜질방</span>
-          )}
+          {sauna.rules.tattoo_allowed       && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🖋️ 타투OK</span>}
+          {sauna.rules.female_allowed       && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👩 여성가능</span>}
+          {sauna.rules.male_allowed         && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">👨 남성가능</span>}
+          {sauna.parking                    && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🅿️ 주차가능</span>}
+          {sauna.kr_specific?.has_jjimjilbang && <span className="rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-sub">🧖 찜질방</span>}
         </div>
       )}
-
-      {/* 구분선 */}
       <div className="h-2 bg-bg-sub border-y border-border-subtle" />
 
       {/* 휴식 공간 */}
-      {sauna.resting_area && (Object.values(sauna.resting_area).some(v => v > 0)) && (
+      {sauna.resting_area && Object.values(sauna.resting_area).some(v => v > 0) && (
         <>
           <div className="px-4 pt-4 pb-2 bg-bg-card">
-            <p className="text-[11px] font-black tracking-widest text-text-muted uppercase mb-3">외기욕 / 休憩</p>
+            <p className="text-[11px] font-black tracking-widest text-text-muted uppercase mb-3">외기욕 공간</p>
             <div className="grid grid-cols-2 gap-2">
-              {sauna.resting_area.outdoor_seats > 0    && <InfoRow label="외기욕 의자"    value={`${sauna.resting_area.outdoor_seats}개`} />}
-              {sauna.resting_area.indoor_seats > 0     && <InfoRow label="실내 의자"      value={`${sauna.resting_area.indoor_seats}개`} />}
-              {(sauna.resting_area.infinity_chairs ?? 0) > 0 && <InfoRow label="인피니티 의자" value={`${sauna.resting_area.infinity_chairs}개`} />}
-              {(sauna.resting_area.deck_chairs ?? 0) > 0     && <InfoRow label="데크 의자"     value={`${sauna.resting_area.deck_chairs}개`} />}
+              {sauna.resting_area.outdoor_seats > 0             && <InfoRow label="외기욕 의자"    value={`${sauna.resting_area.outdoor_seats}개`} />}
+              {sauna.resting_area.indoor_seats > 0              && <InfoRow label="실내 의자"      value={`${sauna.resting_area.indoor_seats}개`} />}
+              {(sauna.resting_area.infinity_chairs ?? 0) > 0   && <InfoRow label="인피니티 의자" value={`${sauna.resting_area.infinity_chairs}개`} />}
+              {(sauna.resting_area.deck_chairs ?? 0) > 0       && <InfoRow label="데크 의자"     value={`${sauna.resting_area.deck_chairs}개`} />}
             </div>
           </div>
           <div className="h-2 bg-bg-sub border-y border-border-subtle" />
@@ -234,11 +182,11 @@ function InfoTab({ sauna }: { sauna: SaunaDto }) {
           <div className="px-4 pt-4 pb-4 bg-bg-card">
             <p className="text-[11px] font-black tracking-widest text-text-muted uppercase mb-3">어메니티</p>
             <div className="grid grid-cols-5 gap-2">
-              <AmenityItem emoji="🧤" label="수건"      ok={sauna.amenities.towel} />
-              <AmenityItem emoji="🧴" label="샴푸"      ok={sauna.amenities.shampoo} />
-              <AmenityItem emoji="🚿" label="바디워시"  ok={sauna.amenities.body_wash} />
-              <AmenityItem emoji="💨" label="드라이어"  ok={sauna.amenities.hair_dryer} />
-              <AmenityItem emoji="💧" label="정수기"    ok={!!sauna.amenities.water_dispenser} />
+              <AmenityItem emoji="🧤" label="수건"     ok={sauna.amenities.towel} />
+              <AmenityItem emoji="🧴" label="샴푸"     ok={sauna.amenities.shampoo} />
+              <AmenityItem emoji="🚿" label="바디워시" ok={sauna.amenities.body_wash} />
+              <AmenityItem emoji="💨" label="드라이어" ok={sauna.amenities.hair_dryer} />
+              <AmenityItem emoji="💧" label="정수기"   ok={!!sauna.amenities.water_dispenser} />
             </div>
           </div>
           <div className="h-2 bg-bg-sub border-y border-border-subtle" />
@@ -250,7 +198,7 @@ function InfoTab({ sauna }: { sauna: SaunaDto }) {
         <>
           <div className="bg-bg-card">
             <div className="px-4 py-3 border-b border-border-subtle">
-              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">요금 / 料金</p>
+              <p className="text-[11px] font-black tracking-widest text-text-muted uppercase">요금</p>
             </div>
             {sauna.pricing.adult_day   > 0 && <InfoRow label="성인 (낮)"   value={`${sauna.pricing.adult_day.toLocaleString()}원~`} />}
             {sauna.pricing.adult_night > 0 && <InfoRow label="성인 (야간)" value={`${sauna.pricing.adult_night.toLocaleString()}원~`} />}
@@ -367,7 +315,6 @@ function InstagramCard({ item }: { item: InstagramMedia }) {
   const { data } = useInstagramOEmbed(item.url, !item.thumbnail_url)
   const thumbnailUrl = item.thumbnail_url ?? data?.thumbnail_url ?? null
   const authorName   = data?.author_name ?? null
-  const shortcode = item.url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/)?.[1]
 
   return (
     <a href={item.url} target="_blank" rel="noopener noreferrer"
@@ -490,7 +437,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-          {/* 상단 버튼 */}
           <div className="absolute left-4 top-4 z-10">
             <button onClick={() => router.back()}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
@@ -517,7 +463,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
             </button>
           </div>
 
-          {/* 타이틀 */}
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <h1 className="text-[22px] font-black text-white leading-tight">{sauna.name}</h1>
             <div className="mt-1 flex items-center justify-between">
@@ -525,7 +470,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
                 <BiMap size={11} />
                 {sauna.address}
               </p>
-              {/* 성별 뱃지 */}
               <div className="flex gap-1">
                 {hasMale   && <span className="rounded-full bg-point/90 px-2 py-0.5 text-[10px] font-black text-white">남</span>}
                 {hasFemale && <span className="rounded-full bg-pink-500/90 px-2 py-0.5 text-[10px] font-black text-white">여</span>}
@@ -534,10 +478,10 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* ── 이키타이 + 사활 카운트 ── */}
+        {/* ── 찜 + 사활 카운트 ── */}
         <div className="flex items-center gap-4 border-b border-border-subtle bg-bg-card px-4 py-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-black text-text-muted">이키타이</span>
+            <span className="text-[11px] font-black text-text-muted">찜</span>
             <span className="text-[13px] font-black text-point tabular-nums">
               {Math.floor(Math.random() * 3000) + 500}
             </span>
@@ -557,7 +501,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
               }`}
             >
               {isFav ? <BiSolidBookmark size={13} /> : <BiBookmark size={13} />}
-              이키타이
+              찜하기
             </button>
           </div>
         </div>
@@ -569,9 +513,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 py-3.5 text-[14px] font-black transition ${
-                activeTab === tab.id
-                  ? 'border-b-2 border-point text-text-main'
-                  : 'text-text-muted'
+                activeTab === tab.id ? 'border-b-2 border-point text-text-main' : 'text-text-muted'
               }`}
             >
               {tab.label}
@@ -581,30 +523,21 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
         {/* ── 탭 콘텐츠 ── */}
         {activeTab === 'info'       && <InfoTab sauna={sauna} />}
-        {activeTab === 'reviews'    && (
-          <div className="pb-24">
-            <ReviewList saunaId={id} onWrite={() => setShowReview(true)} />
-          </div>
-        )}
+        {activeTab === 'reviews'    && <div className="pb-24"><ReviewList saunaId={id} onWrite={() => setShowReview(true)} /></div>}
         {activeTab === 'congestion' && <CongestionSection saunaId={id} />}
       </div>
 
       {/* ── 하단 CTA 바 ── */}
       <div className="flex-shrink-0 border-t border-border-main bg-bg-main px-4 py-3 pb-safe flex items-center gap-3">
-        {/* 이키타이 체크 */}
         <button
           onClick={toggleFav}
           className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-[13px] font-black transition active:scale-95 ${
-            isFav
-              ? 'border-point bg-point/10 text-point'
-              : 'border-border-main bg-bg-main text-text-sub'
+            isFav ? 'border-point bg-point/10 text-point' : 'border-border-main bg-bg-main text-text-sub'
           }`}
         >
           {isFav ? <BiSolidBookmark size={16} /> : <BiBookmark size={16} />}
-          이키타이
+          찜하기
         </button>
-
-        {/* 사활 투고 */}
         <button
           onClick={() => setShowReview(true)}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-point py-3 text-[13px] font-black text-white transition active:scale-95"

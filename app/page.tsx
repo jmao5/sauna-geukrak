@@ -3,6 +3,8 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import { getSaunas } from './actions/sauna.actions'
 import HomeClient from './HomeClient'
 
+export const dynamic = 'force-dynamic'
+
 const PAGE_SIZE = 20
 
 export default async function HomePage() {

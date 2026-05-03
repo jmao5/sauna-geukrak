@@ -3,6 +3,7 @@ import getQueryClient from '@/lib/getQueryClient'
 import { getSaunas } from '@/app/actions/sauna.actions'
 import MapClient from './MapClient'
 
+export const dynamic = 'force-dynamic'
 export const metadata = { title: '지도' }
 
 export default async function MapPage() {

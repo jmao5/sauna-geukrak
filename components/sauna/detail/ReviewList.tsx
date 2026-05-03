@@ -14,7 +14,7 @@ const VISIT_TIME_LABELS: Record<string, string> = {
 }
 
 const CONGESTION_LABELS: Record<string, { label: string; color: string }> = {
-  '비어있음': { label: '공이테루',  color: 'text-point' },
+  '비어있음': { label: '한산함',  color: 'text-point' },
   '보통':     { label: '보통',      color: 'text-text-sub' },
   '혼잡':     { label: '혼잡',      color: 'text-orange-500' },
   '대기':     { label: '대기',      color: 'text-red-500' },
