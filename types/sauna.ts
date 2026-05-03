@@ -1,5 +1,6 @@
 export interface SaunaRoom {
   type: '건식' | '습식' | '핀란드식' | '한증막' | '불가마' | string
+  gender: 'male' | 'female' | 'both'   // 남탕 전용 / 여탕 전용 / 공용
   temp: number
   capacity: number
   has_tv: boolean
@@ -9,6 +10,7 @@ export interface SaunaRoom {
 
 export interface ColdBath {
   temp: number
+  gender: 'male' | 'female' | 'both'   // 남탕 전용 / 여탕 전용 / 공용
   capacity: number
   is_groundwater: boolean
   depth: number

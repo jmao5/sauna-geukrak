@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useUserStore } from '@/stores/userStore'
 import { getSaunaById, updateSauna } from '@/app/actions/sauna.actions'
 import { SaunaDto, SaunaRoom, ColdBath } from '@/types/sauna'
-import { SectionCard, Toggle, NumberInput, TextInput } from '@/components/sauna/SaunaFormComponents'
+import { SectionCard, Toggle, NumberInput, TextInput, GenderSelect } from '@/components/sauna/SaunaFormComponents'
 import ImageUploader from '@/components/ui/ImageUploader'
 import InstagramMediaUploader from '@/components/ui/InstagramMediaUploader'
 import FloorPlanUploader from '@/components/ui/FloorPlanUploader'
@@ -209,6 +209,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
                   <NumberInput label="온도 (°C)" value={room.temp} onChange={(v) => updateRoom(i, { temp: v })} min={40} unit="°C" />
                   <NumberInput label="수용 인원" value={room.capacity} onChange={(v) => updateRoom(i, { capacity: v })} min={1} unit="명" />
                 </div>
+                <GenderSelect value={room.gender ?? 'male'} onChange={(v) => updateRoom(i, { gender: v })} />
                 <div className="space-y-2">
                   <Toggle checked={room.has_auto_loyly} onChange={(v) => updateRoom(i, { has_auto_loyly: v })} label="💦 오토 로우리" />
                   <Toggle checked={!!room.has_self_loyly} onChange={(v) => updateRoom(i, { has_self_loyly: v })} label="🌿 셀프 로우리" />
@@ -241,6 +242,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
                   <NumberInput label="수용 인원" value={bath.capacity} onChange={(v) => updateBath(i, { capacity: v })} min={1} unit="명" />
                 </div>
                 <NumberInput label="수심 (cm)" value={bath.depth} onChange={(v) => updateBath(i, { depth: v })} min={0} unit="cm" />
+                <GenderSelect value={bath.gender ?? 'male'} onChange={(v) => updateBath(i, { gender: v })} />
                 <Toggle checked={bath.is_groundwater} onChange={(v) => updateBath(i, { is_groundwater: v })} label="🏔️ 지하수" />
               </div>
             ))}

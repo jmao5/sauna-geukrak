@@ -3,6 +3,46 @@
 // ──────────────────────────────────────────────────────────────
 import { BiMinus, BiPlus } from 'react-icons/bi'
 
+export function GenderSelect({
+  value,
+  onChange,
+}: {
+  value: 'male' | 'female' | 'both'
+  onChange: (v: 'male' | 'female' | 'both') => void
+}) {
+  const options: { value: 'male' | 'female' | 'both'; label: string; emoji: string }[] = [
+    { value: 'male',   label: '남탕',   emoji: '👨' },
+    { value: 'female', label: '여탕',   emoji: '👩' },
+    { value: 'both',   label: '공용',   emoji: '♿' },
+  ]
+  return (
+    <div>
+      <p className="mb-1.5 text-[10px] font-bold text-text-sub">성제화</p>
+      <div className="flex gap-1.5">
+        {options.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={`flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-bold transition active:scale-95 ${
+              value === opt.value
+                ? opt.value === 'male'
+                  ? 'bg-point text-white'
+                  : opt.value === 'female'
+                  ? 'bg-pink-500 text-white'
+                  : 'bg-text-sub text-white'
+                : 'border border-border-main bg-bg-card text-text-sub'
+            }`}
+          >
+            <span>{opt.emoji}</span>
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function SectionCard({
   title, emoji, children,
 }: {

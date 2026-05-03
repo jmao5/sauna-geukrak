@@ -51,18 +51,26 @@ function AmenityItem({ emoji, label, ok }: { emoji: string; label: string; ok: b
 
 // ── 온도 섹션 ────────────────────────────────────────────────
 function TempSection({ sauna }: { sauna: SaunaDto }) {
-  const [gender, setGender] = useState<'male' | 'female'>('male')
   const hasMale   = sauna.rules?.male_allowed !== false
-  const hasFemale = sauna.rules?.female_allowed
-  const rooms = sauna.sauna_rooms ?? []
-  const baths = sauna.cold_baths ?? []
+  const hasFemale = !!sauna.rules?.female_allowed
+  const [gender, setGender] = useState<'male' | 'female'>(hasMale ? 'male' : 'female')
+
+  // gender 필드 없는 기존 데이터 호환: undefined → 'male'
+  const rooms = (sauna.sauna_rooms ?? []).filter(r => {
+    const g = (r as any).gender ?? 'male'
+    return g === 'both' || g === gender
+  })
+  const baths = (sauna.cold_baths ?? []).filter(b => {
+    const g = (b as any).gender ?? 'male'
+    return g === 'both' || g === gender
+  })
 
   return (
     <div className="bg-bg-card">
-      {/* 남탕/여탕 토글 */}
-      {hasFemale && (
+      {/* 남탕/여탕 토글 - 둘 다 있을 때만 */}
+      {hasMale && hasFemale ? (
         <div className="flex border-b border-border-subtle">
-          {(['male', 'female'] as const).filter(g => g === 'male' ? hasMale : hasFemale).map((g) => (
+          {(['male', 'female'] as const).map((g) => (
             <button
               key={g}
               onClick={() => setGender(g)}
@@ -78,10 +86,20 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
             </button>
           ))}
         </div>
-      )}
-      {!hasFemale && hasMale && (
+      ) : (
         <div className="border-b border-border-subtle">
-          <div className="bg-bg-main py-3.5 text-center text-[14px] font-black text-text-main border-b-2 border-point">남탕</div>
+          <div className={`py-3.5 text-center text-[14px] font-black text-text-main border-b-2 ${
+            hasFemale ? 'border-pink-500' : 'border-point'
+          }`}>
+            {hasFemale ? '여탕' : '남탕'}
+          </div>
+        </div>
+      )}
+
+      {/* 해당 성별 시설 없음 */}
+      {rooms.length === 0 && baths.length === 0 && (
+        <div className="px-4 py-8 text-center">
+          <p className="text-sm text-text-muted">{gender === 'male' ? '남탕' : '여탕'} 정보가 등록되지 않았어요</p>
         </div>
       )}
 
@@ -94,6 +112,9 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
                 <span className="rounded-full bg-sauna-bg px-2.5 py-0.5 text-[10px] font-black text-sauna">
                   {room.type === '건식' ? '건식 사우나' : room.type}
                 </span>
+                {(room as any).gender === 'both' && (
+                  <span className="rounded-full border border-border-main bg-bg-sub px-2 py-0.5 text-[9px] font-bold text-text-muted">공용</span>
+                )}
               </div>
               <p className="text-[12px] text-text-sub mt-1">수용인원 {room.capacity}명</p>
               <div className="mt-2 flex flex-wrap gap-1">
@@ -120,6 +141,9 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="rounded-full bg-cold-bg px-2.5 py-0.5 text-[10px] font-black text-cold">냉탕</span>
+                {(bath as any).gender === 'both' && (
+                  <span className="rounded-full border border-border-main bg-bg-sub px-2 py-0.5 text-[9px] font-bold text-text-muted">공용</span>
+                )}
               </div>
               <p className="text-[12px] text-text-sub mt-1">수용인원 {bath.capacity}명</p>
               <div className="mt-2 flex flex-wrap gap-1.5">

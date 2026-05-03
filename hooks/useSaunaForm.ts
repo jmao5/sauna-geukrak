@@ -5,6 +5,7 @@ export type FormState = Omit<SaunaDto, 'id' | 'created_at'>
 
 export const defaultSaunaRoom = (): SaunaRoom => ({
   type: '건식',
+  gender: 'male',
   temp: 85,
   capacity: 10,
   has_tv: false,
@@ -14,6 +15,7 @@ export const defaultSaunaRoom = (): SaunaRoom => ({
 
 export const defaultColdBath = (): ColdBath => ({
   temp: 15,
+  gender: 'male',
   capacity: 4,
   is_groundwater: false,
   depth: 80,
