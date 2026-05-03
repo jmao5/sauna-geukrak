@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   BiBookmark, BiChevronLeft, BiEdit, BiMap,
-  BiShare, BiSolidBookmark,
+  BiShare, BiSolidBookmark, BiLogoInstagram, BiPlay, BiLinkExternal,
 } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
@@ -40,7 +40,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
   const prev = () => setCurrent((i) => (i - 1 + images.length) % images.length)
   const next = () => setCurrent((i) => (i + 1) % images.length)
 
-  // 터치
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
     touchEndX.current = null
@@ -56,7 +55,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
     touchEndX.current = null
   }
 
-  // 마우스
   const onMouseDown = (e: React.MouseEvent) => {
     touchStartX.current = e.clientX
     touchEndX.current = null
@@ -77,7 +75,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
 
   return (
     <>
-      {/* 슬라이더 */}
       <div className="relative select-none">
         <div
           className="relative overflow-hidden cursor-grab active:cursor-grabbing"
@@ -96,13 +93,11 @@ function FloorPlanSection({ images }: { images: string[] }) {
             className="w-full object-contain"
             style={{ maxHeight: '260px' }}
           />
-          {/* 눌러서 전체보기 힌트 */}
           <div className="absolute bottom-2 right-2 rounded-full bg-black/40 px-2 py-0.5">
             <span className="text-[9px] text-white">눌러서 전체보기</span>
           </div>
         </div>
 
-        {/* 인디케이터 + 카운트 */}
         {images.length > 1 && (
           <div className="flex items-center justify-center gap-1.5 py-2.5">
             {images.map((_, i) => (
@@ -111,9 +106,7 @@ function FloorPlanSection({ images }: { images: string[] }) {
                 type="button"
                 onClick={() => setCurrent(i)}
                 className={`rounded-full transition-all ${
-                  i === current
-                    ? 'w-4 h-1.5 bg-point'
-                    : 'w-1.5 h-1.5 bg-border-strong'
+                  i === current ? 'w-4 h-1.5 bg-point' : 'w-1.5 h-1.5 bg-border-strong'
                 }`}
               />
             ))}
@@ -122,7 +115,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
         )}
       </div>
 
-      {/* 전체화면 모달 */}
       {fullscreenIndex !== null && (
         <div
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 cursor-grab active:cursor-grabbing select-none"
@@ -144,7 +136,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
             touchStartX.current = null; touchEndX.current = null
           }}
         >
-          {/* 닫기 */}
           <button
             type="button"
             onClick={() => setFullscreenIndex(null)}
@@ -152,7 +143,6 @@ function FloorPlanSection({ images }: { images: string[] }) {
           >
             ✕
           </button>
-          {/* 카운트 */}
           {images.length > 1 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1">
               <span className="text-[11px] font-bold text-white">{fullscreenIndex + 1} / {images.length}</span>
@@ -164,16 +154,13 @@ function FloorPlanSection({ images }: { images: string[] }) {
             className="max-h-full max-w-full object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-          {/* 인디케이터 */}
           {images.length > 1 && (
             <div className="absolute bottom-6 flex items-center gap-1.5">
               {images.map((_, i) => (
                 <div
                   key={i}
                   className={`rounded-full transition-all ${
-                    i === fullscreenIndex
-                      ? 'w-4 h-1.5 bg-white'
-                      : 'w-1.5 h-1.5 bg-white/30'
+                    i === fullscreenIndex ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/30'
                   }`}
                 />
               ))}
@@ -185,33 +172,92 @@ function FloorPlanSection({ images }: { images: string[] }) {
   )
 }
 
-// ── 인스타그램 섹션 ──────────────────────────────────────────
+// ── 인스타그램 섹션 — iframe 제거, 카드 + 링크 방식 ──────────
 function InstagramSection({ media }: { media: InstagramMedia[] }) {
+  function extractShortcode(url: string): string | null {
+    const match = url.match(/instagram\.com\/(?:reel|p)\/([A-Za-z0-9_-]+)/)
+    return match ? match[1] : null
+  }
+
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-2 p-4">
       {media.map((item, i) => {
-        // /reel/XXXX/ 또는 /p/XXXX/ 형태에서 임베드 URL 생성
-        const embedUrl = item.url.replace(/\/?$/, '/embed')
+        const isReel = item.type === 'reel'
+        const shortcode = extractShortcode(item.url)
+
         return (
-          <div key={i} className="overflow-hidden rounded-xl border border-border-main bg-bg-main">
-            <div className="flex items-center gap-2 border-b border-border-subtle px-3 py-2">
-              <span className="text-[10px] font-black tracking-wide text-text-muted uppercase">
-                {item.type === 'reel' ? '🎬 Reels' : '📷 Post'}
-              </span>
-              {item.caption && (
-                <span className="truncate text-[10px] text-text-sub">{item.caption}</span>
+          <a
+            key={i}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-xl transition-opacity active:opacity-70"
+            style={{
+              border: '1px solid var(--border-main)',
+              background: 'var(--bg-card)',
+              padding: '12px',
+              display: 'flex',
+            }}
+          >
+            {/* 아이콘 영역 */}
+            <div
+              className="relative flex-shrink-0 flex items-center justify-center rounded-lg"
+              style={{
+                width: 52,
+                height: 52,
+                background: 'var(--bg-sub)',
+                border: '1px solid var(--border-main)',
+              }}
+            >
+              <BiLogoInstagram size={24} style={{ color: '#E1306C', opacity: 0.8 }} />
+              {isReel && (
+                <div
+                  className="absolute bottom-1 right-1 flex items-center justify-center rounded-sm"
+                  style={{ background: '#7c3aed', width: 14, height: 14 }}
+                >
+                  <BiPlay size={9} style={{ color: '#fff' }} />
+                </div>
               )}
             </div>
-            <div className="relative w-full" style={{ paddingBottom: item.type === 'reel' ? '177.7%' : '120%' }}>
-              <iframe
-                src={embedUrl}
-                className="absolute inset-0 h-full w-full"
-                allowFullScreen
-                scrolling="no"
-                frameBorder="0"
-              />
+
+            {/* 텍스트 */}
+            <div className="min-w-0 flex-1">
+              <p
+                className="text-[13px] font-black"
+                style={{ color: 'var(--text-main)' }}
+              >
+                {isReel ? 'Instagram Reels' : 'Instagram Post'}
+              </p>
+              {item.caption ? (
+                <p
+                  className="mt-0.5 truncate text-[11px]"
+                  style={{ color: 'var(--text-sub)' }}
+                >
+                  {item.caption}
+                </p>
+              ) : shortcode ? (
+                <p
+                  className="mt-0.5 truncate text-[10px] font-mono"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  /{shortcode.slice(0, 16)}{shortcode.length > 16 ? '…' : ''}
+                </p>
+              ) : null}
             </div>
-          </div>
+
+            {/* 보기 버튼 */}
+            <div
+              className="flex-shrink-0 flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold"
+              style={{
+                background: 'var(--bg-sub)',
+                border: '1px solid var(--border-main)',
+                color: 'var(--text-sub)',
+              }}
+            >
+              <BiLinkExternal size={12} />
+              보기
+            </div>
+          </a>
         )
       })}
     </div>
@@ -225,7 +271,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
   const { user } = useUserStore()
   const [showReview, setShowReview] = useState(false)
 
-  // ── 찜 ───────────────────────────────────────────────────
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
     queryFn: () => (user ? checkFavorite(user.id, id) : Promise.resolve(false)),
@@ -270,7 +315,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
     favMutation.mutate()
   }
 
-  // ── 공유 ─────────────────────────────────────────────────
   const handleShare = async () => {
     const url = window.location.href
     if (navigator.share) {
@@ -285,7 +329,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
     }
   }
 
-  // ── 데이터 ───────────────────────────────────────────────
   const { data: sauna, isLoading, isError } = useQuery<SaunaDto>({
     queryKey: ['sauna', id],
     queryFn: () => getSaunaById(id),
@@ -340,7 +383,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           onWriteReview={() => setShowReview(true)}
         />
 
-        {/* 태그 */}
         {sauna.rules && (
           <div className="flex flex-wrap gap-1.5 px-4 py-3 bg-bg-card border-b border-border-subtle">
             {sauna.rules.tattoo_allowed && <Tag>🖋️ 타투OK</Tag>}
@@ -353,7 +395,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
         <div className="section-divider" />
 
-        {/* 사우나실 */}
         {sauna.sauna_rooms?.length > 0 && (
           <Section title="Sauna Rooms">
             {sauna.sauna_rooms.map((room, i) => (
@@ -378,7 +419,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </Section>
         )}
 
-        {/* 냉탕 */}
         {sauna.cold_baths?.length > 0 && (
           <Section title="Cold Baths">
             {sauna.cold_baths.map((bath, i) => (
@@ -402,7 +442,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </Section>
         )}
 
-        {/* 휴식 공간 */}
         {sauna.resting_area && (
           <Section title="Resting Area">
             {sauna.resting_area.outdoor_seats > 0 && <InfoRow label="외기욕 의자" value={`${sauna.resting_area.outdoor_seats}개`} />}
@@ -412,14 +451,12 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </Section>
         )}
 
-        {/* 어메니티 */}
         {sauna.amenities && (
           <Section title="Amenities">
             <AmenityGrid amenities={sauna.amenities} />
           </Section>
         )}
 
-        {/* 요금 */}
         {sauna.pricing && (
           <Section title="Pricing">
             {sauna.pricing.adult_day > 0 && <InfoRow label="성인 (낮)" value={`${sauna.pricing.adult_day.toLocaleString()}원`} />}
@@ -428,7 +465,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </Section>
         )}
 
-        {/* 한국 특화 */}
         {sauna.kr_specific && (
           <Section title="Korean Special">
             {sauna.kr_specific.sesin_price_male > 0 && <InfoRow label="때밀이 (남)" value={`${sauna.kr_specific.sesin_price_male.toLocaleString()}원`} />}
@@ -437,7 +473,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </Section>
         )}
 
-        {/* 이용 정보 */}
         <Section title="Info">
           {sauna.business_hours && <InfoRow label="운영 시간" value={sauna.business_hours} />}
           {sauna.contact && (
@@ -451,7 +486,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <InfoRow label="주차" value={sauna.parking ? '가능' : '불가'} />
         </Section>
 
-        {/* 내부 모형도 */}
         {sauna.floor_plan_images?.length > 0 && (
           <>
             <div className="section-divider" />
@@ -461,7 +495,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </>
         )}
 
-        {/* 인스타그램 미디어 */}
         {sauna.instagram_media?.length > 0 && (
           <>
             <div className="section-divider" />
@@ -473,7 +506,6 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
         <div className="section-divider" />
 
-        {/* 사활 기록 목록 */}
         <Section title="사활 기록">
           <ReviewList saunaId={id} onWrite={() => setShowReview(true)} />
         </Section>

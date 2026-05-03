@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react'
-import { BiPlus, BiX, BiLogoInstagram, BiLink, BiPlay, BiExternalLink } from 'react-icons/bi'
+import { BiPlus, BiX, BiLogoInstagram, BiLink, BiPlay, BiLinkExternal } from 'react-icons/bi'
 import { InstagramMedia } from '@/types/sauna'
 import toast from 'react-hot-toast'
 
@@ -27,11 +27,6 @@ function isValidInstagramUrl(url: string): boolean {
 
 function detectType(url: string): 'reel' | 'post' {
   return url.includes('/reel/') ? 'reel' : 'post'
-}
-
-/** shortcode → 공식 썸네일 URL (pic.re 프록시 사용) */
-function getThumbnailUrl(shortcode: string): string {
-  return `https://www.instagram.com/p/${shortcode}/media/?size=m`
 }
 
 /* ── 단일 미디어 카드 ── */
@@ -92,9 +87,8 @@ function MediaCard({
         </button>
       </div>
 
-      {/* 썸네일 + 링크 버튼 — iframe 없음 */}
+      {/* 썸네일 + 링크 버튼 */}
       <div className="flex items-center gap-3 px-3 py-3">
-        {/* 썸네일 자리 — 인스타 로고 + shortcode */}
         <div
           className="relative flex-shrink-0 overflow-hidden rounded-lg flex items-center justify-center"
           style={{
@@ -115,12 +109,8 @@ function MediaCard({
           )}
         </div>
 
-        {/* 텍스트 */}
         <div className="min-w-0 flex-1">
-          <p
-            className="text-[12px] font-black"
-            style={{ color: 'var(--text-main)' }}
-          >
+          <p className="text-[12px] font-black" style={{ color: 'var(--text-main)' }}>
             {isReel ? 'Instagram Reels' : 'Instagram Post'}
           </p>
           {shortcode && (
@@ -128,21 +118,17 @@ function MediaCard({
               className="mt-0.5 truncate text-[10px] font-mono"
               style={{ color: 'var(--text-muted)' }}
             >
-              /{shortcode.slice(0, 14)}
-              {shortcode.length > 14 ? '…' : ''}
+              /{shortcode.slice(0, 14)}{shortcode.length > 14 ? '…' : ''}
             </p>
           )}
           {item.caption && (
-            <p
-              className="mt-1 truncate text-[11px]"
-              style={{ color: 'var(--text-sub)' }}
-            >
+            <p className="mt-1 truncate text-[11px]" style={{ color: 'var(--text-sub)' }}>
               {item.caption}
             </p>
           )}
         </div>
 
-        {/* 인스타그램에서 보기 버튼 */}
+        {/* 인스타그램에서 보기 */}
         <a
           href={item.url}
           target="_blank"
@@ -155,7 +141,7 @@ function MediaCard({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <BiExternalLink size={12} />
+          <BiLinkExternal size={12} />
           보기
         </a>
       </div>
