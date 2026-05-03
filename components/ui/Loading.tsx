@@ -52,7 +52,7 @@ export default function Loading({
   useEffect(() => {
     // 만약 animationData가 안 넘어왔고, lottie 스타일이라면 JSON을 fetch 해옵니다.
     if (!animationData && variant === 'lottie') {
-      fetch('/lottie/waiting.json')
+      fetch('/lottie/waiting2.json')
         .then((res) => res.json())
         .then((data) => setLottieData(data))
         .catch((err) => console.error('Lottie load error:', err))
@@ -77,8 +77,10 @@ export default function Loading({
       aria-busy="true"
       className={clsx(
         'flex flex-col items-center justify-center gap-6',
-        fullScreen ? 'fixed inset-0 z-[9999] h-screen w-full bg-white/80 dark:bg-dark-main/80 backdrop-blur-md' : 'w-full py-10',
-        className
+        fullScreen
+          ? 'dark:bg-dark-main/80 fixed inset-0 z-[9999] h-screen w-full bg-white/80 backdrop-blur-md'
+          : 'w-full py-10',
+        className,
       )}
     >
       {variant === 'lottie' && !!lottieData && (
@@ -122,7 +124,12 @@ export default function Loading({
               className="h-3 w-3 rounded-full"
               style={{ backgroundColor: color }}
               animate={{ y: ['0%', '-100%', '0%'], scale: [1, 0.8, 1], opacity: [1, 0.7, 1] }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: index * 0.15 }}
+              transition={{
+                duration: 0.8,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: index * 0.15,
+              }}
             />
           ))}
         </div>
@@ -132,8 +139,8 @@ export default function Loading({
       {message && showMessage && (
         <div
           className={clsx(
-            'animate-pulse text-center font-bold tracking-wider text-gray-700 dark:text-gray-300 transition-opacity duration-500',
-            fullScreen ? 'text-base' : 'text-sm'
+            'animate-pulse text-center font-bold tracking-wider text-gray-700 transition-opacity duration-500 dark:text-gray-300',
+            fullScreen ? 'text-base' : 'text-sm',
           )}
         >
           {message}
