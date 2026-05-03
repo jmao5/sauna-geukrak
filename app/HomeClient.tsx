@@ -41,6 +41,7 @@ function CardSkeleton() {
 
 export default function HomeClient() {
   const [activeFilter, setActiveFilter] = useState<Filter>('all')
+  const [showFilter, setShowFilter] = useState(false)
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
@@ -116,42 +117,54 @@ export default function HomeClient() {
           </Link>
         </div>
 
-        {/* 검색바 */}
-        <div className="px-4 pb-3">
+        {/* 검색바 + 필터 버튼 */}
+        <div className="flex items-center gap-2 px-4 pb-3">
           <Link
             href="/search"
-            className="flex w-full items-center gap-2.5 rounded-2xl border border-border-main bg-bg-sub px-4 py-3 transition active:opacity-70"
+            className="flex flex-1 items-center gap-2.5 rounded-2xl border border-border-main bg-bg-sub px-4 py-3 transition active:opacity-70"
           >
             <BiSearch size={16} className="flex-shrink-0 text-text-muted" />
             <span className="text-[13px] text-text-muted">에리어 · 시설명 · 키워드</span>
-            <div className="ml-auto flex items-center gap-1.5 rounded-full border border-border-main bg-bg-main px-2.5 py-1">
-              <BiSliderAlt size={12} className="text-text-sub" />
-              <span className="text-[10px] font-bold text-text-sub">필터</span>
-            </div>
           </Link>
+          <button
+            onClick={() => setShowFilter((v) => !v)}
+            className={`flex flex-shrink-0 items-center gap-1.5 rounded-2xl border px-3.5 py-3 transition active:scale-95 ${
+              activeFilter !== 'all'
+                ? 'border-point bg-point/10 text-point'
+                : 'border-border-main bg-bg-sub text-text-sub'
+            }`}
+          >
+            <BiSliderAlt size={14} />
+            <span className="text-[11px] font-bold">필터</span>
+            {activeFilter !== 'all' && (
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-point text-[9px] font-black text-white">1</span>
+            )}
+          </button>
         </div>
 
-        {/* 필터 칩 */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-3">
-          {FILTER_OPTIONS.map((opt) => {
-            const isActive = activeFilter === opt.id
-            return (
-              <button
-                key={opt.id}
-                onClick={() => setActiveFilter(opt.id)}
-                aria-pressed={isActive}
-                className="flex-shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all active:scale-95"
-                style={isActive
-                  ? { background: 'var(--point-color)', color: '#fff', border: '1.5px solid var(--point-color)' }
-                  : { background: 'transparent', color: 'var(--text-sub)', border: '1.5px solid var(--border-main)' }
-                }
-              >
-                <span className="text-[11px]">{opt.emoji}</span>
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
+        {/* 필터 칩 (토글) */}
+        {showFilter && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide px-4 pb-3">
+            {FILTER_OPTIONS.map((opt) => {
+              const isActive = activeFilter === opt.id
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setActiveFilter(opt.id)}
+                  aria-pressed={isActive}
+                  className="flex-shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all active:scale-95"
+                  style={isActive
+                    ? { background: 'var(--point-color)', color: '#fff', border: '1.5px solid var(--point-color)' }
+                    : { background: 'transparent', color: 'var(--text-sub)', border: '1.5px solid var(--border-main)' }
+                  }
+                >
+                  <span className="text-[11px]">{opt.emoji}</span>
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── 콘텐츠 ── */}
