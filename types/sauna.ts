@@ -50,9 +50,10 @@ export interface Pricing {
 
 /** 인스타그램 릴스/피드 미디어 항목 */
 export interface InstagramMedia {
-  url: string          // 인스타그램 게시물 URL
+  url: string           // 인스타그램 게시물 URL
   type: 'reel' | 'post'
-  caption?: string     // 선택적 설명
+  caption?: string      // 선택적 설명
+  thumbnail_url?: string // 썸네일 이미지 URL (직접 입력 or 스크래핑)
 }
 
 /** 리뷰 작성자 */

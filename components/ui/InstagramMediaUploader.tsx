@@ -6,7 +6,8 @@
  */
 
 import { useState } from 'react'
-import { BiPlus, BiX, BiLogoInstagram, BiLink, BiPlay, BiLinkExternal } from 'react-icons/bi'
+import Image from 'next/image'
+import { BiPlus, BiX, BiLogoInstagram, BiLink, BiPlay, BiLinkExternal, BiImage } from 'react-icons/bi'
 import { InstagramMedia } from '@/types/sauna'
 import toast from 'react-hot-toast'
 
@@ -89,16 +90,27 @@ function MediaCard({
 
       {/* 썸네일 + 링크 버튼 */}
       <div className="flex items-center gap-3 px-3 py-3">
-        <div
-          className="relative flex-shrink-0 overflow-hidden rounded-lg flex items-center justify-center"
-          style={{
-            width: 56,
-            height: 56,
-            background: 'var(--bg-sub)',
-            border: '1px solid var(--border-main)',
-          }}
-        >
-          <BiLogoInstagram size={26} style={{ color: '#E1306C', opacity: 0.7 }} />
+      <div
+      className="relative flex-shrink-0 overflow-hidden rounded-lg flex items-center justify-center"
+      style={{
+      width: 56,
+      height: 56,
+      background: 'var(--bg-sub)',
+      border: '1px solid var(--border-main)',
+      }}
+      >
+      {item.thumbnail_url ? (
+        <Image
+        src={item.thumbnail_url}
+      alt="thumbnail"
+      fill
+        className="object-cover"
+      sizes="56px"
+        unoptimized
+        />
+        ) : (
+            <BiLogoInstagram size={26} style={{ color: '#E1306C', opacity: 0.7 }} />
+          )}
           {isReel && (
             <div
               className="absolute bottom-1 right-1 rounded-sm px-1"
@@ -153,6 +165,7 @@ function MediaCard({
 export default function InstagramMediaUploader({ media, onChange, maxCount = 10 }: Props) {
   const [inputUrl, setInputUrl] = useState('')
   const [inputCaption, setInputCaption] = useState('')
+  const [inputThumbnail, setInputThumbnail] = useState('')
   const [isAdding, setIsAdding] = useState(false)
 
   const canAdd = media.length < maxCount
@@ -176,10 +189,12 @@ export default function InstagramMediaUploader({ media, onChange, maxCount = 10 
         url: trimmed,
         type: detectType(trimmed),
         caption: inputCaption.trim() || undefined,
+        thumbnail_url: inputThumbnail.trim() || undefined,
       },
     ])
     setInputUrl('')
     setInputCaption('')
+    setInputThumbnail('')
     setIsAdding(false)
   }
 
@@ -279,6 +294,30 @@ export default function InstagramMediaUploader({ media, onChange, maxCount = 10 
               color: 'var(--text-main)',
             }}
           />
+
+          {/* 썸네일 URL 직접 입력 */}
+          <div
+            className="flex items-center gap-2 rounded-lg px-3"
+            style={{ border: '1px solid var(--border-main)', background: 'var(--bg-sub)' }}
+          >
+            <BiImage size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+            <input
+              type="url"
+              value={inputThumbnail}
+              onChange={(e) => setInputThumbnail(e.target.value)}
+              placeholder="썸네일 이미지 URL (선택사항)"
+              className="flex-1 bg-transparent py-2.5 text-xs outline-none"
+              style={{ color: 'var(--text-main)' }}
+            />
+            {inputThumbnail && (
+              <button type="button" onClick={() => setInputThumbnail('')}>
+                <BiX size={14} style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
+          </div>
+          <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+            인스타 게시물 → 공유 → 이미지 저장 후 Supabase Storage에 업로드하거나, 이미지 URL을 직접 붙여넣으세요
+          </p>
 
           {inputUrl && !isValidInstagramUrl(inputUrl) && (
             <p className="text-[10px]" style={{ color: 'var(--color-danger)' }}>

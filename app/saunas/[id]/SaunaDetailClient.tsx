@@ -134,8 +134,9 @@ function FloorPlanSection({ images }: { images: string[] }) {
 // ── 인스타그램 카드 (썸네일 개별 fetch) ───────────────────────
 function InstagramCard({ item }: { item: InstagramMedia }) {
   const isReel = item.type === 'reel'
-  const { data, isLoading } = useInstagramOEmbed(item.url)
-  const thumbnailUrl = data?.thumbnail_url ?? null
+  // item.thumbnail_url (직접 등록) 우선, 없으면 oEmbed 시도
+  const { data, isLoading } = useInstagramOEmbed(item.url, !item.thumbnail_url)
+  const thumbnailUrl = item.thumbnail_url ?? data?.thumbnail_url ?? null
   const authorName   = data?.author_name ?? null
 
   // shortcode 추출 (fallback 표시용)
