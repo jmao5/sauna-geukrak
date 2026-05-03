@@ -11,6 +11,7 @@ interface SaunaCardProps {
   sauna: SaunaSummaryDto
   className?: string
   variant?: 'grid' | 'row'
+  preferredGender?: 'male' | 'female'
 }
 
 // 성별별 데이터 추출
@@ -86,13 +87,16 @@ function GenderRow({ label, color, data }: {
   )
 }
 
-export default function SaunaCard({ sauna, className = '', variant = 'grid' }: SaunaCardProps) {
-  const maxSaunaTemp = sauna.sauna_rooms?.length
-    ? Math.max(...sauna.sauna_rooms.map((r) => r.temp))
-    : null
-  const minColdTemp = sauna.cold_baths?.length
-    ? Math.min(...sauna.cold_baths.map((b) => b.temp))
-    : null
+export default function SaunaCard({ sauna, className = '', variant = 'grid', preferredGender }: SaunaCardProps) {
+  const filteredRooms = preferredGender 
+    ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
+    : sauna.sauna_rooms
+  const filteredBaths = preferredGender 
+    ? (sauna.cold_baths ?? []).filter(b => (b as any).gender === 'both' || (b as any).gender === preferredGender)
+    : sauna.cold_baths
+
+  const maxSaunaTemp = filteredRooms?.length ? Math.max(...filteredRooms.map((r) => r.temp)) : null
+  const minColdTemp = filteredBaths?.length ? Math.min(...filteredBaths.map((b) => b.temp)) : null
 
   const features: string[] = []
   if (sauna.sauna_rooms?.some((r) => r.has_auto_loyly)) features.push('오토 로우리')
@@ -119,8 +123,8 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
 
   /* ── row ── */
   if (variant === 'row') {
-    const maleData   = hasMale   ? getGenderData(sauna, 'male')   : null
-    const femaleData = hasFemale ? getGenderData(sauna, 'female') : null
+    const maleData   = hasMale && (!preferredGender || preferredGender === 'male') ? getGenderData(sauna, 'male')   : null
+    const femaleData = hasFemale && (!preferredGender || preferredGender === 'female') ? getGenderData(sauna, 'female') : null
 
     return (
       <Link
@@ -183,14 +187,11 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
             ))}
           </div>
 
-          {/* 사활 / 리뷰 */}
+          {/* 사활 */}
           {(reviewCount != null && reviewCount > 0) && (
             <div className="mt-1.5 flex items-center gap-3">
               <span className="text-[11px] text-text-muted">
-                사활 <span className="font-black text-point tabular-nums">{(reviewCount * 12).toLocaleString()}</span>
-              </span>
-              <span className="text-[11px] text-text-muted">
-                리뷰 <span className="font-black text-point tabular-nums">{reviewCount.toLocaleString()}</span>
+                사활 <span className="font-black text-point tabular-nums">{reviewCount.toLocaleString()}</span>
               </span>
             </div>
           )}
@@ -266,6 +267,21 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid' }: S
       <div className="p-2.5 pb-3">
         <p className="truncate text-[12px] font-black text-text-main leading-tight">{sauna.name}</p>
         <p className="mt-0.5 truncate text-[10px] text-text-muted">{sauna.address}</p>
+        
+        {/* 사활 & 별점 */}
+        <div className="mt-1.5 flex items-center gap-2">
+          {reviewCount != null && reviewCount > 0 && (
+            <span className="text-[10px] text-text-muted">
+              사활 <span className="font-black text-point">{reviewCount.toLocaleString()}</span>
+            </span>
+          )}
+          {avgRating != null && (
+            <span className="text-[10px] text-text-muted">
+              ★ <span className="font-black text-text-main">{avgRating.toFixed(1)}</span>
+            </span>
+          )}
+        </div>
+
         {features.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {features.slice(0, 2).map((f) => (

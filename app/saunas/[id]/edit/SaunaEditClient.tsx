@@ -135,7 +135,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
       </div>
 
       {/* 폼 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 space-y-3">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 space-y-3">
 
         {/* 기본 정보 */}
         <SectionCard title="기본 정보" emoji="📍">

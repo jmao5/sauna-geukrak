@@ -88,10 +88,18 @@ function SwipePanel({
 }
 
 // ── 하단 카드 ─────────────────────────────────────────────────
-function SaunaBottomCard({ sauna }: { sauna: SaunaSummaryDto }) {
+function SaunaBottomCard({ sauna, preferredGender }: { sauna: SaunaSummaryDto; preferredGender?: 'male' | 'female' }) {
   const router = useRouter()
-  const maxSaunaTemp = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map((r) => r.temp)) : null
-  const minColdTemp  = sauna.cold_baths?.length  ? Math.min(...sauna.cold_baths.map((b) => b.temp))  : null
+  
+  const filteredRooms = preferredGender 
+    ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
+    : sauna.sauna_rooms
+  const filteredBaths = preferredGender 
+    ? (sauna.cold_baths ?? []).filter(b => (b as any).gender === 'both' || (b as any).gender === preferredGender)
+    : sauna.cold_baths
+
+  const maxSaunaTemp = filteredRooms?.length ? Math.max(...filteredRooms.map((r) => r.temp)) : null
+  const minColdTemp  = filteredBaths?.length  ? Math.min(...filteredBaths.map((b) => b.temp))  : null
   const price        = sauna.pricing?.adult_day
 
   return (
@@ -122,6 +130,11 @@ function SaunaBottomCard({ sauna }: { sauna: SaunaSummaryDto }) {
             <span className="flex items-center gap-0.5 rounded-md bg-[#eef3ff] px-1.5 py-0.5">
               <span className="text-[10px]">❄️</span>
               <span className="text-[11px] font-black text-cold">{minColdTemp}°</span>
+            </span>
+          )}
+          {sauna.review_count !== undefined && sauna.review_count > 0 && (
+            <span className="text-[11px] text-text-muted">
+              사활 <span className="font-black text-point">{sauna.review_count.toLocaleString()}</span>
             </span>
           )}
           {price ? (
@@ -182,12 +195,31 @@ export default function MapClient() {
       const q = searchQuery.toLowerCase()
       if (!s.name.toLowerCase().includes(q) && !s.address.includes(q)) return false
     }
-    if (activeFilters.includes('female') && !s.rules?.female_allowed) return false
-    if (activeFilters.includes('male') && !s.rules?.male_allowed) return false
+
+    const isFemale = activeFilters.includes('female')
+    const isMale = activeFilters.includes('male')
+
+    if (isFemale && !s.rules?.female_allowed) return false
+    if (isMale && !s.rules?.male_allowed) return false
     if (activeFilters.includes('tattoo') && !s.rules?.tattoo_allowed) return false
-    if (activeFilters.includes('autoloyly') && !s.sauna_rooms?.some((r) => r.has_auto_loyly)) return false
+
+    if (activeFilters.includes('autoloyly')) {
+      if (isFemale && !isMale) {
+        if (!s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === 'female' || (r as any).gender === 'both'))) return false
+      } else if (isMale && !isFemale) {
+        if (!s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === 'male' || (r as any).gender === 'both'))) return false
+      } else {
+        if (!s.sauna_rooms?.some((r) => r.has_auto_loyly)) return false
+      }
+    }
     return true
   })
+
+  const preferredGender = activeFilters.includes('female') && !activeFilters.includes('male') 
+    ? 'female' 
+    : !activeFilters.includes('female') && activeFilters.includes('male')
+    ? 'male'
+    : undefined
 
   const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
     const lat = map.getCenter().getLat()
@@ -315,16 +347,24 @@ export default function MapClient() {
                       : 'opacity-0 pointer-events-none'
                   }`}>
                     {sauna.name}
-                    {sauna.sauna_rooms?.length > 0 && (
-                      <span className="ml-1.5 text-sauna">
-                        {Math.max(...sauna.sauna_rooms.map((r) => r.temp))}°
-                      </span>
-                    )}
-                    {sauna.cold_baths?.length > 0 && (
-                      <span className="ml-1 text-cold">
-                        {Math.min(...sauna.cold_baths.map((b) => b.temp))}°
-                      </span>
-                    )}
+                    {(() => {
+                      const rooms = preferredGender 
+                        ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
+                        : sauna.sauna_rooms
+                      const baths = preferredGender 
+                        ? (sauna.cold_baths ?? []).filter(b => (b as any).gender === 'both' || (b as any).gender === preferredGender)
+                        : sauna.cold_baths
+                      
+                      const maxT = rooms?.length ? Math.max(...rooms.map(r => r.temp)) : null
+                      const minC = baths?.length ? Math.min(...baths.map(b => b.temp)) : null
+
+                      return (
+                        <>
+                          {maxT !== null && <span className="ml-1.5 text-sauna">{maxT}°</span>}
+                          {minC !== null && <span className="ml-1 text-cold">{minC}°</span>}
+                        </>
+                      )
+                    })()}
                     {/* 말풍선 꼬리 */}
                     <div className="absolute bottom-[-5px] left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-b border-r border-border-main bg-bg-sub" />
                   </div>
@@ -381,7 +421,7 @@ export default function MapClient() {
                   목록 펼치기
                 </button>
               </div>
-              <SaunaBottomCard sauna={selectedSauna} />
+              <SaunaBottomCard sauna={selectedSauna} preferredGender={preferredGender} />
               <div className="mx-4 h-px bg-border-main" />
             </>
           )}
@@ -401,8 +441,16 @@ export default function MapClient() {
           {/* 가로 스크롤 카드 */}
           <div className="flex gap-2.5 overflow-x-auto scrollbar-hide px-4 pb-3">
             {filteredSaunas.slice(0, 30).map((sauna) => {
-              const maxT = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map((r) => r.temp)) : null
-              const minC = sauna.cold_baths?.length  ? Math.min(...sauna.cold_baths.map((b) => b.temp))  : null
+              const rooms = preferredGender 
+                ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
+                : sauna.sauna_rooms
+              const baths = preferredGender 
+                ? (sauna.cold_baths ?? []).filter(b => (b as any).gender === 'both' || (b as any).gender === preferredGender)
+                : sauna.cold_baths
+              
+              const maxT = rooms?.length ? Math.max(...rooms.map(r => r.temp)) : null
+              const minC = baths?.length ? Math.min(...baths.map(b => b.temp)) : null
+
               return (
                 <button key={sauna.id} onClick={() => handleMarkerClick(sauna)}
                   className={`flex-shrink-0 w-[140px] rounded-xl border text-left overflow-hidden transition active:scale-[0.97] ${
@@ -437,10 +485,10 @@ export default function MapClient() {
 
           {/* 전체 목록 — 패널 최대 확장 시 */}
           {panelSnap >= PANEL_FULL - 20 && (
-            <div className="flex-1 overflow-y-auto scrollbar-hide border-t border-border-main">
+            <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide border-t border-border-main">
               {filteredSaunas.map((sauna) => (
                 <div key={sauna.id} className="border-b border-border-main last:border-0">
-                  <SaunaBottomCard sauna={sauna} />
+                  <SaunaBottomCard sauna={sauna} preferredGender={preferredGender} />
                 </div>
               ))}
             </div>

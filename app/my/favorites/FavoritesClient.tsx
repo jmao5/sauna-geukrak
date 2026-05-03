@@ -139,6 +139,8 @@ function FavCard({
 
   const status    = item.status ?? 'want'
   const isVisited = status === 'visited'
+  
+  // 전체 시설 중 최고/최저 온도 추출 (성별 구분 없이)
   const maxHot    = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map((r) => r.temp)) : null
   const minCold   = sauna.cold_baths?.length  ? Math.min(...sauna.cold_baths.map((b) => b.temp))  : null
 
@@ -183,12 +185,18 @@ function FavCard({
                 🔥{maxHot}°
               </span>
             )}
-            {minCold !== null && (
+            {minCold   !== null && (
               <span className="temp-number text-[12px]" style={{ color: 'var(--point-color)' }}>
                 ❄️{minCold}°
               </span>
             )}
+            {sauna.review_count != null && sauna.review_count > 0 && (
+              <span className="text-[11px] text-text-muted">
+                사활 <span className="font-black text-point">{sauna.review_count.toLocaleString()}</span>
+              </span>
+            )}
             {sauna.avg_rating != null && (
+
               <span className="text-[11px] font-bold" style={{ color: 'var(--text-sub)' }}>
                 ★ {sauna.avg_rating.toFixed(1)}
               </span>

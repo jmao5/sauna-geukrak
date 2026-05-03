@@ -13,7 +13,7 @@ import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 
 // ── 타입 ──────────────────────────────────────────────────────
-type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'parking'
+type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'male' | 'parking'
 type SortKey   = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
 
 // ── 상수 ──────────────────────────────────────────────────────
@@ -29,6 +29,7 @@ const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
   { id: 'jjimjilbang', label: '찜질방',      emoji: '🧖' },
   { id: 'tattoo',      label: '타투 OK',     emoji: '🖋️' },
   { id: 'female',      label: '여성 가능',   emoji: '👩' },
+  { id: 'male',        label: '남성 가능',   emoji: '👨' },
   { id: 'parking',     label: '주차',        emoji: '🅿️' },
 ]
 
@@ -129,14 +130,27 @@ export default function HomeClient() {
 
     // 조건
     if (selectedConds.length > 0) {
+      const isFemale = selectedConds.includes('female')
+      const isMale   = selectedConds.includes('male')
+      const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+
       list = list.filter((s) =>
         selectedConds.every((cond) => {
           switch (cond) {
-            case 'autoloyly':   return s.sauna_rooms?.some((r) => r.has_auto_loyly)
-            case 'groundwater': return s.cold_baths?.some((b) => b.is_groundwater)
+            case 'autoloyly':   
+              if (pref) {
+                return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
+              }
+              return s.sauna_rooms?.some((r) => r.has_auto_loyly)
+            case 'groundwater': 
+              if (pref) {
+                return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
+              }
+              return s.cold_baths?.some((b) => b.is_groundwater)
             case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
             case 'tattoo':      return s.rules?.tattoo_allowed
             case 'female':      return s.rules?.female_allowed
+            case 'male':        return s.rules?.male_allowed !== false
             case 'parking':     return (s as any).parking
             default:            return true
           }
@@ -154,6 +168,10 @@ export default function HomeClient() {
     }
 
     // 정렬
+    const isFemale = selectedConds.includes('female')
+    const isMale   = selectedConds.includes('male')
+    const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+
     switch (sortKey) {
       case 'rating':
         list = [...list].sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0))
@@ -163,15 +181,29 @@ export default function HomeClient() {
         break
       case 'temp_hot':
         list = [...list].sort((a, b) => {
-          const aMax = a.sauna_rooms?.length ? Math.max(...a.sauna_rooms.map((r) => r.temp)) : 0
-          const bMax = b.sauna_rooms?.length ? Math.max(...b.sauna_rooms.map((r) => r.temp)) : 0
+          const aRooms = pref 
+            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+            : a.sauna_rooms
+          const bRooms = pref 
+            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+            : b.sauna_rooms
+          
+          const aMax = aRooms?.length ? Math.max(...aRooms.map((r) => r.temp)) : 0
+          const bMax = bRooms?.length ? Math.max(...bRooms.map((r) => r.temp)) : 0
           return bMax - aMax
         })
         break
       case 'temp_cold':
         list = [...list].sort((a, b) => {
-          const aMin = a.cold_baths?.length ? Math.min(...a.cold_baths.map((r) => r.temp)) : 99
-          const bMin = b.cold_baths?.length ? Math.min(...b.cold_baths.map((r) => r.temp)) : 99
+          const aBaths = pref 
+            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+            : a.cold_baths
+          const bBaths = pref 
+            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+            : b.cold_baths
+
+          const aMin = aBaths?.length ? Math.min(...aBaths.map((r) => r.temp)) : 99
+          const bMin = bBaths?.length ? Math.min(...bBaths.map((r) => r.temp)) : 99
           return aMin - bMin
         })
         break
@@ -361,7 +393,7 @@ export default function HomeClient() {
       )}
 
       {/* ── 리스트 ── */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)
         ) : filtered.length === 0 ? (
@@ -373,15 +405,26 @@ export default function HomeClient() {
             </button>
           </div>
         ) : (
-          filtered.map((sauna) => (
-            <SaunaCard key={sauna.id} sauna={sauna} variant="row" />
-          ))
+          filtered.map((sauna) => {
+            const isFemale = selectedConds.includes('female')
+            const isMale   = selectedConds.includes('male')
+            const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
+            
+            return (
+              <SaunaCard
+                key={sauna.id}
+                sauna={sauna}
+                variant="row"
+                preferredGender={pref}
+              />
+            )
+          })
         )}
 
         <div ref={sentinelRef} className="h-10 flex items-center justify-center">
           {isFetchingNextPage && <Loading variant="dots" fullScreen={false} color="var(--color-point)" />}
         </div>
-        <div className="h-4" />
+        <div className="h-20" />{/* 네브바 여백 */}
       </div>
 
       {/* ── 지역 바텀시트 ── */}

@@ -488,7 +488,7 @@ export default function SaunaNewClient() {
       </div>
 
       {/* 콘텐츠 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4">
         {step === 'search' ? (
           <>
             {!kakaoReady && (

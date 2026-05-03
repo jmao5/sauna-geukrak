@@ -31,11 +31,10 @@ export default function ClientLayout({ children }: ClientLayoutProps) {
         ref={scrollRef}
         className={clsx(
           'bg-bg-main text-text-main relative w-full',
-          'scrollbar-hide h-full overflow-x-hidden overflow-y-auto',
+          'scrollbar-hide h-full overflow-hidden',
         )}
       >
         {children}
-        {!isNavbarHidden && <div className="h-16 w-full shrink-0" />}
       </div>
 
       <Suspense fallback={null}>

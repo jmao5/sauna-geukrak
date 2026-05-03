@@ -359,12 +359,13 @@ export function SaunaDetailClient({ id }: { id: string }) {
   const thumbnail  = sauna.images?.[0] ?? kakaoImage
   const hasMale    = sauna.rules?.male_allowed !== false
   const hasFemale  = sauna.rules?.female_allowed
+  
   // 사활 수 — DB의 review_count 컬럼 (트리거로 자동 갱신)
-  const reviewCount = (sauna as any).review_count ?? 0
+  const reviewCount = sauna.review_count ?? 0
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
 
         {/* ── 히어로 이미지 ── */}
         <div className="relative w-full flex-shrink-0 bg-bg-sub" style={{ height: 220 }}>

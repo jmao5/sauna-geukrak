@@ -115,6 +115,8 @@ export interface SaunaDto {
   instagram_media: InstagramMedia[]
   floor_plan_images: string[]
   created_at: string
+  review_count?: number
+  avg_rating?: number | null
 }
 
 export interface SaunaSummaryDto {

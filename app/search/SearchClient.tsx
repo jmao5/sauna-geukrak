@@ -54,7 +54,7 @@ export default function SearchClient() {
       </div>
 
       {/* 결과 영역 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
         {!keyword ? (
           <div className="p-5 space-y-7">
             {/* 최근 검색어 */}

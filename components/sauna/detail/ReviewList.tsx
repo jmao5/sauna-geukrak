@@ -69,9 +69,6 @@ function ReviewCard({ review }: { review: ReviewDto }) {
               </button>
             </div>
           </div>
-
-          {/* 방문 횟수 */}
-          <p className="mt-0.5 text-[10px] text-text-muted">{visitCount}회 방문</p>
         </div>
       </div>
 

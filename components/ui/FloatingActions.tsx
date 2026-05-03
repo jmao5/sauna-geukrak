@@ -16,7 +16,11 @@ export default function FloatingActions() {
   const scrollRef = useScrollRef()
   const { user } = useUserStore()
 
-  const scrollToTop = () => scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  // 실제 스크롤 컨테이너: 페이지 내부의 data-scroll-main 요소
+  const getScrollEl = () =>
+    scrollRef.current?.querySelector<HTMLElement>('[data-scroll-main]') ?? null
+
+  const scrollToTop = () => getScrollEl()?.scrollTo({ top: 0, behavior: 'smooth' })
 
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -29,14 +33,22 @@ export default function FloatingActions() {
   }, [])
 
   useEffect(() => {
-    const el = scrollRef.current
-    if (!el) return
-    const handleScroll = () => {
-      setShowScrollTop(el.scrollTop > SCROLL_TOP_BUTTON_THRESHOLD)
+    // pathname 바뀔 때마다 새로 attach
+    const attach = () => {
+      const el = getScrollEl()
+      if (!el) return null
+      const handleScroll = () => setShowScrollTop(el.scrollTop > SCROLL_TOP_BUTTON_THRESHOLD)
+      el.addEventListener('scroll', handleScroll, { passive: true })
+      return () => el.removeEventListener('scroll', handleScroll)
     }
-    el.addEventListener('scroll', handleScroll, { passive: true })
-    return () => el.removeEventListener('scroll', handleScroll)
-  }, [scrollRef])
+    // 페이지 전환 후 DOM 반영 대기
+    const timer = setTimeout(() => {
+      const cleanup = attach()
+      return cleanup
+    }, 100)
+    return () => clearTimeout(timer)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   const handleAddSauna = () => {
     if (user) {

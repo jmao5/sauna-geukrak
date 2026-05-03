@@ -133,7 +133,7 @@ export default function MyPageClient() {
       </div>
 
       {/* 메뉴 목록 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-2">
+      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-2">
         {MENU_ITEMS.map((item) => (
           <button
             key={item.href}

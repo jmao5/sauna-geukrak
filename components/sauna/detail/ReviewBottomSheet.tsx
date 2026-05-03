@@ -58,6 +58,7 @@ export function ReviewBottomSheet({
     onSuccess: () => {
       toast.success('사활 기록 완료! 🔥')
       queryClient.invalidateQueries({ queryKey: ['reviews', sauna.id] })
+      queryClient.invalidateQueries({ queryKey: ['sauna', sauna.id] })
       onClose()
     },
     onError: (e: Error) => {

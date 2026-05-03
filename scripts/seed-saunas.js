@@ -18,11 +18,13 @@ const sampleSaunas = [
     latitude: 37.5492,
     longitude: 126.8455,
     sauna_rooms: [
-      { type: '건식', temp: 106, capacity: 15, has_tv: true, has_auto_loyly: false },
-      { type: '습식', temp: 77, capacity: 8, has_tv: false, has_auto_loyly: false }
+      { type: '건식', gender: 'male', temp: 106, capacity: 15, has_tv: true, has_auto_loyly: false },
+      { type: '건식', gender: 'female', temp: 98, capacity: 12, has_tv: true, has_auto_loyly: false },
+      { type: '습식', gender: 'both', temp: 77, capacity: 8, has_tv: false, has_auto_loyly: false }
     ],
     cold_baths: [
-      { temp: 22, capacity: 6, is_groundwater: false, depth: 70 }
+      { gender: 'male', temp: 22, capacity: 6, is_groundwater: false, depth: 70 },
+      { gender: 'female', temp: 24, capacity: 5, is_groundwater: false, depth: 70 }
     ],
     resting_area: {
       indoor_seats: 5,
@@ -62,11 +64,11 @@ const sampleSaunas = [
     latitude: 37.5407,
     longitude: 126.8361,
     sauna_rooms: [
-      { type: '건식', temp: 108, capacity: 12, has_tv: true, has_auto_loyly: false },
-      { type: '건식', temp: 66, capacity: 10, has_tv: true, has_auto_loyly: false }
+      { type: '건식', gender: 'both', temp: 108, capacity: 12, has_tv: true, has_auto_loyly: false },
+      { type: '건식', gender: 'both', temp: 66, capacity: 10, has_tv: true, has_auto_loyly: false }
     ],
     cold_baths: [
-      { temp: 18, capacity: 5, is_groundwater: true, depth: 70 }
+      { gender: 'both', temp: 18, capacity: 5, is_groundwater: true, depth: 70 }
     ],
     resting_area: {
       indoor_seats: 8,
