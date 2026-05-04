@@ -79,7 +79,6 @@ export interface ReviewDto {
   congestion: string | null
   sessions: Session[]
   images: string[]
-  like_count: number
   created_at: string
   users: ReviewUser | null
 }

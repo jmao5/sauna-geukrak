@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useCallback, useRef } from 'react'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { SaunaSummaryDto } from '@/types/sauna'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import Skeleton from '@/components/ui/Skeleton'
 import Link from 'next/link'
-import { BiSearch, BiMap, BiX, BiChevronDown, BiSortAlt2, BiTrophy, BiStar } from 'react-icons/bi'
+import { BiSearch, BiMap, BiX, BiChevronDown, BiSortAlt2 } from 'react-icons/bi'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
-import { getFeaturedSaunas, getTopReviewedSaunas } from './actions/sauna.actions'
 import Loading from '@/components/ui/Loading'
 import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
@@ -85,114 +84,6 @@ function BottomSheet({ open, onClose, title, children }: {
           {children}
         </div>
       </div>
-    </div>
-  )
-}
-
-// ── 큐레이션 섹션 ────────────────────────────────────────────
-function CurationSection() {
-  const { data: featured = [], isLoading: featuredLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas', 'featured'],
-    queryFn: () => getFeaturedSaunas(),
-    staleTime: 1000 * 60 * 10,
-  })
-  const { data: topReviewed = [], isLoading: topLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas', 'top-reviewed'],
-    queryFn: () => getTopReviewedSaunas(10),
-    staleTime: 1000 * 60 * 5,
-  })
-
-  const isLoading = featuredLoading || topLoading
-  if (!featured.length && !topReviewed.length && !isLoading) return null
-
-  return (
-    <div className="flex-shrink-0 border-b border-border-main bg-bg-main">
-
-      {/* 에디터 픽 */}
-      {(isLoading || featured.length > 0) && (
-        <div className="pt-4 pb-3">
-          <div className="flex items-center gap-2 px-4 mb-3">
-            <BiStar size={16} className="text-gold" />
-            <h2 className="text-[13px] font-black text-text-main">에디터 픽</h2>
-            <span className="text-[11px] text-text-muted">극락에서 엄선한 사우나</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4">
-            {isLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-[200px] h-[160px] rounded-2xl bg-bg-sub animate-pulse skeleton-shimmer" />
-                ))
-              : featured.map(sauna => (
-                  <SaunaCard
-                    key={sauna.id}
-                    sauna={sauna}
-                    variant="grid"
-                    className="flex-shrink-0 w-[200px]"
-                  />
-                ))
-            }
-          </div>
-        </div>
-      )}
-
-      {/* 이번 주 TOP 10 */}
-      {(isLoading || topReviewed.length > 0) && (
-        <div className="pt-2 pb-4">
-          <div className="flex items-center justify-between px-4 mb-3">
-            <div className="flex items-center gap-2">
-              <BiTrophy size={16} className="text-point" />
-              <h2 className="text-[13px] font-black text-text-main">사활 많은 TOP 10</h2>
-            </div>
-            <span className="text-[11px] text-text-muted">누적 기준</span>
-          </div>
-          <div className="space-y-0">
-            {isLoading
-              ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex gap-3 px-4 py-3">
-                    <div className="w-6 h-6 rounded-full bg-bg-sub animate-pulse skeleton-shimmer flex-shrink-0" />
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-3 w-2/3 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
-                      <div className="h-2.5 w-1/2 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
-                    </div>
-                  </div>
-                ))
-              : topReviewed.map((sauna, idx) => {
-                  const maxT = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map(r => r.temp)) : null
-                  const minC = sauna.cold_baths?.length  ? Math.min(...sauna.cold_baths.map(b => b.temp))  : null
-                  const rankColors = ['text-gold', 'text-silver', 'text-bronze']
-                  return (
-                    <Link
-                      key={sauna.id}
-                      href={`/saunas/${sauna.id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition active:bg-bg-sub"
-                    >
-                      <span className={`flex-shrink-0 w-6 text-center text-[13px] font-black tabular-nums ${
-                        idx < 3 ? rankColors[idx] : 'text-text-muted'
-                      }`}>
-                        {idx + 1}
-                      </span>
-                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-bg-sub">
-                        {sauna.images?.[0]
-                          ? <img src={sauna.images[0]} alt={sauna.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                          : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg"><span className="text-lg">🧖</span></div>
-                        }
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-black text-text-main">{sauna.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {maxT !== null && <span className="text-[11px] font-black text-sauna">🔥{maxT}°</span>}
-                          {minC !== null && <span className="text-[11px] font-black text-cold">❄️{minC}°</span>}
-                          {!!sauna.review_count && (
-                            <span className="text-[11px] text-text-muted">사활 <span className="font-black text-point">{sauna.review_count}</span></span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })
-            }
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -481,9 +372,6 @@ export default function HomeClient() {
           )}
         </div>
       </div>
-
-      {/* ── 큐레이션 (필터 없을 때만) ── */}
-      {!hasFilter && <CurationSection />}
 
       {/* ── 결과 + 정렬 ── */}
       {!isLoading && (
