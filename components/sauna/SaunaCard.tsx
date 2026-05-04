@@ -112,7 +112,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
 
   const [isVisible, setIsVisible] = useState(false)
   const observerRef = useIntersectionObserver({
-    rootMargin: '100px',
+    rootMargin: '300px',
     onObserve: () => setIsVisible(true),
     enabled: !isVisible,
   })

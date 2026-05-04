@@ -1,11 +1,10 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
-import { SyncLoader } from 'react-spinners'
-import { m } from 'framer-motion'
 import { clsx } from 'clsx'
+import { m } from 'framer-motion'
+import Lottie from 'lottie-react'; // 🚀 lottie-react 라이브러리 추가
 import Image from 'next/image'
-import Lottie from 'lottie-react' // 🚀 lottie-react 라이브러리 추가
+import { ReactNode, useEffect, useState } from 'react'
 
 // 1. 'lottie' 타입을 추가합니다.
 type LoadingVariant = 'spinner' | 'dots' | 'image' | 'lottie'
@@ -107,11 +106,6 @@ export default function Loading({
             priority
           />
         </m.div>
-      )}
-
-      {/* 스피너 및 도트 애니메이션 */}
-      {variant === 'spinner' && (
-        <SyncLoader color={color} size={10} margin={3} speedMultiplier={0.7} />
       )}
 
       {variant === 'dots' && (

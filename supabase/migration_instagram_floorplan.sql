@@ -41,3 +41,24 @@ SELECT column_name, data_type, column_default
 FROM information_schema.columns
 WHERE table_name = 'saunas'
   AND column_name IN ('instagram_media', 'floor_plan_images');
+
+-- ==========================================
+-- Migration: 위치 기반 조회 성능 최적화 인덱스
+-- 실행: Supabase SQL Editor에서 실행하세요
+-- ==========================================
+
+-- 1. latitude + longitude 복합 인덱스
+--    getSaunasByLocation의 바운딩 박스 필터 (.gte/.lte) 속도 향상
+CREATE INDEX IF NOT EXISTS idx_saunas_lat_lng
+  ON public.saunas (latitude, longitude);
+
+-- 2. created_at 인덱스
+--    .order('created_at', { ascending: false }) 속도 향상
+CREATE INDEX IF NOT EXISTS idx_saunas_created_at
+  ON public.saunas (created_at DESC);
+
+-- 3. 인덱스 생성 확인 쿼리
+SELECT indexname, indexdef
+FROM pg_indexes
+WHERE tablename = 'saunas'
+  AND indexname IN ('idx_saunas_lat_lng', 'idx_saunas_created_at');

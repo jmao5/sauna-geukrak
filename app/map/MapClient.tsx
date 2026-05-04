@@ -168,6 +168,10 @@ export default function MapClient() {
   const [showResearch, setShowResearch] = useState(false)
   const [panelSnap, setPanelSnap] = useState(PANEL_LIST)
   const prevCenterRef = useRef(center)
+  const mapRef = useRef<kakao.maps.Map | null>(null)
+  const [mapBounds, setMapBounds] = useState<{
+    swLat: number; swLng: number; neLat: number; neLng: number
+  } | null>(null)
 
   useEffect(() => {
     let attempts = 0
@@ -249,6 +253,16 @@ export default function MapClient() {
     ? 'male'
     : undefined
 
+  const updateBounds = useCallback((map: kakao.maps.Map) => {
+    const bounds = map.getBounds()
+    const sw = bounds.getSouthWest()
+    const ne = bounds.getNorthEast()
+    setMapBounds({
+      swLat: sw.getLat(), swLng: sw.getLng(),
+      neLat: ne.getLat(), neLng: ne.getLng(),
+    })
+  }, [])
+
   const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
     const lat = map.getCenter().getLat()
     const lng = map.getCenter().getLng()
@@ -256,6 +270,7 @@ export default function MapClient() {
     setMapCenter({ lat, lng })
     const dist = Math.sqrt(Math.pow(lat - prevCenterRef.current.lat, 2) + Math.pow(lng - prevCenterRef.current.lng, 2))
     setShowResearch(dist > 0.01)
+    updateBounds(map)
   }, [])
 
   const handleResearch = () => {
@@ -298,6 +313,14 @@ export default function MapClient() {
     setPanelSnap(180)
     setCenter({ lat: sauna.latitude - 0.003, lng: sauna.longitude })
   }
+
+  // 뷰포트 안에 있는 마커만 렌더 (bounds 없으면 전체)
+  const visibleSaunas = mapBounds
+    ? filteredSaunas.filter((s) =>
+        s.latitude  >= mapBounds.swLat && s.latitude  <= mapBounds.neLat &&
+        s.longitude >= mapBounds.swLng && s.longitude <= mapBounds.neLng
+      )
+    : filteredSaunas
 
   if (loadError) {
     return (
@@ -359,10 +382,11 @@ export default function MapClient() {
           <Map
             center={center}
             onCenterChanged={handleCenterChanged}
+            onCreate={(map) => { mapRef.current = map; updateBounds(map) }}
             style={{ width: '100%', height: '100%' }}
             level={6}
           >
-            {filteredSaunas.map((sauna) => (
+            {visibleSaunas.map((sauna) => (
               <div key={sauna.id}>
                 {/* 기존 파비콘 마커 */}
                 <MapMarker
