@@ -261,7 +261,12 @@ export default function MapClient() {
       swLat: sw.getLat(), swLng: sw.getLng(),
       neLat: ne.getLat(), neLng: ne.getLng(),
     })
-  }, [])
+  }, []) // setMapBounds는 stable하므로 deps 없음
+
+  const handleMapCreate = useCallback((map: kakao.maps.Map) => {
+    mapRef.current = map
+    updateBounds(map)
+  }, [updateBounds])
 
   const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
     const lat = map.getCenter().getLat()
@@ -382,7 +387,7 @@ export default function MapClient() {
           <Map
             center={center}
             onCenterChanged={handleCenterChanged}
-            onCreate={(map) => { mapRef.current = map; updateBounds(map) }}
+            onCreate={handleMapCreate}
             style={{ width: '100%', height: '100%' }}
             level={6}
           >
