@@ -33,8 +33,6 @@ export async function getSaunasByLocation(
 ): Promise<SaunaSummaryDto[]> {
   try {
     const supabase = await createClient()
-    // Supabase PostGIS earth_distance 없으면 바운딩 박스 필터로 대체
-    // lat/lng 범위 계산 (1도 ≈ 111km)
     const delta = radiusKm / 111
     const { data, error } = await supabase
       .from('saunas')
@@ -46,7 +44,6 @@ export async function getSaunasByLocation(
       .order('created_at', { ascending: false })
       .limit(200)
     if (error) throw new Error(error.message)
-    // 정확한 원형 반경 필터 (bounding box 제거)
     const filtered = (data as SaunaSummaryDto[]).filter((s) => {
       const dLat = s.latitude  - lat
       const dLng = s.longitude - lng
@@ -84,6 +81,28 @@ export async function getReviewsBySaunaId(id: string) {
   return _get(id)
 }
 
+export async function getPopularKeywords(): Promise<string[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('saunas')
+      .select('name, address, review_count')
+      .order('review_count', { ascending: false })
+      .limit(10)
+    if (error) throw new Error(error.message)
+    const keywords: string[] = []
+    for (const row of (data ?? [])) {
+      // 주소에서 시/군/구 추출
+      const regionMatch = row.address?.match(/^(\S+[시군구])/)
+      if (regionMatch) keywords.push(regionMatch[1])
+      keywords.push(row.name)
+    }
+    return [...new Set(keywords)].slice(0, 5)
+  } catch {
+    return []
+  }
+}
+
 export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   try {
     const supabase = await createClient()
@@ -105,27 +124,14 @@ type ActionResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string }
 
-/**
- * Server Action에서 throw 대신 결과 객체를 반환합니다.
- * Next.js 프로덕션 빌드에서 throw된 에러는 보안상 메시지가 제거되므로,
- * 클라이언트에 에러 내용을 전달하려면 반드시 이 패턴을 사용해야 합니다.
- */
 export async function createSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
 ): Promise<ActionResult<SaunaDto>> {
   try {
     const supabase = await createClient()
-
-    // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
-    // 역할 검증 (admin 확인은 DB 조회 필요 — 1번만)
-    // const { data: userData } = await supabase
-    //   .from('users').select('role').eq('id', session.user.id).single()
-    // if (userData?.role !== 'admin') return { ok: false, error: '관리자 권한이 필요합니다.' }
-
-    // 이미지 없으면 카카오 이미지 1회 시도 (등록 시에만 실행)
     let finalImages = payload.images ?? []
     if (finalImages.length === 0) {
       try {
@@ -172,8 +178,6 @@ export async function updateSauna(
 ): Promise<ActionResult<SaunaDto>> {
   try {
     const supabase = await createClient()
-
-    // getSession() — 로컬 JWT 파싱, 네트워크 왕복 없음
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
