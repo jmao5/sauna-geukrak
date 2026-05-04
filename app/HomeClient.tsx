@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { SaunaSummaryDto } from '@/types/sauna'
 import SaunaCard from '@/components/sauna/SaunaCard'
 import Skeleton from '@/components/ui/Skeleton'
@@ -11,10 +12,11 @@ import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 import Loading from '@/components/ui/Loading'
 import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
+import { useDebounce } from '@/hooks/useDebounce'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'male' | 'parking'
-type SortKey   = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
+type SortKey = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
 
 // ── 상수 ──────────────────────────────────────────────────────
 const REGIONS = [
@@ -24,22 +26,22 @@ const REGIONS = [
 ]
 
 const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
-  { id: 'autoloyly',   label: '오토 로우리', emoji: '💦' },
+  { id: 'autoloyly', label: '오토 로우리', emoji: '💦' },
   { id: 'groundwater', label: '지하수 냉탕', emoji: '🏔️' },
-  { id: 'jjimjilbang', label: '찜질방',      emoji: '🧖' },
-  { id: 'tattoo',      label: '타투 OK',     emoji: '🖋️' },
-  { id: 'female',      label: '여성 가능',   emoji: '👩' },
-  { id: 'male',        label: '남성 가능',   emoji: '👨' },
-  { id: 'parking',     label: '주차',        emoji: '🅿️' },
+  { id: 'jjimjilbang', label: '찜질방', emoji: '🧖' },
+  { id: 'tattoo', label: '타투 OK', emoji: '🖋️' },
+  { id: 'female', label: '여성 가능', emoji: '👩' },
+  { id: 'male', label: '남성 가능', emoji: '👨' },
+  { id: 'parking', label: '주차', emoji: '🅿️' },
 ]
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: 'default',    label: '등록순' },
-  { id: 'rating',     label: '평점 높은순' },
-  { id: 'reviews',    label: '사활 많은순' },
-  { id: 'temp_hot',   label: '사우나 온도 높은순' },
-  { id: 'temp_cold',  label: '냉탕 온도 낮은순' },
-  { id: 'price_asc',  label: '가격 낮은순' },
+  { id: 'default', label: '등록순' },
+  { id: 'rating', label: '평점 높은순' },
+  { id: 'reviews', label: '사활 많은순' },
+  { id: 'temp_hot', label: '사우나 온도 높은순' },
+  { id: 'temp_cold', label: '냉탕 온도 낮은순' },
+  { id: 'price_asc', label: '가격 낮은순' },
 ]
 
 const PAGE_SIZE = 20
@@ -93,16 +95,17 @@ export default function HomeClient() {
   const router = useRouter()
 
   // 검색 상태
-  const [keyword, setKeyword]             = useState('')
+  const [keyword, setKeyword] = useState('')
+  const debouncedKeyword = useDebounce(keyword, 300)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
-  const [selectedConds, setSelectedConds]   = useState<Condition[]>([])
-  const [sortKey, setSortKey]             = useState<SortKey>('default')
+  const [selectedConds, setSelectedConds] = useState<Condition[]>([])
+  const [sortKey, setSortKey] = useState<SortKey>('default')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   // 시트
-  const [regionOpen, setRegionOpen]     = useState(false)
+  const [regionOpen, setRegionOpen] = useState(false)
   const [conditionOpen, setConditionOpen] = useState(false)
-  const [sortOpen, setSortOpen]           = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
 
   // 무한 쿼리
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
@@ -131,36 +134,36 @@ export default function HomeClient() {
     // 조건
     if (selectedConds.length > 0) {
       const isFemale = selectedConds.includes('female')
-      const isMale   = selectedConds.includes('male')
-      const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+      const isMale = selectedConds.includes('male')
+      const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
 
       list = list.filter((s) =>
         selectedConds.every((cond) => {
           switch (cond) {
-            case 'autoloyly':   
+            case 'autoloyly':
               if (pref) {
                 return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
               }
               return s.sauna_rooms?.some((r) => r.has_auto_loyly)
-            case 'groundwater': 
+            case 'groundwater':
               if (pref) {
                 return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
               }
               return s.cold_baths?.some((b) => b.is_groundwater)
             case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
-            case 'tattoo':      return s.rules?.tattoo_allowed
-            case 'female':      return s.rules?.female_allowed
-            case 'male':        return s.rules?.male_allowed !== false
-            case 'parking':     return (s as any).parking
-            default:            return true
+            case 'tattoo': return s.rules?.tattoo_allowed
+            case 'female': return s.rules?.female_allowed
+            case 'male': return s.rules?.male_allowed !== false
+            case 'parking': return (s as any).parking
+            default: return true
           }
         })
       )
     }
 
-    // 키워드
-    if (keyword.trim()) {
-      const kw = keyword.trim().toLowerCase()
+    // 키워드 (디바운스된 값 사용)
+    if (debouncedKeyword.trim()) {
+      const kw = debouncedKeyword.trim().toLowerCase()
       list = list.filter((s) =>
         s.name?.toLowerCase().includes(kw) ||
         s.address?.toLowerCase().includes(kw)
@@ -169,8 +172,8 @@ export default function HomeClient() {
 
     // 정렬
     const isFemale = selectedConds.includes('female')
-    const isMale   = selectedConds.includes('male')
-    const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+    const isMale = selectedConds.includes('male')
+    const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
 
     switch (sortKey) {
       case 'rating':
@@ -181,13 +184,13 @@ export default function HomeClient() {
         break
       case 'temp_hot':
         list = [...list].sort((a, b) => {
-          const aRooms = pref 
-            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+          const aRooms = pref
+            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
             : a.sauna_rooms
-          const bRooms = pref 
-            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+          const bRooms = pref
+            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
             : b.sauna_rooms
-          
+
           const aMax = aRooms?.length ? Math.max(...aRooms.map((r) => r.temp)) : 0
           const bMax = bRooms?.length ? Math.max(...bRooms.map((r) => r.temp)) : 0
           return bMax - aMax
@@ -195,11 +198,11 @@ export default function HomeClient() {
         break
       case 'temp_cold':
         list = [...list].sort((a, b) => {
-          const aBaths = pref 
-            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+          const aBaths = pref
+            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
             : a.cold_baths
-          const bBaths = pref 
-            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+          const bBaths = pref
+            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
             : b.cold_baths
 
           const aMin = aBaths?.length ? Math.min(...aBaths.map((r) => r.temp)) : 99
@@ -217,7 +220,7 @@ export default function HomeClient() {
     }
 
     return list
-  }, [allSaunas, selectedRegion, selectedConds, keyword, sortKey])
+  }, [allSaunas, selectedRegion, selectedConds, debouncedKeyword, sortKey])
 
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage()
@@ -235,7 +238,7 @@ export default function HomeClient() {
     )
 
   const hasFilter = !!selectedRegion || selectedConds.length > 0 || !!keyword.trim()
-  const resetAll  = () => {
+  const resetAll = () => {
     setSelectedRegion(null)
     setSelectedConds([])
     setKeyword('')
@@ -246,6 +249,27 @@ export default function HomeClient() {
 
   // 조건 칩 - 기본 3개 노출, 더보기로 전체
   const visibleConds = showMoreFilters ? CONDITIONS : CONDITIONS.slice(0, 3)
+
+  // ── 가상화 ──────────────────────────────────────────────────
+  const parentRef = useRef<HTMLDivElement>(null)
+  const virtualizer = useVirtualizer({
+    count: filtered.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 134, // SaunaCard row 높이 대략 134px
+    overscan: 5,
+  })
+
+  const virtualItems = virtualizer.getVirtualItems()
+
+  // 무한 스크롤 트리거 (가상화 대응)
+  useEffect(() => {
+    const lastItem = virtualItems[virtualItems.length - 1]
+    if (!lastItem) return
+
+    if (lastItem.index >= filtered.length - 1 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }, [virtualItems, filtered.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
@@ -271,30 +295,27 @@ export default function HomeClient() {
         <div className="flex gap-2.5 px-4 pb-3">
           <button
             onClick={() => setRegionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${
-              selectedRegion
-                ? 'border-point bg-point/5 text-point'
-                : 'border-border-main bg-bg-sub text-text-sub'
-            }`}
+            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedRegion
+              ? 'border-point bg-point/5 text-point'
+              : 'border-border-main bg-bg-sub text-text-sub'
+              }`}
           >
             <div className="text-left">
               <p className="text-[10px] font-black tracking-wider uppercase opacity-60">지역</p>
               <p className="text-[13px] font-black mt-0.5">{selectedRegion ?? '선택하기'}</p>
             </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${
-              selectedRegion ? 'bg-point' : 'bg-text-muted'
-            }`}>
+            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedRegion ? 'bg-point' : 'bg-text-muted'
+              }`}>
               {selectedRegion ? '✓' : '+'}
             </div>
           </button>
 
           <button
             onClick={() => setConditionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${
-              selectedConds.length > 0
-                ? 'border-point bg-point/5 text-point'
-                : 'border-border-main bg-bg-sub text-text-sub'
-            }`}
+            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedConds.length > 0
+              ? 'border-point bg-point/5 text-point'
+              : 'border-border-main bg-bg-sub text-text-sub'
+              }`}
           >
             <div className="text-left">
               <p className="text-[10px] font-black tracking-wider uppercase opacity-60">조건</p>
@@ -304,9 +325,8 @@ export default function HomeClient() {
                   : '선택하기'}
               </p>
             </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${
-              selectedConds.length > 0 ? 'bg-point' : 'bg-text-muted'
-            }`}>
+            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedConds.length > 0 ? 'bg-point' : 'bg-text-muted'
+              }`}>
               {selectedConds.length > 0 ? selectedConds.length : '+'}
             </div>
           </button>
@@ -340,11 +360,10 @@ export default function HomeClient() {
                 <button
                   key={opt.id}
                   onClick={() => toggleCond(opt.id)}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
-                    isActive
-                      ? 'bg-point text-white'
-                      : 'border border-border-main bg-bg-main text-text-sub'
-                  }`}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${isActive
+                    ? 'bg-point text-white'
+                    : 'border border-border-main bg-bg-main text-text-sub'
+                    }`}
                 >
                   <span>{opt.emoji}</span>
                   {opt.label}
@@ -393,7 +412,11 @@ export default function HomeClient() {
       )}
 
       {/* ── 리스트 ── */}
-      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
+      <div
+        ref={parentRef}
+        data-scroll-main
+        className="flex-1 overflow-y-auto scrollbar-hide"
+      >
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)
         ) : filtered.length === 0 ? (
@@ -405,26 +428,48 @@ export default function HomeClient() {
             </button>
           </div>
         ) : (
-          filtered.map((sauna, index) => {
-            const isFemale = selectedConds.includes('female')
-            const isMale   = selectedConds.includes('male')
-            const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
-            
-            return (
-              <SaunaCard
-                key={sauna.id}
-                sauna={sauna}
-                variant="row"
-                preferredGender={pref}
-                priority={index === 0}
-              />
-            )
-          })
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const sauna = filtered[virtualRow.index]
+              const isFemale = selectedConds.includes('female')
+              const isMale = selectedConds.includes('male')
+              const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
+
+              return (
+                <div
+                  key={virtualRow.key}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <SaunaCard
+                    sauna={sauna}
+                    variant="row"
+                    preferredGender={pref}
+                    priority={virtualRow.index === 0}
+                  />
+                </div>
+              )
+            })}
+          </div>
         )}
 
-        <div ref={sentinelRef} className="h-10 flex items-center justify-center">
-          {isFetchingNextPage && <Loading variant="dots" fullScreen={false} color="var(--color-point)" />}
-        </div>
+        {isFetchingNextPage && (
+          <div className="py-4 flex items-center justify-center">
+            <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
+          </div>
+        )}
         <div className="h-20" />{/* 네브바 여백 */}
       </div>
 
@@ -434,9 +479,8 @@ export default function HomeClient() {
           {/* 전체 */}
           <button
             onClick={() => { setSelectedRegion(null); setRegionOpen(false) }}
-            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
-              !selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-            }`}
+            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${!selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+              }`}
           >
             전체 지역
             {!selectedRegion && <span className="text-[16px]">✓</span>}
@@ -448,9 +492,8 @@ export default function HomeClient() {
                 <button
                   key={region}
                   onClick={() => { setSelectedRegion(region); setRegionOpen(false) }}
-                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${
-                    isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
-                  }`}
+                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
+                    }`}
                 >
                   {region}
                 </button>
@@ -469,17 +512,15 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => toggleCond(opt.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
-                }`}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
+                  }`}
               >
                 <span className="text-[18px]">{opt.emoji}</span>
                 <span className={`flex-1 text-left text-[13px] font-bold ${isActive ? 'text-point' : 'text-text-main'}`}>
                   {opt.label}
                 </span>
-                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
-                  isActive ? 'border-point bg-point' : 'border-border-main'
-                }`}>
+                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${isActive ? 'border-point bg-point' : 'border-border-main'
+                  }`}>
                   {isActive && <span className="text-[10px] font-black text-white">✓</span>}
                 </div>
               </button>
@@ -505,9 +546,8 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => { setSortKey(opt.id); setSortOpen(false) }}
-                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-                }`}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+                  }`}
               >
                 {opt.label}
                 {isActive && <span className="text-[16px]">✓</span>}

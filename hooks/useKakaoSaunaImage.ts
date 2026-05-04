@@ -36,8 +36,8 @@ export function useKakaoSaunaImage(
     queryFn: () => fetchKakaoImage(name, address),
     // DB 이미지가 있거나 아직 뷰포트에 진입하지 않으면 fetch 안 함
     enabled: !existingImage && isVisible,
-    staleTime: 1000 * 60 * 60 * 24, // 24시간 캐시
-    gcTime: 1000 * 60 * 60 * 24,
+    staleTime: 1000 * 60 * 60 * 12, // 12시간 캐시
+    gcTime: 1000 * 60 * 60 * 1, // 1시간 (미사용 시 메모리 해제)
     retry: 1,
   })
 }
