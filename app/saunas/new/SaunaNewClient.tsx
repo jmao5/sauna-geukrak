@@ -259,7 +259,10 @@ function DetailFormStep({
                 <NumberInput label="온도 (°C)" value={room.temp} onChange={(v) => updateRoom(i, { temp: v })} min={40} unit="°C" />
                 <NumberInput label="수용 인원" value={room.capacity} onChange={(v) => updateRoom(i, { capacity: v })} min={1} unit="명" />
               </div>
-              <GenderSelect value={room.gender ?? 'male'} onChange={(v) => updateRoom(i, { gender: v })} />
+              <GenderSelect
+                value={(room as any).gender ?? 'male'}
+                onChange={(v) => updateRoom(i, { gender: v } as any)}
+              />
               <div className="space-y-2">
                 <Toggle checked={room.has_auto_loyly} onChange={(v) => updateRoom(i, { has_auto_loyly: v })} label="💦 오토 로우리" />
                 <Toggle checked={!!room.has_self_loyly} onChange={(v) => updateRoom(i, { has_self_loyly: v })} label="🌿 셀프 로우리" />

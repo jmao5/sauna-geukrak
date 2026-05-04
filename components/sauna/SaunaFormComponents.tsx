@@ -11,20 +11,20 @@ export function GenderSelect({
   onChange: (v: 'male' | 'female' | 'both') => void
 }) {
   const options: { value: 'male' | 'female' | 'both'; label: string; emoji: string }[] = [
-    { value: 'male',   label: '남탕',   emoji: '👨' },
-    { value: 'female', label: '여탕',   emoji: '👩' },
-    { value: 'both',   label: '공용',   emoji: '♿' },
+    { value: 'male',   label: '남탕', emoji: '👨' },
+    { value: 'female', label: '여탕', emoji: '👩' },
+    { value: 'both',   label: '공용', emoji: '⚧️' },
   ]
   return (
     <div>
-      <p className="mb-1.5 text-[10px] font-bold text-text-sub">성제화</p>
+      <p className="mb-1.5 text-[10px] font-bold text-text-sub">성별</p>
       <div className="flex gap-1.5">
         {options.map((opt) => (
           <button
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`flex-1 flex items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-bold transition active:scale-95 ${
+            className={`flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-[11px] font-bold transition active:scale-95 ${
               value === opt.value
                 ? opt.value === 'male'
                   ? 'bg-point text-white'
@@ -68,7 +68,7 @@ export function Toggle({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`flex items-center justify-between w-full rounded-xl border px-3.5 py-3 transition active:scale-[0.98] ${
+      className={`flex w-full items-center justify-between rounded-xl border px-3.5 py-3 transition active:scale-[0.98] ${
         checked ? 'border-point/40 bg-point/5' : 'border-border-main bg-bg-main'
       }`}
     >
@@ -105,7 +105,7 @@ export function NumberInput({
           className="h-8 w-full rounded-lg border border-border-main bg-bg-main px-2 text-center text-sm font-black text-text-main outline-none focus:border-point"
           min={min}
         />
-        {unit && <span className="text-xs text-text-sub flex-shrink-0">{unit}</span>}
+        {unit && <span className="flex-shrink-0 text-xs text-text-sub">{unit}</span>}
         <button
           type="button"
           onClick={() => onChange(value + 1)}
