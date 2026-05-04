@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { m, AnimatePresence } from 'framer-motion'
 import { BiArrowToTop, BiPlus } from 'react-icons/bi'
 import { usePathname, useRouter } from 'next/navigation'
@@ -16,7 +16,6 @@ export default function FloatingActions() {
   const scrollRef = useScrollRef()
   const { user } = useUserStore()
 
-  // 실제 스크롤 컨테이너: 페이지 내부의 data-scroll-main 요소
   const getScrollEl = () =>
     scrollRef.current?.querySelector<HTMLElement>('[data-scroll-main]') ?? null
 
@@ -28,25 +27,42 @@ export default function FloatingActions() {
   const isHidden = shouldHideFloatingActions(pathname)
   const isHome = pathname === '/'
 
+  // cleanup ref: 이전 리스너를 명시적으로 추적해 누수 방지
+  const cleanupRef = useRef<(() => void) | null>(null)
+
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
-    // pathname 바뀔 때마다 새로 attach
-    const attach = () => {
-      const el = getScrollEl()
-      if (!el) return null
-      const handleScroll = () => setShowScrollTop(el.scrollTop > SCROLL_TOP_BUTTON_THRESHOLD)
-      el.addEventListener('scroll', handleScroll, { passive: true })
-      return () => el.removeEventListener('scroll', handleScroll)
+    // 이전 리스너가 있으면 먼저 해제
+    if (cleanupRef.current) {
+      cleanupRef.current()
+      cleanupRef.current = null
     }
-    // 페이지 전환 후 DOM 반영 대기
+
+    // pathname 전환 후 DOM이 반영될 때까지 잠깐 대기
     const timer = setTimeout(() => {
-      const cleanup = attach()
-      return cleanup
+      const el = getScrollEl()
+      if (!el) return
+
+      const handleScroll = () =>
+        setShowScrollTop(el.scrollTop > SCROLL_TOP_BUTTON_THRESHOLD)
+
+      el.addEventListener('scroll', handleScroll, { passive: true })
+
+      // cleanup을 ref에 저장 → 다음 effect 실행 시 또는 언마운트 시 해제
+      cleanupRef.current = () => el.removeEventListener('scroll', handleScroll)
     }, 100)
-    return () => clearTimeout(timer)
+
+    return () => {
+      clearTimeout(timer)
+      // 언마운트 또는 pathname 변경 시 리스너 해제
+      if (cleanupRef.current) {
+        cleanupRef.current()
+        cleanupRef.current = null
+      }
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname])
 
@@ -60,8 +76,6 @@ export default function FloatingActions() {
 
   if (!mounted || isHidden) return null
 
-  // fixed 대신 absolute 사용 — AppFrame 컨테이너(relative) 기준으로 위치
-  // 네브바 높이(h-16 = 4rem) + 여백(1rem)
   return (
     <AnimatePresence>
       {isHome && (
@@ -71,7 +85,7 @@ export default function FloatingActions() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           onClick={handleAddSauna}
-          className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-lg text-white transition active:scale-90"
+          className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-lg text-white active:scale-90"
           style={{ bottom: 'calc(4rem + 1rem)' }}
           aria-label="사우나 등록"
         >
@@ -86,7 +100,7 @@ export default function FloatingActions() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           onClick={scrollToTop}
-          className="absolute right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-bg-sub shadow-card border border-border-main text-text-sub transition active:scale-90"
+          className="absolute right-4 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-bg-sub shadow-card border border-border-main text-text-sub active:scale-90"
           style={{
             bottom: isHome ? 'calc(4rem + 5rem)' : 'calc(4rem + 1rem)',
           }}

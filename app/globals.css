@@ -73,7 +73,6 @@
   --text-sub:   #555555;
   --text-muted: #aaaaaa;
 
-  /* 사우나이쿠 블루 */
   --point-color: #1055d4;
   --point-hover: #0d44b0;
   --point-ring:  #90aef5;
@@ -82,12 +81,10 @@
   --border-subtle: #f0f0f0;
   --border-strong: #cccccc;
 
-  /* 사우나 = 레드-오렌지 */
   --sauna-color: #e84040;
   --sauna-bg:    #fff5f5;
   --sauna-text:  #c62828;
 
-  /* 냉탕 = 포인트 블루 */
   --cold-color: #1055d4;
   --cold-bg:    #eff4ff;
   --cold-text:  #0d44b0;
@@ -124,10 +121,10 @@
 }
 
 /* ── 리셋 ──────────────────────────────────────── */
+/* ⚠️ 제거됨: * { @apply transition-colors } — 전체 DOM transition은 GPU 과부하 원인 */
 * {
   font-family: var(--font-pretendard), var(--font-juache), -apple-system, sans-serif;
   font-weight: normal;
-  @apply transition-colors duration-100;
 }
 
 @layer base {
@@ -189,6 +186,7 @@ body {
   border: 1px solid var(--border-main);
   border-radius: 12px;
   overflow: hidden;
+  /* transition은 카드에만 한정 — 전체 DOM에 걸지 않음 */
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 @media (hover: hover) {
@@ -202,7 +200,7 @@ body {
 .sauna-row {
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
-  transition: background-color 0.1s;
+  transition: background-color 0.1s ease;
 }
 @media (hover: hover) {
   .sauna-row:hover { background-color: var(--bg-sub); }
