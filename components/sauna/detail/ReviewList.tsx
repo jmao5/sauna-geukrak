@@ -29,12 +29,18 @@ function LikeButton({ reviewId, initialLiked, initialCount }: {
 }) {
   const { user } = useUserStore()
   const router = useRouter()
-  // useOptimistic 대신 useState 사용
-  // useOptimistic은 Server Component 흐름에서만 정상 동작하며,
-  // 클라이언트 컴포넌트에서 쓰면 transition 종료 후 초기 prop으로 리셋됨
   const [liked, setLiked] = useState(initialLiked)
   const [count, setCount] = useState(initialCount)
   const [isPending, setIsPending] = useState(false)
+
+  // likeStatuses 쿼리가 뒤늦게 로드되거나 갱신될 때 prop → state 동기화
+  // isPending 중에는 optimistic 값 유지 (깜빡임 방지)
+  useEffect(() => {
+    if (!isPending) {
+      setLiked(initialLiked)
+      setCount(initialCount)
+    }
+  }, [initialLiked, initialCount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = async () => {
     if (!user) {
@@ -46,9 +52,9 @@ function LikeButton({ reviewId, initialLiked, initialCount }: {
 
     // 즉시 UI 반영 (Optimistic)
     const nextLiked = !liked
-    const nextCount = count + (nextLiked ? 1 : -1)
+    const nextCount = Math.max(0, count + (nextLiked ? 1 : -1))
     setLiked(nextLiked)
-    setCount(Math.max(0, nextCount))
+    setCount(nextCount)
     setIsPending(true)
 
     const result = await toggleReviewLike(reviewId)
@@ -60,7 +66,7 @@ function LikeButton({ reviewId, initialLiked, initialCount }: {
       setCount(count)
       toast.error(result.error ?? '좋아요 처리에 실패했습니다')
     } else {
-      // 서버 실제 값으로 동기화
+      // 서버 실제 값으로 동기화 (DB 트리거 카운트 반영)
       setLiked(result.liked)
       setCount(result.count)
     }
@@ -70,7 +76,7 @@ function LikeButton({ reviewId, initialLiked, initialCount }: {
     <button
       onClick={handleToggle}
       disabled={isPending}
-      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95 disabled:opacity-60 ${
         liked
           ? 'bg-red-50 text-red-500 dark:bg-red-950/20'
           : 'text-text-muted hover:bg-bg-sub hover:text-text-sub'
@@ -137,12 +143,10 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
       <div className="flex max-h-[80vh] flex-col rounded-t-2xl bg-bg-card border-t border-border-main shadow-xl"
         onClick={(e) => e.stopPropagation()}>
 
-        {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="h-1 w-10 rounded-full bg-border-strong" />
         </div>
 
-        {/* 헤더 */}
         <div className="flex items-center justify-between px-4 pb-3 flex-shrink-0 border-b border-border-subtle">
           <div>
             <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Comments</p>
@@ -156,7 +160,6 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
           </button>
         </div>
 
-        {/* 원본 사활 미리보기 */}
         {review.content && (
           <div className="mx-4 mt-3 flex-shrink-0 rounded-xl border border-border-subtle bg-bg-sub px-3.5 py-2.5">
             <p className="text-[11px] text-text-muted mb-1">{authorName}</p>
@@ -164,7 +167,6 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
           </div>
         )}
 
-        {/* 댓글 목록 */}
         <div className="flex-1 overflow-y-auto scrollbar-hide px-4 py-3 space-y-3">
           {isLoading ? (
             [0, 1, 2].map((i) => (
@@ -226,7 +228,6 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
           )}
         </div>
 
-        {/* 입력창 */}
         <div className="flex-shrink-0 border-t border-border-subtle px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
           {user ? (
             <div className="flex items-center gap-2">
@@ -295,8 +296,6 @@ function ReviewCard({ review, likeStatus }: {
   return (
     <>
       <div className="border-b border-border-subtle px-4 py-4 transition hover:bg-bg-sub">
-
-        {/* 작성자 */}
         <div className="flex items-center gap-2.5">
           <Link href={`/users/${author?.id}`}
             className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub"
@@ -315,7 +314,6 @@ function ReviewCard({ review, likeStatus }: {
               </Link>
               {dateStr && <span className="text-[10px] text-text-muted">{dateStr}</span>}
             </div>
-            {/* 별점 */}
             {review.rating > 0 && (
               <div className="mt-0.5 flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -331,7 +329,6 @@ function ReviewCard({ review, likeStatus }: {
           </div>
         </div>
 
-        {/* 본문 */}
         {content && (
           <div className="mt-2.5">
             <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-text-sub">{displayText}</p>
@@ -345,7 +342,6 @@ function ReviewCard({ review, likeStatus }: {
           </div>
         )}
 
-        {/* 세션 뱃지 */}
         {review.sessions?.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1.5">
             {review.sessions.map((s, i) => (
@@ -362,7 +358,6 @@ function ReviewCard({ review, likeStatus }: {
           </div>
         )}
 
-        {/* 이미지 */}
         {review.images?.length > 0 && (
           <div className="mt-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
             {review.images.map((img, i) => (
@@ -373,7 +368,6 @@ function ReviewCard({ review, likeStatus }: {
           </div>
         )}
 
-        {/* 액션 바 */}
         <div className="mt-2.5 flex items-center gap-1">
           <LikeButton
             reviewId={review.id}
@@ -399,7 +393,7 @@ function ReviewCard({ review, likeStatus }: {
   )
 }
 
-/* ── 스켈레톤 ──────────────────────────────────────────────── */
+/* ── 스켈레톤 ── */
 function ReviewSkeleton() {
   return (
     <div className="divide-y divide-border-subtle">
@@ -426,7 +420,7 @@ function ReviewSkeleton() {
   )
 }
 
-/* ── 메인 ──────────────────────────────────────────────────── */
+/* ── 메인 ── */
 export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void }) {
   const { data: reviews = [], isLoading } = useQuery<ReviewDto[]>({
     queryKey: ['reviews', saunaId],
@@ -440,10 +434,13 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
     staleTime: 1000 * 60 * 5,
   })
 
+  // reviews가 로드된 후 like 상태 조회
+  // queryKey에 review id 목록 포함 → 리뷰가 추가/삭제되면 자동 재조회
+  const reviewIds = reviews.map((r) => r.id)
   const { data: likeStatuses = {} } = useQuery({
-    queryKey: ['review-likes', saunaId, reviews.map((r) => r.id).join(',')],
-    queryFn: () => getReviewLikeStatuses(reviews.map((r) => r.id)),
-    enabled: reviews.length > 0,
+    queryKey: ['review-likes', saunaId, reviewIds.join(',')],
+    queryFn: () => getReviewLikeStatuses(reviewIds),
+    enabled: reviewIds.length > 0,
     staleTime: 1000 * 30,
   })
 
@@ -473,7 +470,10 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
         <ReviewCard
           key={review.id}
           review={review}
-          likeStatus={likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }}
+          likeStatus={
+            // likeStatuses가 로드되기 전엔 reviews 테이블의 like_count를 초기값으로 사용
+            likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }
+          }
         />
       ))}
     </div>
