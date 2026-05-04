@@ -17,19 +17,25 @@ const PANEL_FULL = 420
 type Filter = 'female' | 'male' | 'tattoo' | 'autoloyly'
 
 const FILTER_OPTIONS: { id: Filter; label: string }[] = [
-  { id: 'female',    label: '여성가능' },
-  { id: 'male',      label: '남성가능' },
-  { id: 'tattoo',    label: '타투OK' },
+  { id: 'female', label: '여성가능' },
+  { id: 'male', label: '남성가능' },
+  { id: 'tattoo', label: '타투OK' },
   { id: 'autoloyly', label: '오토 로우리' },
 ]
 
-// ── 마커 이미지 (메모이즈) ──────────────────────────────────
-const MARKER_DEFAULT: kakao.maps.MarkerImageOptions = {
+// kakao.maps.MarkerImageOptions 는 src 없는 서브타입이라 직접 선언
+type MarkerImage = {
+  src: string
+  size: { width: number; height: number }
+  options?: { offset: { x: number; y: number } }
+}
+
+const MARKER_DEFAULT: MarkerImage = {
   src: '/marker-default.png',
   size: { width: 32, height: 40 },
   options: { offset: { x: 16, y: 40 } },
 }
-const MARKER_SELECTED: kakao.maps.MarkerImageOptions = {
+const MARKER_SELECTED: MarkerImage = {
   src: '/marker-selected.png',
   size: { width: 36, height: 46 },
   options: { offset: { x: 18, y: 46 } },
@@ -63,13 +69,13 @@ function SwipePanel({
   onSnapChange: (h: number) => void
   children: React.ReactNode
 }) {
-  const dragStartY   = useRef(0)
+  const dragStartY = useRef(0)
   const dragStartSnap = useRef(currentSnap)
 
   const onPointerDown = (e: React.PointerEvent) => {
-    dragStartY.current    = e.clientY
+    dragStartY.current = e.clientY
     dragStartSnap.current = currentSnap
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+      ; (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const onPointerMove = (e: React.PointerEvent) => {
     if (!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return
@@ -79,9 +85,9 @@ function SwipePanel({
   }
   const onPointerUp = (e: React.PointerEvent) => {
     if (!(e.currentTarget as HTMLElement).hasPointerCapture(e.pointerId)) return
-    ;(e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
-    const delta   = dragStartY.current - e.clientY
-    const biased  = currentSnap + delta * 0.3
+      ; (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId)
+    const delta = dragStartY.current - e.clientY
+    const biased = currentSnap + delta * 0.3
     const closest = snapHeights.reduce((p, c) =>
       Math.abs(c - biased) < Math.abs(p - biased) ? c : p
     )
@@ -119,10 +125,10 @@ function SaunaBottomCard({
   const router = useRouter()
   const rooms = useMemo(() =>
     pref ? sauna.sauna_rooms?.filter(r => (r as any).gender === 'both' || (r as any).gender === pref) : sauna.sauna_rooms
-  , [sauna, pref])
+    , [sauna, pref])
   const baths = useMemo(() =>
     pref ? sauna.cold_baths?.filter(b => (b as any).gender === 'both' || (b as any).gender === pref) : sauna.cold_baths
-  , [sauna, pref])
+    , [sauna, pref])
 
   const maxT = rooms?.length ? Math.max(...rooms.map(r => r.temp)) : null
   const minC = baths?.length ? Math.min(...baths.map(b => b.temp)) : null
@@ -171,27 +177,27 @@ function SaunaBottomCard({
 
 // ── 메인 ──────────────────────────────────────────────────
 export default function MapClient() {
-  const router       = useRouter()
-  const queryClient  = useQueryClient()
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const { isReady: kakaoReady, isError: kakaoError } = useKakaoReady()
 
-  const [userLocation,   setUserLocation]   = useState<{ lat: number; lng: number } | null>(null)
-  const [queryLocation,  setQueryLocation]  = useState<{ lat: number; lng: number } | null>(null)
-  const [center,         setCenter]         = useState({ lat: 37.545, lng: 126.84 })
-  const [mapCenter,      setMapCenter]      = useState({ lat: 37.545, lng: 126.84 })
-  const [hoveredId,      setHoveredId]      = useState<string | null>(null)
-  const [selectedSauna,  setSelectedSauna]  = useState<SaunaSummaryDto | null>(null)
-  const [isLocating,     setIsLocating]     = useState(true)
-  const [activeFilters,  setActiveFilters]  = useState<Filter[]>([])
-  const [searchQuery,    setSearchQuery]    = useState('')
-  const [showResearch,   setShowResearch]   = useState(false)
-  const [panelSnap,      setPanelSnap]      = useState(PANEL_LIST)
-  const [mapBounds,      setMapBounds]      = useState<{
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [queryLocation, setQueryLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [center, setCenter] = useState({ lat: 37.545, lng: 126.84 })
+  const [mapCenter, setMapCenter] = useState({ lat: 37.545, lng: 126.84 })
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
+  const [selectedSauna, setSelectedSauna] = useState<SaunaSummaryDto | null>(null)
+  const [isLocating, setIsLocating] = useState(true)
+  const [activeFilters, setActiveFilters] = useState<Filter[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showResearch, setShowResearch] = useState(false)
+  const [panelSnap, setPanelSnap] = useState(PANEL_LIST)
+  const [mapBounds, setMapBounds] = useState<{
     swLat: number; swLng: number; neLat: number; neLng: number
   } | null>(null)
 
   const prevCenterRef = useRef(center)
-  const mapRef        = useRef<kakao.maps.Map | null>(null)
+  const mapRef = useRef<kakao.maps.Map | null>(null)
 
   // ── 진입 시 즉시 위치 요청 (Kakao 로드와 병렬) ───────────
   useEffect(() => {
@@ -248,7 +254,7 @@ export default function MapClient() {
         if (!s.name.toLowerCase().includes(q) && !s.address.includes(q)) return false
       }
       if (activeFilters.includes('female') && !s.rules?.female_allowed) return false
-      if (activeFilters.includes('male')   && !s.rules?.male_allowed)   return false
+      if (activeFilters.includes('male') && !s.rules?.male_allowed) return false
       if (activeFilters.includes('tattoo') && !s.rules?.tattoo_allowed) return false
       if (activeFilters.includes('autoloyly') && !s.sauna_rooms?.some(r => r.has_auto_loyly)) return false
       return true
@@ -259,14 +265,14 @@ export default function MapClient() {
   const visibleSaunas = useMemo(() => {
     if (!mapBounds) return filteredSaunas
     return filteredSaunas.filter(s =>
-      s.latitude  >= mapBounds.swLat && s.latitude  <= mapBounds.neLat &&
+      s.latitude >= mapBounds.swLat && s.latitude <= mapBounds.neLat &&
       s.longitude >= mapBounds.swLng && s.longitude <= mapBounds.neLng
     )
   }, [filteredSaunas, mapBounds])
 
   // ── 지도 콜백 ─────────────────────────────────────────────
   const updateBounds = useCallback((map: kakao.maps.Map) => {
-    const b  = map.getBounds()
+    const b = map.getBounds()
     const sw = b.getSouthWest()
     const ne = b.getNorthEast()
     setMapBounds({ swLat: sw.getLat(), swLng: sw.getLng(), neLat: ne.getLat(), neLng: ne.getLng() })
@@ -362,9 +368,8 @@ export default function MapClient() {
               const isOn = activeFilters.includes(opt.id)
               return (
                 <button key={opt.id} onClick={() => toggleFilter(opt.id)}
-                  className={`flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold shadow-sm transition active:scale-95 ${
-                    isOn ? 'bg-point text-white' : 'border border-border-main bg-bg-card text-text-sub'
-                  }`}>
+                  className={`flex-shrink-0 rounded-full px-3 py-1.5 text-[11px] font-bold shadow-sm transition active:scale-95 ${isOn ? 'bg-point text-white' : 'border border-border-main bg-bg-card text-text-sub'
+                    }`}>
                   {opt.label}
                 </button>
               )
@@ -517,9 +522,8 @@ export default function MapClient() {
                 const minC = baths?.length ? Math.min(...baths.map(b => b.temp)) : null
                 return (
                   <button key={sauna.id} onClick={() => handleMarkerClick(sauna)}
-                    className={`flex-shrink-0 w-[140px] rounded-xl border text-left overflow-hidden transition active:scale-[0.97] ${
-                      selectedSauna?.id === sauna.id ? 'border-point ring-1 ring-point/30' : 'border-border-main'
-                    } bg-bg-card`}
+                    className={`flex-shrink-0 w-[140px] rounded-xl border text-left overflow-hidden transition active:scale-[0.97] ${selectedSauna?.id === sauna.id ? 'border-point ring-1 ring-point/30' : 'border-border-main'
+                      } bg-bg-card`}
                   >
                     <div className="h-20 w-full overflow-hidden bg-bg-main">
                       {sauna.images?.[0]
