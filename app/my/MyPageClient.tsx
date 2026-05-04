@@ -15,7 +15,7 @@ const MENU_ITEMS = [
   { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites', comingSoon: false },
   { icon: BiHistory, label: '사활 기록', desc: '내가 다녀온 사우나 방문 기록', href: '/my/records', comingSoon: false },
   { icon: BiBell, label: '알림 설정', desc: '키워드 알림 및 공지사항', href: '/my/notifications', comingSoon: true },
-  { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings', comingSoon: false },
+  { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings', comingSoon: true },
 ]
 
 export default function MyPageClient() {
