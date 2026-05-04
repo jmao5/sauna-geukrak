@@ -8,14 +8,13 @@ import Skeleton from '@/components/ui/Skeleton'
 import Link from 'next/link'
 import { BiSearch, BiMap, BiX, BiChevronDown, BiSortAlt2, BiTrophy, BiStar } from 'react-icons/bi'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
-import { getFeaturedSaunas, getTopReviewedSaunas } from './actions/sauna.actions'
 import Loading from '@/components/ui/Loading'
 import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'male' | 'parking'
-type SortKey   = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
+type SortKey = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
 
 // ── 상수 ──────────────────────────────────────────────────────
 const REGIONS = [
@@ -25,22 +24,22 @@ const REGIONS = [
 ]
 
 const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
-  { id: 'autoloyly',   label: '오토 로우리', emoji: '💦' },
+  { id: 'autoloyly', label: '오토 로우리', emoji: '💦' },
   { id: 'groundwater', label: '지하수 냉탕', emoji: '🏔️' },
-  { id: 'jjimjilbang', label: '찜질방',      emoji: '🧖' },
-  { id: 'tattoo',      label: '타투 OK',     emoji: '🖋️' },
-  { id: 'female',      label: '여성 가능',   emoji: '👩' },
-  { id: 'male',        label: '남성 가능',   emoji: '👨' },
-  { id: 'parking',     label: '주차',        emoji: '🅿️' },
+  { id: 'jjimjilbang', label: '찜질방', emoji: '🧖' },
+  { id: 'tattoo', label: '타투 OK', emoji: '🖋️' },
+  { id: 'female', label: '여성 가능', emoji: '👩' },
+  { id: 'male', label: '남성 가능', emoji: '👨' },
+  { id: 'parking', label: '주차', emoji: '🅿️' },
 ]
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: 'default',    label: '등록순' },
-  { id: 'rating',     label: '평점 높은순' },
-  { id: 'reviews',    label: '사활 많은순' },
-  { id: 'temp_hot',   label: '사우나 온도 높은순' },
-  { id: 'temp_cold',  label: '냉탕 온도 낮은순' },
-  { id: 'price_asc',  label: '가격 낮은순' },
+  { id: 'default', label: '등록순' },
+  { id: 'rating', label: '평점 높은순' },
+  { id: 'reviews', label: '사활 많은순' },
+  { id: 'temp_hot', label: '사우나 온도 높은순' },
+  { id: 'temp_cold', label: '냉탕 온도 낮은순' },
+  { id: 'price_asc', label: '가격 낮은순' },
 ]
 
 const PAGE_SIZE = 20
@@ -119,16 +118,16 @@ function CurationSection() {
           <div className="flex gap-3 overflow-x-auto scrollbar-hide px-4">
             {isLoading
               ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex-shrink-0 w-[200px] h-[160px] rounded-2xl bg-bg-sub animate-pulse skeleton-shimmer" />
-                ))
+                <div key={i} className="flex-shrink-0 w-[200px] h-[160px] rounded-2xl bg-bg-sub animate-pulse skeleton-shimmer" />
+              ))
               : featured.map(sauna => (
-                  <SaunaCard
-                    key={sauna.id}
-                    sauna={sauna}
-                    variant="grid"
-                    className="flex-shrink-0 w-[200px]"
-                  />
-                ))
+                <SaunaCard
+                  key={sauna.id}
+                  sauna={sauna}
+                  variant="grid"
+                  className="flex-shrink-0 w-[200px]"
+                />
+              ))
             }
           </div>
         </div>
@@ -147,48 +146,47 @@ function CurationSection() {
           <div className="space-y-0">
             {isLoading
               ? Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex gap-3 px-4 py-3">
-                    <div className="w-6 h-6 rounded-full bg-bg-sub animate-pulse skeleton-shimmer flex-shrink-0" />
-                    <div className="flex-1 space-y-1.5">
-                      <div className="h-3 w-2/3 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
-                      <div className="h-2.5 w-1/2 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
-                    </div>
+                <div key={i} className="flex gap-3 px-4 py-3">
+                  <div className="w-6 h-6 rounded-full bg-bg-sub animate-pulse skeleton-shimmer flex-shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3 w-2/3 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
+                    <div className="h-2.5 w-1/2 rounded bg-bg-sub animate-pulse skeleton-shimmer" />
                   </div>
-                ))
+                </div>
+              ))
               : topReviewed.map((sauna, idx) => {
-                  const maxT = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map(r => r.temp)) : null
-                  const minC = sauna.cold_baths?.length  ? Math.min(...sauna.cold_baths.map(b => b.temp))  : null
-                  const rankColors = ['text-gold', 'text-silver', 'text-bronze']
-                  return (
-                    <Link
-                      key={sauna.id}
-                      href={`/saunas/${sauna.id}`}
-                      className="flex items-center gap-3 px-4 py-3 transition active:bg-bg-sub"
-                    >
-                      <span className={`flex-shrink-0 w-6 text-center text-[13px] font-black tabular-nums ${
-                        idx < 3 ? rankColors[idx] : 'text-text-muted'
+                const maxT = sauna.sauna_rooms?.length ? Math.max(...sauna.sauna_rooms.map(r => r.temp)) : null
+                const minC = sauna.cold_baths?.length ? Math.min(...sauna.cold_baths.map(b => b.temp)) : null
+                const rankColors = ['text-gold', 'text-silver', 'text-bronze']
+                return (
+                  <Link
+                    key={sauna.id}
+                    href={`/saunas/${sauna.id}`}
+                    className="flex items-center gap-3 px-4 py-3 transition active:bg-bg-sub"
+                  >
+                    <span className={`flex-shrink-0 w-6 text-center text-[13px] font-black tabular-nums ${idx < 3 ? rankColors[idx] : 'text-text-muted'
                       }`}>
-                        {idx + 1}
-                      </span>
-                      <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-bg-sub">
-                        {sauna.images?.[0]
-                          ? <img src={sauna.images[0]} alt={sauna.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
-                          : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg"><span className="text-lg">🧖</span></div>
-                        }
+                      {idx + 1}
+                    </span>
+                    <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-xl bg-bg-sub">
+                      {sauna.images?.[0]
+                        ? <img src={sauna.images[0]} alt={sauna.name} className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+                        : <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg"><span className="text-lg">🧖</span></div>
+                      }
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-black text-text-main">{sauna.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {maxT !== null && <span className="text-[11px] font-black text-sauna">🔥{maxT}°</span>}
+                        {minC !== null && <span className="text-[11px] font-black text-cold">❄️{minC}°</span>}
+                        {!!sauna.review_count && (
+                          <span className="text-[11px] text-text-muted">사활 <span className="font-black text-point">{sauna.review_count}</span></span>
+                        )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-black text-text-main">{sauna.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {maxT !== null && <span className="text-[11px] font-black text-sauna">🔥{maxT}°</span>}
-                          {minC !== null && <span className="text-[11px] font-black text-cold">❄️{minC}°</span>}
-                          {!!sauna.review_count && (
-                            <span className="text-[11px] text-text-muted">사활 <span className="font-black text-point">{sauna.review_count}</span></span>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  )
-                })
+                    </div>
+                  </Link>
+                )
+              })
             }
           </div>
         </div>
@@ -202,16 +200,16 @@ export default function HomeClient() {
   const router = useRouter()
 
   // 검색 상태
-  const [keyword, setKeyword]             = useState('')
+  const [keyword, setKeyword] = useState('')
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
-  const [selectedConds, setSelectedConds]   = useState<Condition[]>([])
-  const [sortKey, setSortKey]             = useState<SortKey>('default')
+  const [selectedConds, setSelectedConds] = useState<Condition[]>([])
+  const [sortKey, setSortKey] = useState<SortKey>('default')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
   // 시트
-  const [regionOpen, setRegionOpen]     = useState(false)
+  const [regionOpen, setRegionOpen] = useState(false)
   const [conditionOpen, setConditionOpen] = useState(false)
-  const [sortOpen, setSortOpen]           = useState(false)
+  const [sortOpen, setSortOpen] = useState(false)
 
   // 무한 쿼리
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
@@ -240,28 +238,28 @@ export default function HomeClient() {
     // 조건
     if (selectedConds.length > 0) {
       const isFemale = selectedConds.includes('female')
-      const isMale   = selectedConds.includes('male')
-      const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+      const isMale = selectedConds.includes('male')
+      const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
 
       list = list.filter((s) =>
         selectedConds.every((cond) => {
           switch (cond) {
-            case 'autoloyly':   
+            case 'autoloyly':
               if (pref) {
                 return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
               }
               return s.sauna_rooms?.some((r) => r.has_auto_loyly)
-            case 'groundwater': 
+            case 'groundwater':
               if (pref) {
                 return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
               }
               return s.cold_baths?.some((b) => b.is_groundwater)
             case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
-            case 'tattoo':      return s.rules?.tattoo_allowed
-            case 'female':      return s.rules?.female_allowed
-            case 'male':        return s.rules?.male_allowed !== false
-            case 'parking':     return (s as any).parking
-            default:            return true
+            case 'tattoo': return s.rules?.tattoo_allowed
+            case 'female': return s.rules?.female_allowed
+            case 'male': return s.rules?.male_allowed !== false
+            case 'parking': return (s as any).parking
+            default: return true
           }
         })
       )
@@ -278,8 +276,8 @@ export default function HomeClient() {
 
     // 정렬
     const isFemale = selectedConds.includes('female')
-    const isMale   = selectedConds.includes('male')
-    const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+    const isMale = selectedConds.includes('male')
+    const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
 
     switch (sortKey) {
       case 'rating':
@@ -290,13 +288,13 @@ export default function HomeClient() {
         break
       case 'temp_hot':
         list = [...list].sort((a, b) => {
-          const aRooms = pref 
-            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+          const aRooms = pref
+            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
             : a.sauna_rooms
-          const bRooms = pref 
-            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') 
+          const bRooms = pref
+            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
             : b.sauna_rooms
-          
+
           const aMax = aRooms?.length ? Math.max(...aRooms.map((r) => r.temp)) : 0
           const bMax = bRooms?.length ? Math.max(...bRooms.map((r) => r.temp)) : 0
           return bMax - aMax
@@ -304,11 +302,11 @@ export default function HomeClient() {
         break
       case 'temp_cold':
         list = [...list].sort((a, b) => {
-          const aBaths = pref 
-            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+          const aBaths = pref
+            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
             : a.cold_baths
-          const bBaths = pref 
-            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') 
+          const bBaths = pref
+            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
             : b.cold_baths
 
           const aMin = aBaths?.length ? Math.min(...aBaths.map((r) => r.temp)) : 99
@@ -344,7 +342,7 @@ export default function HomeClient() {
     )
 
   const hasFilter = !!selectedRegion || selectedConds.length > 0 || !!keyword.trim()
-  const resetAll  = () => {
+  const resetAll = () => {
     setSelectedRegion(null)
     setSelectedConds([])
     setKeyword('')
@@ -380,30 +378,27 @@ export default function HomeClient() {
         <div className="flex gap-2.5 px-4 pb-3">
           <button
             onClick={() => setRegionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${
-              selectedRegion
-                ? 'border-point bg-point/5 text-point'
-                : 'border-border-main bg-bg-sub text-text-sub'
-            }`}
+            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedRegion
+              ? 'border-point bg-point/5 text-point'
+              : 'border-border-main bg-bg-sub text-text-sub'
+              }`}
           >
             <div className="text-left">
               <p className="text-[10px] font-black tracking-wider uppercase opacity-60">지역</p>
               <p className="text-[13px] font-black mt-0.5">{selectedRegion ?? '선택하기'}</p>
             </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${
-              selectedRegion ? 'bg-point' : 'bg-text-muted'
-            }`}>
+            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedRegion ? 'bg-point' : 'bg-text-muted'
+              }`}>
               {selectedRegion ? '✓' : '+'}
             </div>
           </button>
 
           <button
             onClick={() => setConditionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${
-              selectedConds.length > 0
-                ? 'border-point bg-point/5 text-point'
-                : 'border-border-main bg-bg-sub text-text-sub'
-            }`}
+            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedConds.length > 0
+              ? 'border-point bg-point/5 text-point'
+              : 'border-border-main bg-bg-sub text-text-sub'
+              }`}
           >
             <div className="text-left">
               <p className="text-[10px] font-black tracking-wider uppercase opacity-60">조건</p>
@@ -413,9 +408,8 @@ export default function HomeClient() {
                   : '선택하기'}
               </p>
             </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${
-              selectedConds.length > 0 ? 'bg-point' : 'bg-text-muted'
-            }`}>
+            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedConds.length > 0 ? 'bg-point' : 'bg-text-muted'
+              }`}>
               {selectedConds.length > 0 ? selectedConds.length : '+'}
             </div>
           </button>
@@ -449,11 +443,10 @@ export default function HomeClient() {
                 <button
                   key={opt.id}
                   onClick={() => toggleCond(opt.id)}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
-                    isActive
-                      ? 'bg-point text-white'
-                      : 'border border-border-main bg-bg-main text-text-sub'
-                  }`}
+                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${isActive
+                    ? 'bg-point text-white'
+                    : 'border border-border-main bg-bg-main text-text-sub'
+                    }`}
                 >
                   <span>{opt.emoji}</span>
                   {opt.label}
@@ -519,9 +512,9 @@ export default function HomeClient() {
         ) : (
           filtered.map((sauna, index) => {
             const isFemale = selectedConds.includes('female')
-            const isMale   = selectedConds.includes('male')
-            const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
-            
+            const isMale = selectedConds.includes('male')
+            const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
+
             return (
               <SaunaCard
                 key={sauna.id}
@@ -546,9 +539,8 @@ export default function HomeClient() {
           {/* 전체 */}
           <button
             onClick={() => { setSelectedRegion(null); setRegionOpen(false) }}
-            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
-              !selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-            }`}
+            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${!selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+              }`}
           >
             전체 지역
             {!selectedRegion && <span className="text-[16px]">✓</span>}
@@ -560,9 +552,8 @@ export default function HomeClient() {
                 <button
                   key={region}
                   onClick={() => { setSelectedRegion(region); setRegionOpen(false) }}
-                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${
-                    isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
-                  }`}
+                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
+                    }`}
                 >
                   {region}
                 </button>
@@ -581,17 +572,15 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => toggleCond(opt.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
-                }`}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
+                  }`}
               >
                 <span className="text-[18px]">{opt.emoji}</span>
                 <span className={`flex-1 text-left text-[13px] font-bold ${isActive ? 'text-point' : 'text-text-main'}`}>
                   {opt.label}
                 </span>
-                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
-                  isActive ? 'border-point bg-point' : 'border-border-main'
-                }`}>
+                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${isActive ? 'border-point bg-point' : 'border-border-main'
+                  }`}>
                   {isActive && <span className="text-[10px] font-black text-white">✓</span>}
                 </div>
               </button>
@@ -617,9 +606,8 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => { setSortKey(opt.id); setSortOpen(false) }}
-                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-                }`}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+                  }`}
               >
                 {opt.label}
                 {isActive && <span className="text-[16px]">✓</span>}
@@ -631,3 +619,11 @@ export default function HomeClient() {
     </div>
   )
 }
+function getFeaturedSaunas(): SaunaSummaryDto[] | Promise<SaunaSummaryDto[]> {
+  throw new Error('Function not implemented.')
+}
+
+function getTopReviewedSaunas(arg0: number): SaunaSummaryDto[] | Promise<SaunaSummaryDto[]> {
+  throw new Error('Function not implemented.')
+}
+
