@@ -26,6 +26,43 @@ export async function getSaunas(page = 0, pageSize = 20): Promise<SaunaSummaryDt
   }
 }
 
+export async function getSaunasByLocation(
+  lat: number,
+  lng: number,
+  radiusKm = 10
+): Promise<SaunaSummaryDto[]> {
+  try {
+    const supabase = await createClient()
+    // Supabase PostGIS earth_distance 없으면 바운딩 박스 필터로 대체
+    // lat/lng 범위 계산 (1도 ≈ 111km)
+    const delta = radiusKm / 111
+    const { data, error } = await supabase
+      .from('saunas')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
+      .gte('latitude',  lat - delta)
+      .lte('latitude',  lat + delta)
+      .gte('longitude', lng - delta)
+      .lte('longitude', lng + delta)
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) throw new Error(error.message)
+    // 정확한 원형 반경 필터 (bounding box 제거)
+    const filtered = (data as SaunaSummaryDto[]).filter((s) => {
+      const dLat = s.latitude  - lat
+      const dLng = s.longitude - lng
+      const distKm = Math.sqrt(dLat * dLat + dLng * dLng) * 111
+      return distKm <= radiusKm
+    })
+    return filtered.map((row) => ({
+      ...row,
+      images: row.images?.slice(0, 1) ?? [],
+    }))
+  } catch (error) {
+    console.error('위치 기반 사우나 조회 에러:', error)
+    throw new Error('사우나 목록을 불러오는데 실패했습니다.')
+  }
+}
+
 export async function getSaunaById(id: string): Promise<SaunaDto> {
   try {
     const supabase = await createClient()

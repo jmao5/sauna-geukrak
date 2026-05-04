@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
-import { getSaunas } from '@/app/actions/sauna.actions'
+import { getSaunasByLocation } from '@/app/actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { BiCurrentLocation, BiSearch, BiX, BiChevronRight, BiRefresh } from 'react-icons/bi'
@@ -156,11 +156,13 @@ export default function MapClient() {
 
   const [isLoaded, setIsLoaded] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [queryLocation, setQueryLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [center, setCenter] = useState({ lat: 37.545, lng: 126.84 })
   const [mapCenter, setMapCenter] = useState({ lat: 37.545, lng: 126.84 })
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
   const [selectedSauna, setSelectedSauna] = useState<SaunaSummaryDto | null>(null)
-  const [isLocating, setIsLocating] = useState(false)
+  const [isLocating, setIsLocating] = useState(true) // 진입 시 바로 위치 요청
   const [activeFilters, setActiveFilters] = useState<Filter[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [showResearch, setShowResearch] = useState(false)
@@ -177,18 +179,44 @@ export default function MapClient() {
     return () => clearInterval(check)
   }, [])
 
-  const { data: saunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas', 'all'],
-    queryFn: () => getSaunas(0, 200),
-    staleTime: 1000 * 60 * 5,
-  })
-
+  // 진입 시 자동 위치 요청
   useEffect(() => {
-    if (saunas.length > 0) {
-      const loc = { lat: saunas[0].latitude, lng: saunas[0].longitude }
-      setCenter(loc); prevCenterRef.current = loc
+    if (!navigator.geolocation) {
+      // 위치 거부 시 서울 기본값으로 쿼리
+      const fallback = { lat: 37.545, lng: 126.84 }
+      setCenter(fallback)
+      setQueryLocation(fallback)
+      prevCenterRef.current = fallback
+      setIsLocating(false)
+      return
     }
-  }, [saunas])
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setUserLocation(loc)
+        setQueryLocation(loc)
+        setCenter(loc)
+        prevCenterRef.current = loc
+        setIsLocating(false)
+      },
+      () => {
+        // 거부/실패 시 서울 기본값
+        const fallback = { lat: 37.545, lng: 126.84 }
+        setCenter(fallback)
+        setQueryLocation(fallback)
+        prevCenterRef.current = fallback
+        setIsLocating(false)
+      },
+      { timeout: 6000, enableHighAccuracy: false }
+    )
+  }, [])
+
+  const { data: saunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
+    queryKey: ['saunas', 'location', queryLocation?.lat, queryLocation?.lng],
+    queryFn: () => getSaunasByLocation(queryLocation!.lat, queryLocation!.lng, 15),
+    enabled: !!queryLocation,
+    staleTime: 1000 * 60 * 3,
+  })
 
   const filteredSaunas = saunas.filter((s) => {
     if (searchQuery) {
@@ -232,17 +260,30 @@ export default function MapClient() {
 
   const handleResearch = () => {
     prevCenterRef.current = mapCenter
+    setQueryLocation(mapCenter)  // 새 좌표로 재쿼리
     setShowResearch(false)
   }
 
   const handleLocate = () => {
+    if (userLocation) {
+      // 이미 위치 허용된 경우 저장된 좌표 재사용
+      setCenter(userLocation)
+      setQueryLocation(userLocation)
+      prevCenterRef.current = userLocation
+      setShowResearch(false)
+      return
+    }
     if (!navigator.geolocation) return
     setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-        setCenter(loc); prevCenterRef.current = loc
-        setIsLocating(false); setShowResearch(false)
+        setUserLocation(loc)
+        setQueryLocation(loc)
+        setCenter(loc)
+        prevCenterRef.current = loc
+        setIsLocating(false)
+        setShowResearch(false)
       },
       () => setIsLocating(false),
       { timeout: 5000 }
