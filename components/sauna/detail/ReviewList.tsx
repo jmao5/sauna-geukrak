@@ -22,21 +22,25 @@ const VISIT_TIME_LABELS: Record<string, string> = {
 const MAX_CHARS = 140
 
 /* ── 좋아요 버튼 ──────────────────────────────────────────── */
-function LikeButton({ reviewId, initialLiked, initialCount }: {
+function LikeButton({
+  reviewId, saunaId, initialLiked, initialCount,
+}: {
   reviewId: string
+  saunaId: string
   initialLiked: boolean
   initialCount: number
 }) {
   const { user } = useUserStore()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [liked, setLiked] = useState(initialLiked)
   const [count, setCount] = useState(initialCount)
-  const [isPending, setIsPending] = useState(false)
+  const isPendingRef = useRef(false)  // ref로 관리 → re-render 없이 useEffect 조건 판단
 
-  // likeStatuses 쿼리가 뒤늦게 로드되거나 갱신될 때 prop → state 동기화
-  // isPending 중에는 optimistic 값 유지 (깜빡임 방지)
+  // likeStatuses 쿼리가 갱신될 때 prop → state 동기화
+  // 단, 요청 중(pendingRef=true)이면 무시 (optimistic 값 보존)
   useEffect(() => {
-    if (!isPending) {
+    if (!isPendingRef.current) {
       setLiked(initialLiked)
       setCount(initialCount)
     }
@@ -48,35 +52,72 @@ function LikeButton({ reviewId, initialLiked, initialCount }: {
       router.push('/login')
       return
     }
-    if (isPending) return
+    if (isPendingRef.current) return
 
-    // 즉시 UI 반영 (Optimistic)
+    const prevLiked = liked
+    const prevCount = count
     const nextLiked = !liked
     const nextCount = Math.max(0, count + (nextLiked ? 1 : -1))
+
+    // 1. Optimistic UI 반영
     setLiked(nextLiked)
     setCount(nextCount)
-    setIsPending(true)
+    isPendingRef.current = true
+
+    // 2. 쿼리 캐시도 즉시 업데이트 → 탭 이동 후 돌아와도 캐시가 최신값 유지
+    queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
+      // ReviewList의 queryKey와 동일하게 맞춰야 함
+      // reviewIds 목록을 모르므로 like 관련 모든 캐시 항목에 적용
+      ['review-likes', saunaId],
+      (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          [reviewId]: { liked: nextLiked, count: nextCount },
+        }
+      }
+    )
 
     const result = await toggleReviewLike(reviewId)
-    setIsPending(false)
+    isPendingRef.current = false
 
     if (!result.ok) {
-      // 실패 시 롤백
-      setLiked(liked)
-      setCount(count)
+      // 실패 → 롤백
+      setLiked(prevLiked)
+      setCount(prevCount)
+      // 캐시도 롤백
+      queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
+        ['review-likes', saunaId],
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            [reviewId]: { liked: prevLiked, count: prevCount },
+          }
+        }
+      )
       toast.error(result.error ?? '좋아요 처리에 실패했습니다')
     } else {
-      // 서버 실제 값으로 동기화 (DB 트리거 카운트 반영)
+      // 성공 → 서버 실제값으로 최종 동기화
       setLiked(result.liked)
       setCount(result.count)
+      queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
+        ['review-likes', saunaId],
+        (old) => {
+          if (!old) return old
+          return {
+            ...old,
+            [reviewId]: { liked: result.liked, count: result.count },
+          }
+        }
+      )
     }
   }
 
   return (
     <button
       onClick={handleToggle}
-      disabled={isPending}
-      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95 disabled:opacity-60 ${
+      className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95 ${
         liked
           ? 'bg-red-50 text-red-500 dark:bg-red-950/20'
           : 'text-text-muted hover:bg-bg-sub hover:text-text-sub'
@@ -273,8 +314,9 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
 }
 
 /* ── ReviewCard ──────────────────────────────────────────── */
-function ReviewCard({ review, likeStatus }: {
+function ReviewCard({ review, saunaId, likeStatus }: {
   review: ReviewDto
+  saunaId: string
   likeStatus: { liked: boolean; count: number }
 }) {
   const [expanded, setExpanded] = useState(false)
@@ -371,6 +413,7 @@ function ReviewCard({ review, likeStatus }: {
         <div className="mt-2.5 flex items-center gap-1">
           <LikeButton
             reviewId={review.id}
+            saunaId={saunaId}
             initialLiked={likeStatus.liked}
             initialCount={likeStatus.count}
           />
@@ -434,14 +477,15 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
     staleTime: 1000 * 60 * 5,
   })
 
-  // reviews가 로드된 후 like 상태 조회
-  // queryKey에 review id 목록 포함 → 리뷰가 추가/삭제되면 자동 재조회
   const reviewIds = reviews.map((r) => r.id)
+
+  // queryKey를 saunaId만으로 단순화
+  // → LikeButton이 setQueryData할 때 같은 key를 참조하게 됨
   const { data: likeStatuses = {} } = useQuery({
-    queryKey: ['review-likes', saunaId, reviewIds.join(',')],
+    queryKey: ['review-likes', saunaId],
     queryFn: () => getReviewLikeStatuses(reviewIds),
     enabled: reviewIds.length > 0,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 5,  // 5분 — 탭 이동 후 돌아와도 재요청 안 함
   })
 
   if (isLoading) return <ReviewSkeleton />
@@ -470,8 +514,8 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
         <ReviewCard
           key={review.id}
           review={review}
+          saunaId={saunaId}
           likeStatus={
-            // likeStatuses가 로드되기 전엔 reviews 테이블의 like_count를 초기값으로 사용
             likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }
           }
         />
