@@ -12,6 +12,39 @@ function toSummary(row: any): SaunaSummaryDto {
   return { ...row, images: row.images?.slice(0, 1) ?? [] }
 }
 
+export async function getFeaturedSaunas(): Promise<SaunaSummaryDto[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('saunas')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
+      .eq('is_featured', true)
+      .order('review_count', { ascending: false })
+      .limit(10)
+    if (error) throw new Error(error.message)
+    return data as SaunaSummaryDto[]
+  } catch (error) {
+    console.error('에디터 픽 조회 에러:', error)
+    return []
+  }
+}
+
+export async function getTopReviewedSaunas(limit = 10): Promise<SaunaSummaryDto[]> {
+  try {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('saunas')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count')
+      .order('review_count', { ascending: false })
+      .limit(limit)
+    if (error) throw new Error(error.message)
+    return data as SaunaSummaryDto[]
+  } catch (error) {
+    console.error('TOP 리븷 조회 에러:', error)
+    return []
+  }
+}
+
 export async function getSaunas(page = 0, pageSize = 20): Promise<SaunaSummaryDto[]> {
   try {
     const supabase = await createClient()
@@ -30,7 +63,7 @@ export async function getSaunas(page = 0, pageSize = 20): Promise<SaunaSummaryDt
   }
 }
 
-/** TOP: review_count 기준 */
+/** TOP 10: 이번 달 사활 수 기준 */
 export async function getTopSaunas(limit = 10): Promise<SaunaSummaryDto[]> {
   try {
     const supabase = await createClient()
@@ -63,7 +96,7 @@ export async function getFeaturedSaunas(): Promise<SaunaSummaryDto[]> {
   }
 }
 
-/** 위치 기반 — 가까운 순 */
+/** 위치 기반 — 가까운 순 (정렬은 클라이언트에서 거리 계산) */
 export async function getSaunasByLocation(
   lat: number,
   lng: number,
@@ -82,8 +115,8 @@ export async function getSaunasByLocation(
       .order('created_at', { ascending: false })
       .limit(200)
     if (error) throw new Error(error.message)
-    return (data as any[])
-      .map(toSummary)
+    const list = (data as any[]).map(toSummary)
+    return list
       .map((s) => ({
         ...s,
         _dist: Math.sqrt((s.latitude - lat) ** 2 + (s.longitude - lng) ** 2) * 111,
