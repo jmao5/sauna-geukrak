@@ -9,6 +9,7 @@ export const NAVBAR_HIDDEN_EXACT_PATHS = ['/404']
 export const NAVBAR_HIDDEN_PREFIX_PATHS: string[] = [
   '/login',
   '/saunas/new',
+  '/users/',
 ]
 
 // FloatingActions를 숨길 경로 접두사들
