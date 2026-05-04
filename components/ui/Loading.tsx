@@ -1,7 +1,6 @@
 'use client'
 
 import { clsx } from 'clsx'
-import { m } from 'framer-motion'
 import Lottie from 'lottie-react'; // 🚀 lottie-react 라이브러리 추가
 import Image from 'next/image'
 import { ReactNode, useEffect, useState } from 'react'
@@ -34,7 +33,7 @@ interface LoadingProps {
  * 사우나 극락 전용 공통 로딩 컴포넌트
  */
 export default function Loading({
-  variant = 'lottie', // ✨ 기본값을 'lottie'로 변경하여 전역에 즉시 적용!
+  variant = 'lottie', // ✨ 기본값
   fullScreen = true,
   message,
   messageDelay = 1000,
@@ -50,13 +49,13 @@ export default function Loading({
 
   useEffect(() => {
     // 만약 animationData가 안 넘어왔고, lottie 스타일이라면 JSON을 fetch 해옵니다.
-    if (!animationData && variant === 'lottie') {
+    if (!animationData && variant === 'lottie' && !lottieData) {
       fetch('/lottie/waiting.json')
         .then((res) => res.json())
         .then((data) => setLottieData(data))
         .catch((err) => console.error('Lottie load error:', err))
     }
-  }, [animationData, variant])
+  }, [animationData, variant, lottieData])
 
   useEffect(() => {
     setMounted(true)
@@ -80,23 +79,28 @@ export default function Loading({
         className
       )}
     >
-      {variant === 'lottie' && !!lottieData && (
+      {variant === 'lottie' && (
         <div className="relative flex items-center justify-center">
-          <Lottie
-            animationData={lottieData}
-            loop={true}
-            style={{ width: imageSize, height: imageSize }}
-          />
+          {lottieData ? (
+            <Lottie
+              animationData={lottieData}
+              loop={true}
+              style={{ width: imageSize, height: imageSize }}
+              rendererSettings={{ preserveAspectRatio: 'xMidYMid slice' }}
+            />
+          ) : (
+            // Lottie 로딩 전까지는 스피너 표시 (CPU 절약)
+            <div 
+              className="animate-loading-spin rounded-full border-4 border-border-main border-t-point" 
+              style={{ width: 40, height: 40 }} 
+            />
+          )}
         </div>
       )}
 
-      {/* 🖼️ 기존 커스텀 이미지 영역 */}
+      {/* 🖼️ 기존 커스텀 이미지 영역 (CSS 애니메이션으로 교체) */}
       {variant === 'image' && imageSrc && (
-        <m.div
-          className="relative flex items-center justify-center"
-          animate={{ scale: [0.95, 1.05, 0.95], opacity: [0.8, 1, 0.8] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        >
+        <div className="relative flex items-center justify-center animate-loading-pulse">
           <Image
             src={imageSrc}
             alt="로딩 중..."
@@ -105,21 +109,31 @@ export default function Loading({
             className="object-contain"
             priority
           />
-        </m.div>
+        </div>
       )}
 
+      {/* 🟢 점 로딩 (CSS 애니메이션으로 교체) */}
       {variant === 'dots' && (
         <div className="flex gap-2">
           {[0, 1, 2].map((index) => (
-            <m.div
+            <div
               key={index}
-              className="h-3 w-3 rounded-full"
-              style={{ backgroundColor: color }}
-              animate={{ y: ['0%', '-100%', '0%'], scale: [1, 0.8, 1], opacity: [1, 0.7, 1] }}
-              transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut', delay: index * 0.15 }}
+              className="h-3 w-3 rounded-full animate-loading-bounce"
+              style={{ 
+                backgroundColor: color,
+                animationDelay: `${index * 0.15}s`
+              }}
             />
           ))}
         </div>
+      )}
+
+      {/* 🟢 스피너 (추가) */}
+      {variant === 'spinner' && (
+        <div 
+          className="animate-loading-spin rounded-full border-4 border-border-main border-t-point" 
+          style={{ width: 40, height: 40, borderTopColor: color }} 
+        />
       )}
 
       {/* 메시지 영역 */}
