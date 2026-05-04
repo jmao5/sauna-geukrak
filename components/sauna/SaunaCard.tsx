@@ -139,7 +139,10 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
           style={{ width: 84, height: 84, background: 'var(--bg-sub)' }}
         >
           {displayImage ? (
-            <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="84px" />
+            <Image src={displayImage} alt={sauna.name} fill className="object-cover" sizes="84px"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
+          />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <span className="text-3xl opacity-10">♨</span>
