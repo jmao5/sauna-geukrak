@@ -159,7 +159,7 @@ export default function MapClient() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [queryLocation, setQueryLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [center, setCenter] = useState({ lat: 37.545, lng: 126.84 })
-  const [mapCenter, setMapCenter] = useState({ lat: 37.545, lng: 126.84 })
+  const currentCenterRef = useRef(center)
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
   const [selectedSauna, setSelectedSauna] = useState<SaunaSummaryDto | null>(null)
   const [isLocating, setIsLocating] = useState(true) // 진입 시 바로 위치 요청
@@ -189,6 +189,7 @@ export default function MapClient() {
       // 위치 거부 시 서울 기본값으로 쿼리
       const fallback = { lat: 37.545, lng: 126.84 }
       setCenter(fallback)
+      currentCenterRef.current = fallback
       setQueryLocation(fallback)
       prevCenterRef.current = fallback
       setIsLocating(false)
@@ -200,6 +201,7 @@ export default function MapClient() {
         setUserLocation(loc)
         setQueryLocation(loc)
         setCenter(loc)
+        currentCenterRef.current = loc
         prevCenterRef.current = loc
         setIsLocating(false)
       },
@@ -207,6 +209,7 @@ export default function MapClient() {
         // 거부/실패 시 서울 기본값
         const fallback = { lat: 37.545, lng: 126.84 }
         setCenter(fallback)
+        currentCenterRef.current = fallback
         setQueryLocation(fallback)
         prevCenterRef.current = fallback
         setIsLocating(false)
@@ -271,16 +274,25 @@ export default function MapClient() {
   const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
     const lat = map.getCenter().getLat()
     const lng = map.getCenter().getLng()
-    setCenter({ lat, lng })
-    setMapCenter({ lat, lng })
-    const dist = Math.sqrt(Math.pow(lat - prevCenterRef.current.lat, 2) + Math.pow(lng - prevCenterRef.current.lng, 2))
-    setShowResearch(dist > 0.01)
-    updateBounds(map)
+    currentCenterRef.current = { lat, lng }
   }, [])
 
+  const handleDragEnd = useCallback((map: kakao.maps.Map) => {
+    const { lat, lng } = currentCenterRef.current
+    const dist = Math.sqrt(Math.pow(lat - prevCenterRef.current.lat, 2) + Math.pow(lng - prevCenterRef.current.lng, 2))
+    setShowResearch(dist > 0.01)
+  }, [])
+
+  const handleIdle = useCallback((map: kakao.maps.Map) => {
+    updateBounds(map)
+    // 현재 위치를 state와 동기화하여 다른 이유로 리렌더링 시 지도가 튀는 현상 방지
+    setCenter(currentCenterRef.current)
+  }, [updateBounds])
+
   const handleResearch = () => {
-    prevCenterRef.current = mapCenter
-    setQueryLocation(mapCenter)  // 새 좌표로 재쿼리
+    const current = currentCenterRef.current
+    prevCenterRef.current = current
+    setQueryLocation(current)  // 새 좌표로 재쿼리
     setShowResearch(false)
   }
 
@@ -288,6 +300,7 @@ export default function MapClient() {
     if (userLocation) {
       // 이미 위치 허용된 경우 저장된 좌표 재사용
       setCenter(userLocation)
+      currentCenterRef.current = userLocation
       setQueryLocation(userLocation)
       prevCenterRef.current = userLocation
       setShowResearch(false)
@@ -301,6 +314,7 @@ export default function MapClient() {
         setUserLocation(loc)
         setQueryLocation(loc)
         setCenter(loc)
+        currentCenterRef.current = loc
         prevCenterRef.current = loc
         setIsLocating(false)
         setShowResearch(false)
@@ -316,7 +330,9 @@ export default function MapClient() {
   const handleMarkerClick = (sauna: SaunaSummaryDto) => {
     setSelectedSauna(sauna)
     setPanelSnap(180)
-    setCenter({ lat: sauna.latitude - 0.003, lng: sauna.longitude })
+    const newCenter = { lat: sauna.latitude - 0.003, lng: sauna.longitude }
+    setCenter(newCenter)
+    currentCenterRef.current = newCenter
   }
 
   // 뷰포트 안에 있는 마커만 렌더 (bounds 없으면 전체)
@@ -387,6 +403,8 @@ export default function MapClient() {
           <Map
             center={center}
             onCenterChanged={handleCenterChanged}
+            onDragEnd={handleDragEnd}
+            onIdle={handleIdle}
             onCreate={handleMapCreate}
             style={{ width: '100%', height: '100%' }}
             level={6}
