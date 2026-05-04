@@ -9,7 +9,7 @@ export async function getReviewsBySaunaId(saunaId: string): Promise<ReviewDto[]>
     const { data, error } = await supabase
       .from('reviews')
       .select(`id, rating, content, visit_date, visit_time, congestion, sessions, images, created_at,
-        users (id, nickname, avatar_url)`)
+        users!user_id (id, nickname, avatar_url)`)
       .eq('sauna_id', saunaId)
       .order('created_at', { ascending: false })
       .limit(20)
