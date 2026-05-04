@@ -10,6 +10,7 @@ import { BiCurrentLocation, BiSearch, BiX, BiChevronRight, BiRefresh } from 'rea
 import { m, AnimatePresence } from 'framer-motion'
 import Loading from '@/components/ui/Loading'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useKakaoReady } from '@/hooks/useKakaoReady'
 import Link from 'next/link'
 
 type Filter = 'female' | 'male' | 'tattoo' | 'autoloyly'
@@ -25,6 +26,7 @@ const PANEL_PEEK = 52
 const PANEL_LIST = 240
 const PANEL_FULL = 420
 
+// 서울 fallback — page.tsx prefetch와 동일한 좌표여야 캐시 히트
 const SEOUL_FALLBACK = { lat: 37.545, lng: 126.84 }
 
 // ── 스와이프 패널 ─────────────────────────────────────────────
@@ -147,16 +149,19 @@ export default function MapClient() {
   const router = useRouter()
   const isMobile = useIsMobile()
 
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [loadError, setLoadError] = useState(false)
+  // SDK 로드 — 폴링 없이 이벤트 기반
+  const { isReady: isLoaded, isError: loadError } = useKakaoReady()
+
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
-  const [queryLocation, setQueryLocation] = useState<{ lat: number; lng: number } | null>(null)
+  // ★ 초기값을 SEOUL_FALLBACK으로 — 서버 prefetch 캐시 즉시 히트
+  const [queryLocation, setQueryLocation] = useState(SEOUL_FALLBACK)
   const [center, setCenter] = useState(SEOUL_FALLBACK)
   const currentCenterRef = useRef(SEOUL_FALLBACK)
   const prevCenterRef = useRef(SEOUL_FALLBACK)
+
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null)
   const [selectedSauna, setSelectedSauna] = useState<SaunaSummaryDto | null>(null)
-  const [isLocating, setIsLocating] = useState(true)
+  const [isLocating, setIsLocating] = useState(false) // 초기 자동 위치 요청 중 여부
   const [activeFilters, setActiveFilters] = useState<Filter[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [showResearch, setShowResearch] = useState(false)
@@ -166,65 +171,33 @@ export default function MapClient() {
     swLat: number; swLng: number; neLat: number; neLng: number
   } | null>(null)
 
-  // ── SDK 로드 + 위치 요청 병렬 시작 ──────────────────────────
+  // 위치 권한 요청 — SDK 로드와 완전히 분리, 마운트 즉시 시작
   useEffect(() => {
-    // 1) 카카오 SDK — 폴링 대신 load() 콜백 직접 사용
-    const initKakao = () => {
-      if (window.kakao?.maps) {
-        window.kakao.maps.load(() => setIsLoaded(true))
-      } else {
-        // SDK 스크립트가 아직 파싱 중이면 짧게 대기 후 재시도
-        const t = setTimeout(initKakao, 50)
-        return () => clearTimeout(t)
-      }
-    }
-    initKakao()
-
-    // 2) 위치 요청 — SDK와 무관하게 동시 시작
-    if (!navigator.geolocation) {
-      setQueryLocation(SEOUL_FALLBACK)
-      setCenter(SEOUL_FALLBACK)
-      currentCenterRef.current = SEOUL_FALLBACK
-      prevCenterRef.current = SEOUL_FALLBACK
-      setIsLocating(false)
-      return
-    }
-
+    if (!navigator.geolocation) return
+    setIsLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         setUserLocation(loc)
-        setQueryLocation(loc)
+        setQueryLocation(loc)       // 실제 위치로 재쿼리 (캐시 미스 → 새 fetch)
         setCenter(loc)
         currentCenterRef.current = loc
         prevCenterRef.current = loc
         setIsLocating(false)
       },
       () => {
-        // 거부/실패 → 서울 폴백
-        setQueryLocation(SEOUL_FALLBACK)
-        setCenter(SEOUL_FALLBACK)
-        currentCenterRef.current = SEOUL_FALLBACK
-        prevCenterRef.current = SEOUL_FALLBACK
+        // 거부/타임아웃 → 서울 fallback 유지 (이미 prefetch됨)
         setIsLocating(false)
       },
-      { timeout: 3000, enableHighAccuracy: false } // 6초 → 3초
+      { timeout: 5000, enableHighAccuracy: false }
     )
   }, [])
 
-  // SDK 로드 실패 감지 (10초 후에도 isLoaded가 false면 에러)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (!isLoaded) setLoadError(true)
-    }, 10000)
-    return () => clearTimeout(t)
-  }, [isLoaded])
-
-  const { data: saunas = [], isLoading } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas', 'location', queryLocation?.lat, queryLocation?.lng],
-    queryFn: () => getSaunasByLocation(queryLocation!.lat, queryLocation!.lng, 15),
-    enabled: !!queryLocation,
+  const { data: saunas = [], isFetching } = useQuery<SaunaSummaryDto[]>({
+    queryKey: ['saunas', 'location', queryLocation.lat, queryLocation.lng],
+    queryFn: () => getSaunasByLocation(queryLocation.lat, queryLocation.lng, 15),
     staleTime: 1000 * 60 * 3,
+    // enabled 조건 제거 — queryLocation은 항상 유효한 값
   })
 
   const filteredSaunas = saunas.filter((s) => {
@@ -330,7 +303,6 @@ export default function MapClient() {
     currentCenterRef.current = newCenter
   }
 
-  // 뷰포트 안 마커만 렌더
   const visibleSaunas = mapBounds
     ? filteredSaunas.filter(s =>
         s.latitude  >= mapBounds.swLat && s.latitude  <= mapBounds.neLat &&
@@ -383,7 +355,7 @@ export default function MapClient() {
         </div>
       </div>
 
-      {/* 지도 — SDK 로드만 기다림, 데이터 로딩은 기다리지 않음 */}
+      {/* 지도 */}
       <div className="absolute inset-0">
         {!isLoaded ? (
           <div className="flex h-full items-center justify-center bg-bg-main">
@@ -421,7 +393,6 @@ export default function MapClient() {
                       onMouseOut={() => setHoveredMarkerId(null)}
                       onClick={() => handleMarkerClick(sauna)}
                     />
-                    {/* 말풍선 — hover/선택된 것만 렌더 */}
                     {(isMobile || isHovered || isSelected) && (
                       <CustomOverlayMap
                         position={{ lat: sauna.latitude, lng: sauna.longitude }}
@@ -441,12 +412,14 @@ export default function MapClient() {
               })}
             </Map>
 
-            {/* 데이터 로딩 오버레이 — 지도는 보이되 로딩 인디케이터만 표시 */}
-            {isLoading && (
+            {/* 데이터 로딩 인디케이터 — 지도는 이미 보임 */}
+            {isFetching && (
               <div className="absolute bottom-[260px] left-1/2 -translate-x-1/2 z-20">
                 <div className="flex items-center gap-2 rounded-full border border-border-main bg-bg-card px-3.5 py-2 shadow-card">
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-border-main border-t-point" />
-                  <span className="text-[11px] font-bold text-text-sub">사우나 불러오는 중...</span>
+                  <span className="text-[11px] font-bold text-text-sub">
+                    {isLocating ? '위치 확인 중...' : '사우나 불러오는 중...'}
+                  </span>
                 </div>
               </div>
             )}
@@ -476,7 +449,7 @@ export default function MapClient() {
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-bg-card shadow-card transition active:scale-90">
           {isLocating
             ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-border-main border-t-point" />
-            : <BiCurrentLocation size={18} className="text-point" />
+            : <BiCurrentLocation size={18} className={userLocation ? 'text-point' : 'text-text-muted'} />
           }
         </button>
       </div>

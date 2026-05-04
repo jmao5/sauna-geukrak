@@ -12,17 +12,6 @@ import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import Loading from '@/components/ui/Loading'
 
-/**
- * Pretendard 폰트 설정
- *
- * 현재: Pretendard-Regular.woff2를 weight 100-900으로 선언
- *   → 900 이하 weight는 브라우저 합성 bold로 보여집니다.
- *
- * 품질 개선하려면 PretendardVariable.woff2 추가:
- *   https://github.com/orioncactus/pretendard/releases
- *   → PretendardVariable.woff2 를 app/fonts/ 에 복사
- *   → src를 './fonts/PretendardVariable.woff2' 로 변경
- */
 const pretendard = localFont({
   src: './fonts/Pretendard-Regular.woff2',
   variable: '--font-pretendard',
@@ -38,7 +27,6 @@ const juache = localFont({
   weight: '400'
 })
 
-// 1. 뷰포트 설정
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -50,17 +38,11 @@ export const viewport: Viewport = {
   ],
 }
 
-// 2. 글로벌 메타데이터 설정
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
-
-  title: {
-    template: '%s | 사우나 극락',
-    default: '사우나 극락',
-  },
-  description: '전국의 사우나, 찜질방 정보를 확인하고 나만의 방문 기록을 남겨보세요. 온도 정보부터 생생한 후기까지, 사우나 극락에서 확인하세요.',
-  keywords: ['사우나', '찜질방', '온천', '목욕', '사우나 추천', '사우나 극락', '사우나 이키타이'],
-
+  title: { template: '%s | 사우나 극락', default: '사우나 극락' },
+  description: '전국의 사우나, 찜질방 정보를 확인하고 나만의 방문 기록을 남겨보세요.',
+  keywords: ['사우나', '찜질방', '온천', '목욕', '사우나 추천', '사우나 극락'],
   openGraph: {
     title: '사우나 극락',
     description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
@@ -69,86 +51,45 @@ export const metadata: Metadata = {
     locale: 'ko_KR',
     type: 'website',
   },
-
-  twitter: {
-    card: 'summary_large_image',
-    title: '사우나 극락',
-    description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스',
-  },
-
-  verification: {
-    google: '0nTgDHM2T8QPuBOP45Kg1NFw7cgi_hMnXdyi5cZuEgk',
-  },
-
+  twitter: { card: 'summary_large_image', title: '사우나 극락', description: '한국의 사우나·찜질방을 발견하고 기록하는 서비스' },
+  verification: { google: '0nTgDHM2T8QPuBOP45Kg1NFw7cgi_hMnXdyi5cZuEgk' },
   icons: {
     icon: [
       { url: '/favicon.ico' },
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
-    apple: [
-      { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
   },
-
   manifest: '/manifest.json',
-
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: '사우나 극락',
-  },
-
-  formatDetection: {
-    telephone: false,
-  },
-
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-    },
-  },
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: '사우나 극락' },
+  formatDetection: { telephone: false },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" suppressHydrationWarning className={`${pretendard.variable} ${juache.variable}`}>
       <head>
+        {/* 테마 플리커 방지 인라인 스크립트 */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var theme = localStorage.getItem('ui-storage');
-                  if (theme) {
-                    var parsed = JSON.parse(theme);
-                    if (parsed.state && parsed.state.theme === 'dark') {
-                      document.documentElement.classList.add('dark');
-                    }
-                  }
-                } catch (e) {}
-              })();
-            ` }}
+            __html: `(function(){try{var t=localStorage.getItem('ui-storage');if(t){var p=JSON.parse(t);if(p.state&&p.state.theme==='dark')document.documentElement.classList.add('dark');}}catch(e){}})();`
+          }}
+        />
+        {/*
+          카카오 SDK: afterInteractive → 지도 화면 진입 전에 파싱 완료.
+          lazyOnload 는 onload 이벤트 후에야 다운로드 시작하므로 지도 진입 시 항상 늦음.
+          afterInteractive 는 hydration 직후 바로 실행 → 체감 1-2초 단축.
+        */}
+        <script
+          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
+          async
         />
       </head>
       <body className="antialiased overflow-hidden">
-        <Script
-          src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_APP_KEY}&libraries=services,clusterer&autoload=false`}
-          strategy="lazyOnload"
-        />
-        {/* Service Worker 등록 */}
         <Script id="sw-register" strategy="afterInteractive">
-          {`
-            if ('serviceWorker' in navigator) {
-              window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                  .catch(function(err) { console.warn('SW registration failed:', err) })
-              })
-            }
-          `}
+          {`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`}
         </Script>
         <QueryProvider>
           <ThemeProvider>
@@ -165,25 +106,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               position="bottom-center"
               toastOptions={{
                 className: 'font-pretendard text-sm font-medium shadow-lg',
-                style: {
-                  background: 'rgba(30, 30, 30, 0.9)',
-                  color: '#fff',
-                  padding: '12px 20px',
-                  borderRadius: '99px',
-                  backdropFilter: 'blur(10px)'
-                },
-                success: {
-                  iconTheme: {
-                    primary: '#FF007A',
-                    secondary: 'white'
-                  }
-                },
-                error: {
-                  iconTheme: {
-                    primary: '#dc2626',
-                    secondary: 'white'
-                  }
-                }
+                style: { background: 'rgba(30, 30, 30, 0.9)', color: '#fff', padding: '12px 20px', borderRadius: '99px', backdropFilter: 'blur(10px)' },
+                success: { iconTheme: { primary: '#FF007A', secondary: 'white' } },
+                error: { iconTheme: { primary: '#dc2626', secondary: 'white' } },
               }}
             />
           </ThemeProvider>

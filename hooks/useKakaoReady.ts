@@ -1,46 +1,57 @@
 import { useEffect, useState } from 'react'
 
 /**
- * 카카오 지도 SDK 로드 완료 여부를 반환하는 훅
+ * 카카오 지도 SDK 로드 완료 여부.
  *
- * layout.tsx에서 autoload=false로 SDK를 삽입하므로,
- * window.kakao.maps.load()를 직접 호출해야 services 등이 초기화됩니다.
- * 이 훅은 그 초기화를 보장하고 완료 여부를 반환합니다.
+ * layout.tsx에서 <script async>로 삽입하므로
+ * 폴링 대신 kakao.maps.load() 콜백만 사용.
+ * 이미 초기화된 경우(다른 페이지에서 한 번 진입 후 복귀) 즉시 true.
  */
 export function useKakaoReady(): { isReady: boolean; isError: boolean } {
-  const [isReady, setIsReady] = useState(false)
+  const [isReady, setIsReady] = useState(() =>
+    // 초기값: 이미 services까지 초기화돼 있으면 바로 true
+    typeof window !== 'undefined' && !!window.kakao?.maps?.services
+  )
   const [isError, setIsError] = useState(false)
 
   useEffect(() => {
-    // 이미 초기화 완료된 경우 바로 반환
-    if (window.kakao?.maps?.services) {
-      setIsReady(true)
-      return
-    }
+    if (isReady) return
 
-    let attempts = 0
-    const MAX_ATTEMPTS = 100 // 최대 10초 대기
+    let cancelled = false
 
-    const check = setInterval(() => {
-      attempts++
-
+    const init = () => {
+      if (cancelled) return
       if (window.kakao?.maps) {
-        // SDK는 로드됐으나 autoload=false라 아직 초기화 안 된 경우
         window.kakao.maps.load(() => {
-          setIsReady(true)
+          if (!cancelled) setIsReady(true)
         })
-        clearInterval(check)
         return
       }
-
-      if (attempts >= MAX_ATTEMPTS) {
-        clearInterval(check)
-        setIsError(true)
+      // SDK 스크립트가 아직 파싱 중 — 이벤트 기반으로 재시도
+      const onLoad = () => { clearTimeout(errorTimer); init() }
+      const script = document.querySelector<HTMLScriptElement>(
+        'script[src*="dapi.kakao.com"]'
+      )
+      if (script) {
+        script.addEventListener('load', onLoad, { once: true })
+      } else {
+        // 스크립트 태그 자체가 없는 경우 (SSR 등)
+        if (!cancelled) setIsError(true)
       }
-    }, 100)
+    }
 
-    return () => clearInterval(check)
-  }, [])
+    // 10초 후에도 초기화 안 되면 에러
+    const errorTimer = setTimeout(() => {
+      if (!isReady && !cancelled) setIsError(true)
+    }, 10_000)
+
+    init()
+
+    return () => {
+      cancelled = true
+      clearTimeout(errorTimer)
+    }
+  }, [isReady])
 
   return { isReady, isError }
 }
