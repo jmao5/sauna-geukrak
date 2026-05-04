@@ -405,7 +405,7 @@ export default function HomeClient() {
             </button>
           </div>
         ) : (
-          filtered.map((sauna) => {
+          filtered.map((sauna, index) => {
             const isFemale = selectedConds.includes('female')
             const isMale   = selectedConds.includes('male')
             const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
@@ -416,6 +416,7 @@ export default function HomeClient() {
                 sauna={sauna}
                 variant="row"
                 preferredGender={pref}
+                priority={index === 0}
               />
             )
           })

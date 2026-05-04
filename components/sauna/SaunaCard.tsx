@@ -12,6 +12,7 @@ interface SaunaCardProps {
   className?: string
   variant?: 'grid' | 'row'
   preferredGender?: 'male' | 'female'
+  priority?: boolean
 }
 
 // 성별별 데이터 추출
@@ -87,7 +88,7 @@ function GenderRow({ label, color, data }: {
   )
 }
 
-export default function SaunaCard({ sauna, className = '', variant = 'grid', preferredGender }: SaunaCardProps) {
+export default function SaunaCard({ sauna, className = '', variant = 'grid', preferredGender, priority = false }: SaunaCardProps) {
   const filteredRooms = preferredGender 
     ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
     : sauna.sauna_rooms
@@ -212,6 +213,8 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
             sizes="(max-width: 768px) 50vw, 320px"
+            priority={priority}
+            loading={priority ? 'eager' : 'lazy'}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">

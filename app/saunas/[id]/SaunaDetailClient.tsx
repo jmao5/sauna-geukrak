@@ -18,6 +18,7 @@ import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { CongestionSection } from '@/components/sauna/detail/CongestionSection'
 import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
+import { getSaunaById } from '@/app/actions/sauna.actions'
 import { checkFavorite, addFavorite, removeFavorite, getFavoriteCount } from '@/app/actions/favorite.actions'
 
 
