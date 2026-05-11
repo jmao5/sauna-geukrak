@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
@@ -47,8 +48,7 @@ export async function getSaunasByLocation(
     const filtered = (data as SaunaSummaryDto[]).filter((s) => {
       const dLat = s.latitude  - lat
       const dLng = s.longitude - lng
-      const distKm = Math.sqrt(dLat * dLat + dLng * dLng) * 111
-      return distKm <= radiusKm
+      return Math.sqrt(dLat * dLat + dLng * dLng) * 111 <= radiusKm
     })
     return filtered.map((row) => ({
       ...row,
@@ -92,7 +92,6 @@ export async function getPopularKeywords(): Promise<string[]> {
     if (error) throw new Error(error.message)
     const keywords: string[] = []
     for (const row of (data ?? [])) {
-      // 주소에서 시/군/구 추출
       const regionMatch = row.address?.match(/^(\S+[시군구])/)
       if (regionMatch) keywords.push(regionMatch[1])
       keywords.push(row.name)
@@ -119,10 +118,7 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   }
 }
 
-// ── 결과 타입 ──────────────────────────────────────────────
-type ActionResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: string }
+type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
 export async function createSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
@@ -137,11 +133,10 @@ export async function createSauna(
       try {
         const kakaoImageUrl = await getKakaoPlaceImage(payload.name, payload.address)
         if (kakaoImageUrl) {
-          const tempId = crypto.randomUUID()
           const downloaded = await downloadImageBuffer(kakaoImageUrl)
           if (downloaded) {
             const storedUrl = await uploadSaunaImage(
-              downloaded.buffer, downloaded.contentType, `saunas/${tempId}`
+              downloaded.buffer, downloaded.contentType, `saunas/${crypto.randomUUID()}`
             )
             if (storedUrl) finalImages = [storedUrl]
           }
@@ -157,18 +152,14 @@ export async function createSauna(
       .select()
       .single()
 
-    if (error) {
-      console.error('사우나 등록 DB 에러:', error)
-      return { ok: false, error: error.message }
-    }
+    if (error) return { ok: false, error: error.message }
+
+    // ISR 캐시 즉시 무효화
+    revalidatePath('/')
 
     return { ok: true, data: data as SaunaDto }
   } catch (error) {
-    console.error('사우나 등록 에러:', error)
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : '사우나 등록에 실패했습니다.',
-    }
+    return { ok: false, error: error instanceof Error ? error.message : '사우나 등록에 실패했습니다.' }
   }
 }
 
@@ -188,17 +179,14 @@ export async function updateSauna(
       .select()
       .single()
 
-    if (error) {
-      console.error('사우나 수정 DB 에러:', error)
-      return { ok: false, error: error.message }
-    }
+    if (error) return { ok: false, error: error.message }
+
+    // ISR 캐시 즉시 무효화
+    revalidatePath('/')
+    revalidatePath(`/saunas/${id}`)
 
     return { ok: true, data: data as SaunaDto }
   } catch (error) {
-    console.error('사우나 수정 에러:', error)
-    return {
-      ok: false,
-      error: error instanceof Error ? error.message : '사우나 수정에 실패했습니다.',
-    }
+    return { ok: false, error: error instanceof Error ? error.message : '사우나 수정에 실패했습니다.' }
   }
 }

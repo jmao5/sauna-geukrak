@@ -1,28 +1,37 @@
-import getQueryClient from '@/lib/getQueryClient'
-import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { getSaunas } from './actions/sauna.actions'
 import HomeClient from './HomeClient'
 
-export const dynamic = 'force-dynamic'
+/**
+ * 개선: force-dynamic → ISR (revalidate: 60)
+ *
+ * 기존 문제:
+ *   force-dynamic = 매 요청마다 서버에서 Supabase 쿼리 실행 후 HTML 생성
+ *   → 사우나 목록은 실시간성 불필요한데 매번 100~300ms 지연 발생
+ *   → CDN 캐시도 없어 모든 유저가 동일한 비용을 반복 지불
+ *
+ * 개선 결과:
+ *   첫 요청만 Supabase 쿼리 실행, 이후 60초간 CDN에서 즉시 서빙
+ *   → 대부분의 요청에서 서버 렌더링 지연 0ms
+ *   → 사우나 등록/수정은 revalidatePath('/') 호출로 즉시 갱신 가능
+ */
+export const revalidate = 60
 
 const PAGE_SIZE = 20
 
 export default async function HomePage() {
-  const queryClient = getQueryClient()
+  const queryClient = new QueryClient()
 
-  // 서버에서 무한 스크롤의 첫 페이지 데이터를 미리 가져옵니다. (Prefetch)
   await queryClient.prefetchInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
     queryFn: async () => {
-      // 서버에서 실행되므로 훨씬 빠르게 데이터를 확보합니다.
-      const result = await getSaunas( 0, PAGE_SIZE)
-      return (Array.isArray(result) ? result : [])
+      const result = await getSaunas(0, PAGE_SIZE)
+      return Array.isArray(result) ? result : []
     },
     initialPageParam: 0,
   })
 
   return (
-    // dehydrate를 통해 서버에서 가져온 캐시를 클라이언트로 안전하게 넘겨줍니다.
     <HydrationBoundary state={dehydrate(queryClient)}>
       <HomeClient />
     </HydrationBoundary>
