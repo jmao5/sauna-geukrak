@@ -18,6 +18,45 @@ const MENU_ITEMS = [
   { icon: BiCog, label: '설정', desc: '내 정보 및 앱 설정', href: '/my/settings', comingSoon: false },
 ]
 
+// ── 인스타그램 팔로우 블록 ────────────────────────────────────
+function InstagramFollowBlock() {
+  return (
+    <a
+      href="https://instagram.com/sauna_road_kr"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3.5 rounded-2xl px-4 py-4 transition active:opacity-70"
+      style={{
+        background: 'linear-gradient(135deg, #fdf0e8 0%, #fce8f0 100%)',
+        border: '1px solid #f0c0a0',
+      }}
+    >
+      {/* 인스타 그라데이션 아이콘 */}
+      <div
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
+        style={{
+          background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="white" strokeWidth="1.8"/>
+          <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8"/>
+          <circle cx="17.5" cy="6.5" r="1.1" fill="white"/>
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-black" style={{ color: '#9b1a6a' }}>@sauna_road_kr 팔로우</p>
+        <p className="mt-0.5 text-[11px] leading-snug" style={{ color: '#c05080' }}>
+          새 사우나 소식 · 업데이트 알림
+        </p>
+      </div>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M9 18l6-6-6-6" stroke="#c05080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </a>
+  )
+}
+
 export default function MyPageClient() {
   const router = useRouter()
   const { user, isLoading, clearSession } = useUserStore()
@@ -59,10 +98,14 @@ export default function MyPageClient() {
           <p className="text-[12px] text-text-sub mb-5">찜 목록과 방문 기록을 저장해보세요</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-3 text-[13px] font-black text-white shadow-sm transition-all duration-200 hover:bg-point-hover hover:-translate-y-0.5 hover:shadow-md active:scale-[0.97]"
+            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-3 text-[13px] font-black text-white shadow-sm transition active:scale-[0.97]"
           >
             로그인 / 회원가입
           </Link>
+        </div>
+        {/* 비로그인에도 인스타 블록 노출 */}
+        <div className="px-4 pt-5">
+          <InstagramFollowBlock />
         </div>
         <div className="flex-1 flex items-center justify-center">
           <p className="text-[12px] text-text-muted">로그인 후 이용 가능합니다</p>
@@ -125,7 +168,7 @@ export default function MyPageClient() {
       <div className="px-4 mb-4">
         <Link
           href="/saunas/new"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-3 text-[13px] font-black text-point transition-all duration-200 hover:bg-point/10 hover:border-point/60 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-3 text-[13px] font-black text-point transition active:scale-[0.98]"
         >
           <BiPlus size={16} />
           새 사우나 등록하기
@@ -144,9 +187,9 @@ export default function MyPageClient() {
               }
               router.push(item.href)
             }}
-            className="group flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] active:translate-y-0"
+            className="group flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm transition active:scale-[0.98]"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub transition-colors duration-200 group-hover:bg-bg-sub">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub">
               <item.icon size={20} />
             </div>
             <div className="flex-1 text-left">
@@ -156,12 +199,16 @@ export default function MyPageClient() {
             {item.comingSoon ? (
               <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">준비중</span>
             ) : (
-              <BiChevronRight size={18} className="text-text-muted/50 transition-transform duration-200 group-hover:translate-x-0.5" />
+              <BiChevronRight size={18} className="text-text-muted/50" />
             )}
           </button>
         ))}
 
-        <div className="pt-2 pb-4 border-t border-border-subtle mt-2">
+        {/* ── 인스타그램 팔로우 블록 ── */}
+        <InstagramFollowBlock />
+
+        {/* ── 하단 보조 메뉴 ── */}
+        <div className="pt-2 pb-6 border-t border-border-subtle mt-1">
           <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold text-text-muted transition-colors duration-150 hover:bg-bg-card hover:text-text-sub active:bg-bg-main">
             <BiHelpCircle size={18} />
             도움말 및 문의

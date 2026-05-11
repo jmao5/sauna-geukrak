@@ -44,19 +44,8 @@ function GenderRow({ label, color, data }: {
 }) {
   if (!data.hasRooms && data.saunaTemp === null && data.coldTemp === null) return null
 
-  const cell = (val: number | null, unit: string, colorClass: string) =>
-    val !== null ? (
-      <span className={`font-black ${colorClass}`}>
-        {unit}<span className="temp-number">{val}</span>
-      </span>
-    ) : (
-      <span className="text-text-muted">
-        {unit}<span>–</span>
-      </span>
-    )
-
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5 flex-wrap">
       {/* 성별 뱃지 */}
       <span
         className="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-black text-white"
@@ -65,25 +54,31 @@ function GenderRow({ label, color, data }: {
         {label}
       </span>
 
-      {/* 사우나 온도 */}
-      <span className="text-[11px] text-text-muted">사</span>
-      {cell(data.saunaTemp, '', 'text-sauna text-[12px]')}
+      {/* 사우나 온도 — 있을 때만 */}
+      {data.saunaTemp !== null && (
+        <span className="flex items-center gap-0.5">
+          <span className="text-[10px] text-text-muted">사</span>
+          <span className="temp-number text-[12px] font-black text-sauna">{data.saunaTemp}</span>
+        </span>
+      )}
 
-      {/* 냉탕 온도 */}
-      <span className="text-[11px] text-text-muted ml-1">냉</span>
-      {cell(data.coldTemp, '', 'text-cold text-[12px]')}
+      {/* 냉탕 온도 — 있을 때만 */}
+      {data.coldTemp !== null && (
+        <span className="flex items-center gap-0.5">
+          <span className="text-[10px] text-text-muted">냉</span>
+          <span className="temp-number text-[12px] font-black text-cold">{data.coldTemp}</span>
+        </span>
+      )}
 
-      {/* 외기욕 */}
-      <span className="text-[11px] text-text-muted ml-1">외</span>
-      <span className={`text-[11px] font-bold ${data.hasOutdoor ? 'text-text-main' : 'text-text-muted'}`}>
-        {data.hasOutdoor ? '○' : '–'}
-      </span>
+      {/* 외기욕 — 있을 때만 */}
+      {data.hasOutdoor && (
+        <span className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">외기욕</span>
+      )}
 
-      {/* 로우리 */}
-      <span className="text-[11px] text-text-muted ml-1">로</span>
-      <span className={`text-[11px] font-bold ${data.hasLoyly ? 'text-text-main' : 'text-text-muted'}`}>
-        {data.hasLoyly ? '○' : '–'}
-      </span>
+      {/* 로우리 — 있을 때만 */}
+      {data.hasLoyly && (
+        <span className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로우리</span>
+      )}
     </div>
   )
 }

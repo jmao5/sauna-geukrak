@@ -13,10 +13,15 @@ import Loading from '@/components/ui/Loading'
 import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/hooks/useDebounce'
+import { LINKS } from '@/constants/links'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'male' | 'parking'
 type SortKey = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
+
+// 가상화 리스트 아이템 타입 — 사우나 카드 or 배너 sentinel
+const INSTAGRAM_BANNER_ITEM = '__INSTAGRAM_BANNER__' as const
+type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM
 
 // ── 상수 ──────────────────────────────────────────────────────
 const REGIONS = [
@@ -45,6 +50,44 @@ const SORT_OPTIONS: { id: SortKey; label: string }[] = [
 ]
 
 const PAGE_SIZE = 20
+// 필터/검색 없는 기본 상태일 때만 5번째 카드 아래 배너 삽입
+const BANNER_INSERT_INDEX = 5
+
+// ── 인스타그램 인터스티셜 배너 ────────────────────────────────
+function InstagramBanner() {
+  return (
+    <a
+      href={LINKS.INSTAGRAM}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mx-4 my-1.5 flex items-center gap-3.5 rounded-2xl border border-border-main bg-bg-card px-4 py-3.5 transition active:opacity-70"
+      style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
+    >
+      <div
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+        style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="white" strokeWidth="1.8"/>
+          <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8"/>
+          <circle cx="17.5" cy="6.5" r="1.1" fill="white"/>
+        </svg>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-black text-text-main">@sauna_road_kr</p>
+        <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
+          사우나 극락 인스타그램 · 새 사우나 소식
+        </p>
+      </div>
+      <div
+        className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-black text-white"
+        style={{ background: 'linear-gradient(135deg, #f09433, #dc2743, #bc1888)' }}
+      >
+        팔로우
+      </div>
+    </a>
+  )
+}
 
 // ── 스켈레톤 ──────────────────────────────────────────────────
 function RowSkeleton() {
@@ -70,18 +113,15 @@ function BottomSheet({ open, onClose, title, children }: {
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative rounded-t-3xl bg-bg-main max-h-[80vh] flex flex-col">
-        {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="h-1 w-10 rounded-full bg-border-strong" />
         </div>
-        {/* 헤더 */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle flex-shrink-0">
           <h2 className="text-base font-black text-text-main">{title}</h2>
           <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-sub">
             <BiX size={18} className="text-text-sub" />
           </button>
         </div>
-        {/* 콘텐츠 */}
         <div className="overflow-y-auto flex-1 pb-safe">
           {children}
         </div>
@@ -94,7 +134,6 @@ function BottomSheet({ open, onClose, title, children }: {
 export default function HomeClient() {
   const router = useRouter()
 
-  // 검색 상태
   const [keyword, setKeyword] = useState('')
   const debouncedKeyword = useDebounce(keyword, 300)
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
@@ -102,12 +141,10 @@ export default function HomeClient() {
   const [sortKey, setSortKey] = useState<SortKey>('default')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
 
-  // 시트
   const [regionOpen, setRegionOpen] = useState(false)
   const [conditionOpen, setConditionOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
 
-  // 무한 쿼리
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
     queryFn: async ({ pageParam }: { pageParam: number }) => {
@@ -122,16 +159,13 @@ export default function HomeClient() {
 
   const allSaunas = useMemo(() => (data?.pages ?? []).flat() as SaunaSummaryDto[], [data])
 
-  // 필터링
   const filtered = useMemo(() => {
     let list = allSaunas
 
-    // 지역
     if (selectedRegion) {
       list = list.filter((s) => s.address?.includes(selectedRegion))
     }
 
-    // 조건
     if (selectedConds.length > 0) {
       const isFemale = selectedConds.includes('female')
       const isMale = selectedConds.includes('male')
@@ -141,14 +175,10 @@ export default function HomeClient() {
         selectedConds.every((cond) => {
           switch (cond) {
             case 'autoloyly':
-              if (pref) {
-                return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
-              }
+              if (pref) return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
               return s.sauna_rooms?.some((r) => r.has_auto_loyly)
             case 'groundwater':
-              if (pref) {
-                return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
-              }
+              if (pref) return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
               return s.cold_baths?.some((b) => b.is_groundwater)
             case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
             case 'tattoo': return s.rules?.tattoo_allowed
@@ -161,7 +191,6 @@ export default function HomeClient() {
       )
     }
 
-    // 키워드 (디바운스된 값 사용)
     if (debouncedKeyword.trim()) {
       const kw = debouncedKeyword.trim().toLowerCase()
       list = list.filter((s) =>
@@ -170,7 +199,6 @@ export default function HomeClient() {
       )
     }
 
-    // 정렬
     const isFemale = selectedConds.includes('female')
     const isMale = selectedConds.includes('male')
     const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
@@ -184,53 +212,58 @@ export default function HomeClient() {
         break
       case 'temp_hot':
         list = [...list].sort((a, b) => {
-          const aRooms = pref
-            ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
-            : a.sauna_rooms
-          const bRooms = pref
-            ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both')
-            : b.sauna_rooms
-
-          const aMax = aRooms?.length ? Math.max(...aRooms.map((r) => r.temp)) : 0
-          const bMax = bRooms?.length ? Math.max(...bRooms.map((r) => r.temp)) : 0
-          return bMax - aMax
+          const aRooms = pref ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : a.sauna_rooms
+          const bRooms = pref ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : b.sauna_rooms
+          return (bRooms?.length ? Math.max(...bRooms.map(r => r.temp)) : 0) - (aRooms?.length ? Math.max(...aRooms.map(r => r.temp)) : 0)
         })
         break
       case 'temp_cold':
         list = [...list].sort((a, b) => {
-          const aBaths = pref
-            ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
-            : a.cold_baths
-          const bBaths = pref
-            ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both')
-            : b.cold_baths
-
-          const aMin = aBaths?.length ? Math.min(...aBaths.map((r) => r.temp)) : 99
-          const bMin = bBaths?.length ? Math.min(...bBaths.map((r) => r.temp)) : 99
-          return aMin - bMin
+          const aBaths = pref ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : a.cold_baths
+          const bBaths = pref ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : b.cold_baths
+          return (aBaths?.length ? Math.min(...aBaths.map(r => r.temp)) : 99) - (bBaths?.length ? Math.min(...bBaths.map(r => r.temp)) : 99)
         })
         break
       case 'price_asc':
-        list = [...list].sort((a, b) =>
-          (a.pricing?.adult_day ?? 99999) - (b.pricing?.adult_day ?? 99999)
-        )
-        break
-      default:
+        list = [...list].sort((a, b) => (a.pricing?.adult_day ?? 99999) - (b.pricing?.adult_day ?? 99999))
         break
     }
 
     return list
   }, [allSaunas, selectedRegion, selectedConds, debouncedKeyword, sortKey])
 
+  const hasActiveFilter = !!selectedRegion || selectedConds.length > 0 || !!debouncedKeyword.trim()
+
+  const listItems = useMemo<ListItem[]>(() => {
+    // 배너는 리스트 맨 위에 1번만, 필터 없을 때만 표시
+    if (hasActiveFilter || filtered.length === 0) return filtered
+    return [INSTAGRAM_BANNER_ITEM, ...filtered]
+  }, [filtered, hasActiveFilter])
+
+  const parentRef = useRef<HTMLDivElement>(null)
+  const virtualizer = useVirtualizer({
+    count: listItems.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => listItems[index] === INSTAGRAM_BANNER_ITEM ? 68 : 155,
+    overscan: 5,
+    measureElement: typeof window !== 'undefined'
+      ? (el) => el.getBoundingClientRect().height
+      : undefined,
+  })
+
+  const virtualItems = virtualizer.getVirtualItems()
+
   const loadMore = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  const sentinelRef = useIntersectionObserver({
-    rootMargin: '200px',
-    onObserve: loadMore,
-    enabled: !!hasNextPage && !isFetchingNextPage,
-  })
+  useEffect(() => {
+    const lastItem = virtualItems[virtualItems.length - 1]
+    if (!lastItem) return
+    if (lastItem.index >= listItems.length - 1 && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }, [virtualItems, listItems.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const toggleCond = (cond: Condition) =>
     setSelectedConds((prev) =>
@@ -246,38 +279,11 @@ export default function HomeClient() {
   }
 
   const currentSort = SORT_OPTIONS.find((o) => o.id === sortKey)!
-
-  // 조건 칩 - 기본 3개 노출, 더보기로 전체
   const visibleConds = showMoreFilters ? CONDITIONS : CONDITIONS.slice(0, 3)
-
-  // ── 가상화 ──────────────────────────────────────────────────
-  const parentRef = useRef<HTMLDivElement>(null)
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 134, // SaunaCard row 높이 대략 134px
-    overscan: 5,
-  })
-
-  const virtualItems = virtualizer.getVirtualItems()
-
-  // 무한 스크롤 트리거 (가상화 대응)
-  useEffect(() => {
-    const lastItem = virtualItems[virtualItems.length - 1]
-    if (!lastItem) return
-
-    if (lastItem.index >= filtered.length - 1 && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }, [virtualItems, filtered.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
-
-      {/* ── 헤더 ── */}
       <div className="flex-shrink-0 bg-bg-main border-b border-border-main">
-
-        {/* 로고 + 지도 버튼 */}
         <div className="flex items-center justify-between px-4 pt-5 pb-4">
           <h1 className="font-juache text-[28px] leading-none text-text-main" style={{ letterSpacing: '-0.02em' }}>
             사우나 극락
@@ -291,108 +297,68 @@ export default function HomeClient() {
           </Link>
         </div>
 
-        {/* 지역 + 조건 버튼 */}
-        <div className="flex gap-2.5 px-4 pb-3">
-          <button
-            onClick={() => setRegionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedRegion
-              ? 'border-point bg-point/5 text-point'
-              : 'border-border-main bg-bg-sub text-text-sub'
-              }`}
-          >
-            <div className="text-left">
-              <p className="text-[10px] font-black tracking-wider uppercase opacity-60">지역</p>
-              <p className="text-[13px] font-black mt-0.5">{selectedRegion ?? '선택하기'}</p>
-            </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedRegion ? 'bg-point' : 'bg-text-muted'
-              }`}>
-              {selectedRegion ? '✓' : '+'}
-            </div>
-          </button>
-
-          <button
-            onClick={() => setConditionOpen(true)}
-            className={`flex flex-1 items-center justify-between rounded-2xl border px-4 py-3 transition active:scale-[0.98] ${selectedConds.length > 0
-              ? 'border-point bg-point/5 text-point'
-              : 'border-border-main bg-bg-sub text-text-sub'
-              }`}
-          >
-            <div className="text-left">
-              <p className="text-[10px] font-black tracking-wider uppercase opacity-60">조건</p>
-              <p className="text-[13px] font-black mt-0.5">
-                {selectedConds.length > 0
-                  ? `${selectedConds.length}개 선택`
-                  : '선택하기'}
-              </p>
-            </div>
-            <div className={`flex h-6 w-6 items-center justify-center rounded-full text-white text-[14px] font-black ${selectedConds.length > 0 ? 'bg-point' : 'bg-text-muted'
-              }`}>
-              {selectedConds.length > 0 ? selectedConds.length : '+'}
-            </div>
-          </button>
-        </div>
-
-        {/* 키워드 검색 */}
         <div className="px-4 pb-3">
-          <div className="flex items-center gap-2.5 rounded-2xl border border-border-main bg-bg-sub px-4 py-3">
-            <BiSearch size={15} className="flex-shrink-0 text-text-muted" />
+          <div className="relative">
+            <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
             <input
               type="text"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              placeholder="시설명, 에리어 검색"
-              className="flex-1 bg-transparent text-[13px] text-text-main placeholder:text-text-muted outline-none"
+              placeholder="사우나 이름, 지역으로 검색..."
+              className="w-full rounded-xl border border-border-main bg-bg-sub py-2.5 pl-9 pr-9 text-[13px] font-bold text-text-main placeholder:text-text-muted outline-none transition focus:border-point focus:ring-2 focus:ring-point/15"
             />
             {keyword && (
-              <button onClick={() => setKeyword('')} className="rounded-full p-0.5">
-                <BiX size={15} className="text-text-muted" />
+              <button onClick={() => setKeyword('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <BiX size={16} className="text-text-muted" />
               </button>
             )}
           </div>
         </div>
 
-        {/* 조건 칩 + 더보기 */}
-        <div className="px-4 pb-3 space-y-2">
-          <div className="flex flex-wrap gap-1.5">
-            {visibleConds.map((opt) => {
-              const isActive = selectedConds.includes(opt.id)
-              return (
-                <button
-                  key={opt.id}
-                  onClick={() => toggleCond(opt.id)}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${isActive
-                    ? 'bg-point text-white'
-                    : 'border border-border-main bg-bg-main text-text-sub'
-                    }`}
-                >
-                  <span>{opt.emoji}</span>
-                  {opt.label}
-                </button>
-              )
-            })}
-            <button
-              onClick={() => setShowMoreFilters((v) => !v)}
-              className="flex items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95"
-            >
-              {showMoreFilters ? '접기' : '더보기'}
-              <BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
-            </button>
-          </div>
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pb-3">
+          <button
+            onClick={() => setRegionOpen(true)}
+            className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+              selectedRegion ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
+            }`}
+          >
+            {selectedRegion ?? '지역'}
+            <BiChevronDown size={12} />
+          </button>
+          {visibleConds.map((opt) => {
+            const isActive = selectedConds.includes(opt.id)
+            return (
+              <button
+                key={opt.id}
+                onClick={() => toggleCond(opt.id)}
+                className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+                  isActive ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
+                }`}
+              >
+                <span>{opt.emoji}</span>
+                {opt.label}
+              </button>
+            )
+          })}
+          <button
+            onClick={() => setShowMoreFilters((v) => !v)}
+            className="flex flex-shrink-0 items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95"
+          >
+            {showMoreFilters ? '접기' : '더보기'}
+            <BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
 
-          {/* 필터 초기화 */}
-          {hasFilter && (
-            <button
-              onClick={resetAll}
-              className="flex items-center gap-1 text-[11px] font-bold text-text-muted"
-            >
+        {hasFilter && (
+          <div className="px-4 pb-2.5">
+            <button onClick={resetAll} className="flex items-center gap-1 text-[11px] font-bold text-text-muted">
               <BiX size={12} />
               필터 초기화
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* ── 결과 + 정렬 ── */}
       {!isLoading && (
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border-subtle bg-bg-main">
           <p className="text-[13px] font-black text-text-main">
@@ -411,12 +377,7 @@ export default function HomeClient() {
         </div>
       )}
 
-      {/* ── 리스트 ── */}
-      <div
-        ref={parentRef}
-        data-scroll-main
-        className="flex-1 overflow-y-auto scrollbar-hide"
-      >
+      <div ref={parentRef} data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)
         ) : filtered.length === 0 ? (
@@ -428,59 +389,47 @@ export default function HomeClient() {
             </button>
           </div>
         ) : (
-          <div
-            style={{
-              height: `${virtualizer.getTotalSize()}px`,
-              width: '100%',
-              position: 'relative',
-            }}
-          >
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
             {virtualItems.map((virtualRow) => {
-              const sauna = filtered[virtualRow.index]
+              const item = listItems[virtualRow.index]
               const isFemale = selectedConds.includes('female')
               const isMale = selectedConds.includes('male')
               const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
-
               return (
                 <div
                   key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
                   style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: `${virtualRow.size}px`,
+                    position: 'absolute', top: 0, left: 0, width: '100%',
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  <SaunaCard
-                    sauna={sauna}
-                    variant="row"
-                    preferredGender={pref}
-                    priority={virtualRow.index === 0}
-                  />
+                  {item === INSTAGRAM_BANNER_ITEM ? (
+                    <InstagramBanner />
+                  ) : (
+                    <SaunaCard sauna={item} variant="row" preferredGender={pref} priority={virtualRow.index === 0} />
+                  )}
                 </div>
               )
             })}
           </div>
         )}
-
         {isFetchingNextPage && (
           <div className="py-4 flex items-center justify-center">
             <Loading variant="dots" fullScreen={false} color="var(--color-point)" />
           </div>
         )}
-        <div className="h-20" />{/* 네브바 여백 */}
+        <div className="h-20" />
       </div>
 
-      {/* ── 지역 바텀시트 ── */}
       <BottomSheet open={regionOpen} onClose={() => setRegionOpen(false)} title="지역 선택">
         <div className="p-4">
-          {/* 전체 */}
           <button
             onClick={() => { setSelectedRegion(null); setRegionOpen(false) }}
-            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${!selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-              }`}
+            className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
+              !selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+            }`}
           >
             전체 지역
             {!selectedRegion && <span className="text-[16px]">✓</span>}
@@ -492,8 +441,9 @@ export default function HomeClient() {
                 <button
                   key={region}
                   onClick={() => { setSelectedRegion(region); setRegionOpen(false) }}
-                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
-                    }`}
+                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${
+                    isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
+                  }`}
                 >
                   {region}
                 </button>
@@ -503,7 +453,6 @@ export default function HomeClient() {
         </div>
       </BottomSheet>
 
-      {/* ── 조건 바텀시트 ── */}
       <BottomSheet open={conditionOpen} onClose={() => setConditionOpen(false)} title="조건 선택">
         <div className="p-4 space-y-2">
           {CONDITIONS.map((opt) => {
@@ -512,32 +461,30 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => toggleCond(opt.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
-                  }`}
+                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${
+                  isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
+                }`}
               >
                 <span className="text-[18px]">{opt.emoji}</span>
                 <span className={`flex-1 text-left text-[13px] font-bold ${isActive ? 'text-point' : 'text-text-main'}`}>
                   {opt.label}
                 </span>
-                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${isActive ? 'border-point bg-point' : 'border-border-main'
-                  }`}>
+                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
+                  isActive ? 'border-point bg-point' : 'border-border-main'
+                }`}>
                   {isActive && <span className="text-[10px] font-black text-white">✓</span>}
                 </div>
               </button>
             )
           })}
           <div className="pt-2">
-            <button
-              onClick={() => setConditionOpen(false)}
-              className="w-full rounded-2xl bg-point py-4 text-[14px] font-black text-white"
-            >
+            <button onClick={() => setConditionOpen(false)} className="w-full rounded-2xl bg-point py-4 text-[14px] font-black text-white">
               {selectedConds.length > 0 ? `${selectedConds.length}개 조건 적용` : '닫기'}
             </button>
           </div>
         </div>
       </BottomSheet>
 
-      {/* ── 정렬 바텀시트 ── */}
       <BottomSheet open={sortOpen} onClose={() => setSortOpen(false)} title="정렬 기준">
         <div className="p-4 space-y-2">
           {SORT_OPTIONS.map((opt) => {
@@ -546,8 +493,9 @@ export default function HomeClient() {
               <button
                 key={opt.id}
                 onClick={() => { setSortKey(opt.id); setSortOpen(false) }}
-                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-                  }`}
+                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
+                  isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+                }`}
               >
                 {opt.label}
                 {isActive && <span className="text-[16px]">✓</span>}
