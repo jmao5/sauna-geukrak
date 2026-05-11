@@ -194,10 +194,13 @@ export default function MapClient() {
   }, [])
 
   const { data: saunas = [], isFetching } = useQuery<SaunaSummaryDto[]>({
-    queryKey: ['saunas', 'location', queryLocation.lat, queryLocation.lng],
+    // 소수점 2자리 반올림 → 약 1km 격자, 캐시 히트율 향상
+    queryKey: ['saunas', 'location',
+      Math.round(queryLocation.lat * 100) / 100,
+      Math.round(queryLocation.lng * 100) / 100,
+    ],
     queryFn: () => getSaunasByLocation(queryLocation.lat, queryLocation.lng, 15),
     staleTime: 1000 * 60 * 3,
-    // enabled 조건 제거 — queryLocation은 항상 유효한 값
   })
 
   const filteredSaunas = saunas.filter((s) => {

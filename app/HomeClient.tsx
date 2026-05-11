@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { SaunaSummaryDto } from '@/types/sauna'
@@ -14,12 +14,13 @@ import { getSaunas } from './actions/sauna.actions'
 import { useRouter } from 'next/navigation'
 import { useDebounce } from '@/hooks/useDebounce'
 import { LINKS } from '@/constants/links'
+import { createPortal } from 'react-dom'
+import { AnimatePresence, m } from 'framer-motion'
 
 // ── 타입 ──────────────────────────────────────────────────────
 type Condition = 'autoloyly' | 'groundwater' | 'jjimjilbang' | 'tattoo' | 'female' | 'male' | 'parking'
 type SortKey = 'default' | 'rating' | 'reviews' | 'temp_hot' | 'temp_cold' | 'price_asc'
 
-// 가상화 리스트 아이템 타입 — 사우나 카드 or 배너 sentinel
 const INSTAGRAM_BANNER_ITEM = '__INSTAGRAM_BANNER__' as const
 type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM
 
@@ -31,29 +32,27 @@ const REGIONS = [
 ]
 
 const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
-  { id: 'autoloyly', label: '오토 로우리', emoji: '💦' },
+  { id: 'autoloyly',   label: '오토 로우리', emoji: '💦' },
   { id: 'groundwater', label: '지하수 냉탕', emoji: '🏔️' },
-  { id: 'jjimjilbang', label: '찜질방', emoji: '🧖' },
-  { id: 'tattoo', label: '타투 OK', emoji: '🖋️' },
-  { id: 'female', label: '여성 가능', emoji: '👩' },
-  { id: 'male', label: '남성 가능', emoji: '👨' },
-  { id: 'parking', label: '주차', emoji: '🅿️' },
+  { id: 'jjimjilbang', label: '찜질방',      emoji: '🧖' },
+  { id: 'tattoo',      label: '타투 OK',     emoji: '🖋️' },
+  { id: 'female',      label: '여성 가능',   emoji: '👩' },
+  { id: 'male',        label: '남성 가능',   emoji: '👨' },
+  { id: 'parking',     label: '주차',        emoji: '🅿️' },
 ]
 
 const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: 'default', label: '등록순' },
-  { id: 'rating', label: '평점 높은순' },
-  { id: 'reviews', label: '사활 많은순' },
-  { id: 'temp_hot', label: '사우나 온도 높은순' },
+  { id: 'default',   label: '등록순' },
+  { id: 'rating',    label: '평점 높은순' },
+  { id: 'reviews',   label: '사활 많은순' },
+  { id: 'temp_hot',  label: '사우나 온도 높은순' },
   { id: 'temp_cold', label: '냉탕 온도 낮은순' },
   { id: 'price_asc', label: '가격 낮은순' },
 ]
 
 const PAGE_SIZE = 20
-// 필터/검색 없는 기본 상태일 때만 5번째 카드 아래 배너 삽입
-const BANNER_INSERT_INDEX = 5
 
-// ── 인스타그램 인터스티셜 배너 ────────────────────────────────
+// ── 인스타그램 배너 ───────────────────────────────────────────
 function InstagramBanner() {
   return (
     <a
@@ -63,10 +62,8 @@ function InstagramBanner() {
       className="mx-4 my-1.5 flex items-center gap-3.5 rounded-2xl border border-border-main bg-bg-card px-4 py-3.5 transition active:opacity-70"
       style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
     >
-      <div
-        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
-        style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
-      >
+      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+        style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="white" strokeWidth="1.8"/>
           <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8"/>
@@ -75,14 +72,10 @@ function InstagramBanner() {
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[12px] font-black text-text-main">@sauna_road_kr</p>
-        <p className="mt-0.5 text-[11px] leading-snug text-text-muted">
-          사우나 극락 인스타그램 · 새 사우나 소식
-        </p>
+        <p className="mt-0.5 text-[11px] leading-snug text-text-muted">사우나 극락 인스타그램 · 새 사우나 소식</p>
       </div>
-      <div
-        className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-black text-white"
-        style={{ background: 'linear-gradient(135deg, #f09433, #dc2743, #bc1888)' }}
-      >
+      <div className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-black text-white"
+        style={{ background: 'linear-gradient(135deg, #f09433, #dc2743, #bc1888)' }}>
         팔로우
       </div>
     </a>
@@ -104,29 +97,54 @@ function RowSkeleton() {
   )
 }
 
-// ── 바텀시트 래퍼 ─────────────────────────────────────────────
+// ── 바텀시트 — portal + absolute (웹 너비 버그 수정) ──────────
 function BottomSheet({ open, onClose, title, children }: {
   open: boolean; onClose: () => void; title: string; children: React.ReactNode
 }) {
-  if (!open) return null
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative rounded-t-3xl bg-bg-main max-h-[80vh] flex flex-col">
-        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="h-1 w-10 rounded-full bg-border-strong" />
-        </div>
-        <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle flex-shrink-0">
-          <h2 className="text-base font-black text-text-main">{title}</h2>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-sub">
-            <BiX size={18} className="text-text-sub" />
-          </button>
-        </div>
-        <div className="overflow-y-auto flex-1 pb-safe">
-          {children}
-        </div>
-      </div>
-    </div>
+  const [portalEl, setPortalEl] = useState<Element | null>(null)
+  useEffect(() => { setPortalEl(document.getElementById('app-root')) }, [])
+  if (!portalEl) return null
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* 딤 */}
+          <m.div
+            key="dim"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm"
+            onClick={onClose}
+          />
+          {/* 시트 */}
+          <m.div
+            key="sheet"
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', stiffness: 400, damping: 40, mass: 0.8 }}
+            className="absolute bottom-0 left-0 right-0 z-50 rounded-t-3xl bg-bg-main max-h-[80vh] flex flex-col"
+          >
+            <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+              <div className="h-1 w-10 rounded-full bg-border-strong" />
+            </div>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border-subtle flex-shrink-0">
+              <h2 className="text-base font-black text-text-main">{title}</h2>
+              <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-sub">
+                <BiX size={18} className="text-text-sub" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 pb-safe">
+              {children}
+            </div>
+          </m.div>
+        </>
+      )}
+    </AnimatePresence>,
+    portalEl
   )
 }
 
@@ -134,16 +152,16 @@ function BottomSheet({ open, onClose, title, children }: {
 export default function HomeClient() {
   const router = useRouter()
 
-  const [keyword, setKeyword] = useState('')
-  const debouncedKeyword = useDebounce(keyword, 300)
+  const [keyword,       setKeyword]       = useState('')
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
-  const [selectedConds, setSelectedConds] = useState<Condition[]>([])
-  const [sortKey, setSortKey] = useState<SortKey>('default')
+  const [selectedConds,  setSelectedConds]  = useState<Condition[]>([])
+  const [sortKey,        setSortKey]        = useState<SortKey>('default')
   const [showMoreFilters, setShowMoreFilters] = useState(false)
-
-  const [regionOpen, setRegionOpen] = useState(false)
+  const [regionOpen,    setRegionOpen]    = useState(false)
   const [conditionOpen, setConditionOpen] = useState(false)
-  const [sortOpen, setSortOpen] = useState(false)
+  const [sortOpen,      setSortOpen]      = useState(false)
+
+  const debouncedKeyword = useDebounce(keyword, 300)
 
   const { data, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
@@ -157,88 +175,60 @@ export default function HomeClient() {
     staleTime: 1000 * 60 * 5,
   })
 
-  const allSaunas = useMemo(() => (data?.pages ?? []).flat() as SaunaSummaryDto[], [data])
+  // React Compiler가 자동 메모이제이션 — useMemo 불필요
+  const allSaunas = (data?.pages ?? []).flat() as SaunaSummaryDto[]
 
-  const filtered = useMemo(() => {
-    let list = allSaunas
+  const isFemale = selectedConds.includes('female')
+  const isMale   = selectedConds.includes('male')
+  const pref     = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
 
-    if (selectedRegion) {
-      list = list.filter((s) => s.address?.includes(selectedRegion))
-    }
+  let filtered = allSaunas
+  if (selectedRegion)       filtered = filtered.filter(s => s.address?.includes(selectedRegion))
+  if (selectedConds.length) filtered = filtered.filter(s =>
+    selectedConds.every(cond => {
+      switch (cond) {
+        case 'autoloyly':
+          return pref
+            ? s.sauna_rooms?.some(r => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
+            : s.sauna_rooms?.some(r => r.has_auto_loyly)
+        case 'groundwater':
+          return pref
+            ? s.cold_baths?.some(b => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
+            : s.cold_baths?.some(b => b.is_groundwater)
+        case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
+        case 'tattoo':      return s.rules?.tattoo_allowed
+        case 'female':      return s.rules?.female_allowed
+        case 'male':        return s.rules?.male_allowed !== false
+        case 'parking':     return (s as any).parking
+        default:            return true
+      }
+    })
+  )
+  if (debouncedKeyword.trim()) {
+    const kw = debouncedKeyword.trim().toLowerCase()
+    filtered = filtered.filter(s => s.name?.toLowerCase().includes(kw) || s.address?.toLowerCase().includes(kw))
+  }
 
-    if (selectedConds.length > 0) {
-      const isFemale = selectedConds.includes('female')
-      const isMale = selectedConds.includes('male')
-      const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
-
-      list = list.filter((s) =>
-        selectedConds.every((cond) => {
-          switch (cond) {
-            case 'autoloyly':
-              if (pref) return s.sauna_rooms?.some((r) => r.has_auto_loyly && ((r as any).gender === pref || (r as any).gender === 'both'))
-              return s.sauna_rooms?.some((r) => r.has_auto_loyly)
-            case 'groundwater':
-              if (pref) return s.cold_baths?.some((b) => b.is_groundwater && ((b as any).gender === pref || (b as any).gender === 'both'))
-              return s.cold_baths?.some((b) => b.is_groundwater)
-            case 'jjimjilbang': return s.kr_specific?.has_jjimjilbang
-            case 'tattoo': return s.rules?.tattoo_allowed
-            case 'female': return s.rules?.female_allowed
-            case 'male': return s.rules?.male_allowed !== false
-            case 'parking': return (s as any).parking
-            default: return true
-          }
-        })
-      )
-    }
-
-    if (debouncedKeyword.trim()) {
-      const kw = debouncedKeyword.trim().toLowerCase()
-      list = list.filter((s) =>
-        s.name?.toLowerCase().includes(kw) ||
-        s.address?.toLowerCase().includes(kw)
-      )
-    }
-
-    const isFemale = selectedConds.includes('female')
-    const isMale = selectedConds.includes('male')
-    const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
-
-    switch (sortKey) {
-      case 'rating':
-        list = [...list].sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0))
-        break
-      case 'reviews':
-        list = [...list].sort((a, b) => (b.review_count ?? 0) - (a.review_count ?? 0))
-        break
-      case 'temp_hot':
-        list = [...list].sort((a, b) => {
-          const aRooms = pref ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : a.sauna_rooms
-          const bRooms = pref ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : b.sauna_rooms
-          return (bRooms?.length ? Math.max(...bRooms.map(r => r.temp)) : 0) - (aRooms?.length ? Math.max(...aRooms.map(r => r.temp)) : 0)
-        })
-        break
-      case 'temp_cold':
-        list = [...list].sort((a, b) => {
-          const aBaths = pref ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : a.cold_baths
-          const bBaths = pref ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : b.cold_baths
-          return (aBaths?.length ? Math.min(...aBaths.map(r => r.temp)) : 99) - (bBaths?.length ? Math.min(...bBaths.map(r => r.temp)) : 99)
-        })
-        break
-      case 'price_asc':
-        list = [...list].sort((a, b) => (a.pricing?.adult_day ?? 99999) - (b.pricing?.adult_day ?? 99999))
-        break
-    }
-
-    return list
-  }, [allSaunas, selectedRegion, selectedConds, debouncedKeyword, sortKey])
+  switch (sortKey) {
+    case 'rating':    filtered = [...filtered].sort((a, b) => (b.avg_rating ?? 0) - (a.avg_rating ?? 0)); break
+    case 'reviews':   filtered = [...filtered].sort((a, b) => (b.review_count ?? 0) - (a.review_count ?? 0)); break
+    case 'temp_hot':  filtered = [...filtered].sort((a, b) => {
+      const aR = pref ? a.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : a.sauna_rooms
+      const bR = pref ? b.sauna_rooms?.filter(r => (r as any).gender === pref || (r as any).gender === 'both') : b.sauna_rooms
+      return (bR?.length ? Math.max(...bR.map(r => r.temp)) : 0) - (aR?.length ? Math.max(...aR.map(r => r.temp)) : 0)
+    }); break
+    case 'temp_cold': filtered = [...filtered].sort((a, b) => {
+      const aB = pref ? a.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : a.cold_baths
+      const bB = pref ? b.cold_baths?.filter(b => (b as any).gender === pref || (b as any).gender === 'both') : b.cold_baths
+      return (aB?.length ? Math.min(...aB.map(r => r.temp)) : 99) - (bB?.length ? Math.min(...bB.map(r => r.temp)) : 99)
+    }); break
+    case 'price_asc': filtered = [...filtered].sort((a, b) => (a.pricing?.adult_day ?? 99999) - (b.pricing?.adult_day ?? 99999)); break
+  }
 
   const hasActiveFilter = !!selectedRegion || selectedConds.length > 0 || !!debouncedKeyword.trim()
-
-  const listItems = useMemo<ListItem[]>(() => {
-    // 배너는 리스트 맨 위에 1번만, 필터 없을 때만 표시
-    if (hasActiveFilter || filtered.length === 0) return filtered
-    return [INSTAGRAM_BANNER_ITEM, ...filtered]
-  }, [filtered, hasActiveFilter])
+  const listItems: ListItem[] = (hasActiveFilter || filtered.length === 0)
+    ? filtered
+    : [INSTAGRAM_BANNER_ITEM, ...filtered]
 
   const parentRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
@@ -246,64 +236,44 @@ export default function HomeClient() {
     getScrollElement: () => parentRef.current,
     estimateSize: (index) => listItems[index] === INSTAGRAM_BANNER_ITEM ? 68 : 155,
     overscan: 5,
-    measureElement: typeof window !== 'undefined'
-      ? (el) => el.getBoundingClientRect().height
-      : undefined,
+    measureElement: typeof window !== 'undefined' ? (el) => el.getBoundingClientRect().height : undefined,
   })
 
   const virtualItems = virtualizer.getVirtualItems()
 
-  const loadMore = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) fetchNextPage()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
-
   useEffect(() => {
     const lastItem = virtualItems[virtualItems.length - 1]
     if (!lastItem) return
-    if (lastItem.index >= listItems.length - 1 && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
+    if (lastItem.index >= listItems.length - 1 && hasNextPage && !isFetchingNextPage) fetchNextPage()
   }, [virtualItems, listItems.length, hasNextPage, isFetchingNextPage, fetchNextPage])
 
   const toggleCond = (cond: Condition) =>
-    setSelectedConds((prev) =>
-      prev.includes(cond) ? prev.filter((c) => c !== cond) : [...prev, cond]
-    )
+    setSelectedConds(prev => prev.includes(cond) ? prev.filter(c => c !== cond) : [...prev, cond])
 
-  const hasFilter = !!selectedRegion || selectedConds.length > 0 || !!keyword.trim()
-  const resetAll = () => {
-    setSelectedRegion(null)
-    setSelectedConds([])
-    setKeyword('')
-    setSortKey('default')
-  }
+  const resetAll = () => { setSelectedRegion(null); setSelectedConds([]); setKeyword(''); setSortKey('default') }
 
-  const currentSort = SORT_OPTIONS.find((o) => o.id === sortKey)!
+  const currentSort  = SORT_OPTIONS.find(o => o.id === sortKey)!
   const visibleConds = showMoreFilters ? CONDITIONS : CONDITIONS.slice(0, 3)
+  const hasFilter    = !!selectedRegion || selectedConds.length > 0 || !!keyword.trim()
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
+      {/* 헤더 */}
       <div className="flex-shrink-0 bg-bg-main border-b border-border-main">
         <div className="flex items-center justify-between px-4 pt-5 pb-4">
           <h1 className="font-juache text-[28px] leading-none text-text-main" style={{ letterSpacing: '-0.02em' }}>
             사우나 극락
           </h1>
-          <Link
-            href="/map"
-            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3.5 py-2 text-[12px] font-bold text-text-sub transition active:opacity-70"
-          >
-            <BiMap size={14} />
-            지도
+          <Link href="/map"
+            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3.5 py-2 text-[12px] font-bold text-text-sub transition active:opacity-70">
+            <BiMap size={14} /> 지도
           </Link>
         </div>
 
         <div className="px-4 pb-3">
           <div className="relative">
             <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
-            <input
-              type="text"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+            <input type="text" value={keyword} onChange={e => setKeyword(e.target.value)}
               placeholder="사우나 이름, 지역으로 검색..."
               className="w-full rounded-xl border border-border-main bg-bg-sub py-2.5 pl-9 pr-9 text-[13px] font-bold text-text-main placeholder:text-text-muted outline-none transition focus:border-point focus:ring-2 focus:ring-point/15"
             />
@@ -316,34 +286,22 @@ export default function HomeClient() {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide px-4 pb-3">
-          <button
-            onClick={() => setRegionOpen(true)}
+          <button onClick={() => setRegionOpen(true)}
             className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
               selectedRegion ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
-            }`}
-          >
-            {selectedRegion ?? '지역'}
-            <BiChevronDown size={12} />
+            }`}>
+            {selectedRegion ?? '지역'}<BiChevronDown size={12} />
           </button>
-          {visibleConds.map((opt) => {
-            const isActive = selectedConds.includes(opt.id)
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleCond(opt.id)}
-                className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
-                  isActive ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
-                }`}
-              >
-                <span>{opt.emoji}</span>
-                {opt.label}
-              </button>
-            )
-          })}
-          <button
-            onClick={() => setShowMoreFilters((v) => !v)}
-            className="flex flex-shrink-0 items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95"
-          >
+          {visibleConds.map(opt => (
+            <button key={opt.id} onClick={() => toggleCond(opt.id)}
+              className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+                selectedConds.includes(opt.id) ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
+              }`}>
+              <span>{opt.emoji}</span>{opt.label}
+            </button>
+          ))}
+          <button onClick={() => setShowMoreFilters(v => !v)}
+            className="flex flex-shrink-0 items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95">
             {showMoreFilters ? '접기' : '더보기'}
             <BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
           </button>
@@ -352,8 +310,7 @@ export default function HomeClient() {
         {hasFilter && (
           <div className="px-4 pb-2.5">
             <button onClick={resetAll} className="flex items-center gap-1 text-[11px] font-bold text-text-muted">
-              <BiX size={12} />
-              필터 초기화
+              <BiX size={12} />필터 초기화
             </button>
           </div>
         )}
@@ -362,14 +319,11 @@ export default function HomeClient() {
       {!isLoading && (
         <div className="flex-shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-border-subtle bg-bg-main">
           <p className="text-[13px] font-black text-text-main">
-            검색결과{' '}
-            <span className="text-point">{filtered.length.toLocaleString()}</span>
+            검색결과 <span className="text-point">{filtered.length.toLocaleString()}</span>
             <span className="text-text-muted font-bold">건</span>
           </p>
-          <button
-            onClick={() => setSortOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3 py-1.5"
-          >
+          <button onClick={() => setSortOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3 py-1.5">
             <BiSortAlt2 size={13} className="text-text-sub" />
             <span className="text-[11px] font-bold text-text-sub">{currentSort.label}</span>
             <BiChevronDown size={12} className="text-text-muted" />
@@ -377,6 +331,7 @@ export default function HomeClient() {
         </div>
       )}
 
+      {/* 리스트 */}
       <div ref={parentRef} data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)
@@ -384,31 +339,20 @@ export default function HomeClient() {
           <div className="flex flex-col items-center gap-4 py-20 text-center px-8">
             <span className="text-5xl opacity-20">♨</span>
             <p className="text-[14px] font-bold text-text-sub">해당 조건의 사우나가 없어요</p>
-            <button onClick={resetAll} className="rounded-full bg-point px-5 py-2 text-[12px] font-bold text-white">
-              필터 초기화
-            </button>
+            <button onClick={resetAll} className="rounded-full bg-point px-5 py-2 text-[12px] font-bold text-white">필터 초기화</button>
           </div>
         ) : (
           <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-            {virtualItems.map((virtualRow) => {
+            {virtualItems.map(virtualRow => {
               const item = listItems[virtualRow.index]
-              const isFemale = selectedConds.includes('female')
-              const isMale = selectedConds.includes('male')
-              const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
+              const prefGender = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : undefined
               return (
-                <div
-                  key={virtualRow.key}
-                  data-index={virtualRow.index}
-                  ref={virtualizer.measureElement}
-                  style={{
-                    position: 'absolute', top: 0, left: 0, width: '100%',
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}
-                >
+                <div key={virtualRow.key} data-index={virtualRow.index} ref={virtualizer.measureElement}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualRow.start}px)` }}>
                   {item === INSTAGRAM_BANNER_ITEM ? (
                     <InstagramBanner />
                   ) : (
-                    <SaunaCard sauna={item} variant="row" preferredGender={pref} priority={virtualRow.index === 0} />
+                    <SaunaCard sauna={item} variant="row" preferredGender={prefGender} priority={virtualRow.index === 0} />
                   )}
                 </div>
               )
@@ -423,85 +367,69 @@ export default function HomeClient() {
         <div className="h-20" />
       </div>
 
+      {/* 지역 바텀시트 */}
       <BottomSheet open={regionOpen} onClose={() => setRegionOpen(false)} title="지역 선택">
         <div className="p-4">
-          <button
-            onClick={() => { setSelectedRegion(null); setRegionOpen(false) }}
+          <button onClick={() => { setSelectedRegion(null); setRegionOpen(false) }}
             className={`mb-3 flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
               !selectedRegion ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-            }`}
-          >
+            }`}>
             전체 지역
             {!selectedRegion && <span className="text-[16px]">✓</span>}
           </button>
           <div className="grid grid-cols-3 gap-2">
-            {REGIONS.map((region) => {
-              const isActive = selectedRegion === region
-              return (
-                <button
-                  key={region}
-                  onClick={() => { setSelectedRegion(region); setRegionOpen(false) }}
-                  className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${
-                    isActive ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
-                  }`}
-                >
-                  {region}
-                </button>
-              )
-            })}
+            {REGIONS.map(region => (
+              <button key={region} onClick={() => { setSelectedRegion(region); setRegionOpen(false) }}
+                className={`rounded-2xl border py-3.5 text-[13px] font-bold transition active:scale-95 ${
+                  selectedRegion === region ? 'border-point bg-point text-white' : 'border-border-main bg-bg-sub text-text-sub'
+                }`}>
+                {region}
+              </button>
+            ))}
           </div>
         </div>
       </BottomSheet>
 
+      {/* 조건 바텀시트 */}
       <BottomSheet open={conditionOpen} onClose={() => setConditionOpen(false)} title="조건 선택">
         <div className="p-4 space-y-2">
-          {CONDITIONS.map((opt) => {
-            const isActive = selectedConds.includes(opt.id)
-            return (
-              <button
-                key={opt.id}
-                onClick={() => toggleCond(opt.id)}
-                className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
-                }`}
-              >
-                <span className="text-[18px]">{opt.emoji}</span>
-                <span className={`flex-1 text-left text-[13px] font-bold ${isActive ? 'text-point' : 'text-text-main'}`}>
-                  {opt.label}
-                </span>
-                <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
-                  isActive ? 'border-point bg-point' : 'border-border-main'
-                }`}>
-                  {isActive && <span className="text-[10px] font-black text-white">✓</span>}
-                </div>
-              </button>
-            )
-          })}
+          {CONDITIONS.map(opt => (
+            <button key={opt.id} onClick={() => toggleCond(opt.id)}
+              className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition active:scale-[0.98] ${
+                selectedConds.includes(opt.id) ? 'border-point bg-point/5' : 'border-border-main bg-bg-sub'
+              }`}>
+              <span className="text-[18px]">{opt.emoji}</span>
+              <span className={`flex-1 text-left text-[13px] font-bold ${selectedConds.includes(opt.id) ? 'text-point' : 'text-text-main'}`}>
+                {opt.label}
+              </span>
+              <div className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition ${
+                selectedConds.includes(opt.id) ? 'border-point bg-point' : 'border-border-main'
+              }`}>
+                {selectedConds.includes(opt.id) && <span className="text-[10px] font-black text-white">✓</span>}
+              </div>
+            </button>
+          ))}
           <div className="pt-2">
-            <button onClick={() => setConditionOpen(false)} className="w-full rounded-2xl bg-point py-4 text-[14px] font-black text-white">
+            <button onClick={() => setConditionOpen(false)}
+              className="w-full rounded-2xl bg-point py-4 text-[14px] font-black text-white">
               {selectedConds.length > 0 ? `${selectedConds.length}개 조건 적용` : '닫기'}
             </button>
           </div>
         </div>
       </BottomSheet>
 
+      {/* 정렬 바텀시트 */}
       <BottomSheet open={sortOpen} onClose={() => setSortOpen(false)} title="정렬 기준">
         <div className="p-4 space-y-2">
-          {SORT_OPTIONS.map((opt) => {
-            const isActive = sortKey === opt.id
-            return (
-              <button
-                key={opt.id}
-                onClick={() => { setSortKey(opt.id); setSortOpen(false) }}
-                className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
-                  isActive ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
-                }`}
-              >
-                {opt.label}
-                {isActive && <span className="text-[16px]">✓</span>}
-              </button>
-            )
-          })}
+          {SORT_OPTIONS.map(opt => (
+            <button key={opt.id} onClick={() => { setSortKey(opt.id); setSortOpen(false) }}
+              className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-[13px] font-bold transition active:scale-[0.98] ${
+                sortKey === opt.id ? 'border-point bg-point/5 text-point' : 'border-border-main text-text-sub'
+              }`}>
+              {opt.label}
+              {sortKey === opt.id && <span className="text-[16px]">✓</span>}
+            </button>
+          ))}
         </div>
       </BottomSheet>
     </div>
