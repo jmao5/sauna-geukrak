@@ -1,16 +1,23 @@
 'use client'
 
-import { LazyMotion } from 'framer-motion'
+import { LazyMotion, domAnimation } from 'framer-motion'
 
-// domAnimation: 기본 애니메이션 기능만 포함 (enter/exit, layout 제외 고급 기능 제거)
-// domMax 대비 번들 크기 ~40% 감소. Navbar, FloatingActions 용도에 충분함.
-// layout animation(layoutId)이 필요한 경우에만 domMax로 교체할 것.
-const loadFeatures = () =>
-  import('framer-motion').then((mod) => mod.domAnimation)
-
+/**
+ * 개선: 비동기 features → 정적 import
+ *
+ * 기존 문제:
+ *   const loadFeatures = () => import('framer-motion').then(mod => mod.domAnimation)
+ *   LazyMotion이 features를 동적으로 로드하므로 로드 완료 전까지
+ *   하위 m.* 컴포넌트(Navbar 인디케이터, 바텀시트 등)가 렌더를 보류.
+ *
+ * 개선 결과:
+ *   domAnimation을 정적 import → 추가 네트워크 왕복 없이 즉시 사용 가능.
+ *   domAnimation 자체가 domMax 대비 ~40% 작으므로 번들 절감 효과는 유지.
+ *   layoutId(layout animation)를 쓸 일이 생기면 domMax로 교체할 것.
+ */
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   return (
-    <LazyMotion features={loadFeatures} strict>
+    <LazyMotion features={domAnimation} strict>
       {children}
     </LazyMotion>
   )
