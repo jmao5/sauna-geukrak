@@ -22,9 +22,7 @@ const VISIT_TIME_LABELS: Record<string, string> = {
 const MAX_CHARS = 140
 
 /* ── 좋아요 버튼 ──────────────────────────────────────────── */
-function LikeButton({
-  reviewId, saunaId, initialLiked, initialCount,
-}: {
+function LikeButton({ reviewId, saunaId, initialLiked, initialCount }: {
   reviewId: string
   saunaId: string
   initialLiked: boolean
@@ -35,10 +33,8 @@ function LikeButton({
   const queryClient = useQueryClient()
   const [liked, setLiked] = useState(initialLiked)
   const [count, setCount] = useState(initialCount)
-  const isPendingRef = useRef(false)  // ref로 관리 → re-render 없이 useEffect 조건 판단
+  const isPendingRef = useRef(false)
 
-  // likeStatuses 쿼리가 갱신될 때 prop → state 동기화
-  // 단, 요청 중(pendingRef=true)이면 무시 (optimistic 값 보존)
   useEffect(() => {
     if (!isPendingRef.current) {
       setLiked(initialLiked)
@@ -59,73 +55,43 @@ function LikeButton({
     const nextLiked = !liked
     const nextCount = Math.max(0, count + (nextLiked ? 1 : -1))
 
-    // 1. Optimistic UI 반영
     setLiked(nextLiked)
     setCount(nextCount)
     isPendingRef.current = true
 
-    // 2. 쿼리 캐시도 즉시 업데이트 → 탭 이동 후 돌아와도 캐시가 최신값 유지
+    // 캐시 즉시 업데이트 → 탭 이동 후 돌아와도 유지
     queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
-      // ReviewList의 queryKey와 동일하게 맞춰야 함
-      // reviewIds 목록을 모르므로 like 관련 모든 캐시 항목에 적용
       ['review-likes', saunaId],
-      (old) => {
-        if (!old) return old
-        return {
-          ...old,
-          [reviewId]: { liked: nextLiked, count: nextCount },
-        }
-      }
+      (old) => old ? { ...old, [reviewId]: { liked: nextLiked, count: nextCount } } : old
     )
 
     const result = await toggleReviewLike(reviewId)
     isPendingRef.current = false
 
     if (!result.ok) {
-      // 실패 → 롤백
       setLiked(prevLiked)
       setCount(prevCount)
-      // 캐시도 롤백
       queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
         ['review-likes', saunaId],
-        (old) => {
-          if (!old) return old
-          return {
-            ...old,
-            [reviewId]: { liked: prevLiked, count: prevCount },
-          }
-        }
+        (old) => old ? { ...old, [reviewId]: { liked: prevLiked, count: prevCount } } : old
       )
       toast.error(result.error ?? '좋아요 처리에 실패했습니다')
     } else {
-      // 성공 → 서버 실제값으로 최종 동기화
       setLiked(result.liked)
       setCount(result.count)
       queryClient.setQueryData<Record<string, { liked: boolean; count: number }>>(
         ['review-likes', saunaId],
-        (old) => {
-          if (!old) return old
-          return {
-            ...old,
-            [reviewId]: { liked: result.liked, count: result.count },
-          }
-        }
+        (old) => old ? { ...old, [reviewId]: { liked: result.liked, count: result.count } } : old
       )
     }
   }
 
   return (
-    <button
-      onClick={handleToggle}
+    <button onClick={handleToggle}
       className={`flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold transition active:scale-95 ${
-        liked
-          ? 'bg-red-50 text-red-500 dark:bg-red-950/20'
-          : 'text-text-muted hover:bg-bg-sub hover:text-text-sub'
-      }`}
-    >
-      {liked
-        ? <BiSolidHeart size={14} className="text-red-500" />
-        : <BiHeart size={14} />}
+        liked ? 'bg-red-50 text-red-500' : 'text-text-muted hover:bg-bg-sub hover:text-text-sub'
+      }`}>
+      {liked ? <BiSolidHeart size={14} className="text-red-500" /> : <BiHeart size={14} />}
       {count > 0 && <span className="tabular-nums">{count}</span>}
     </button>
   )
@@ -138,10 +104,11 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
   const queryClient = useQueryClient()
   const inputRef = useRef<HTMLInputElement>(null)
   const [text, setText] = useState('')
-  const [mounted, setMounted] = useState(false)
+  // portal 대상: #app-root → 웹 데스크톱에서도 앱 너비 안에 렌더됨
+  const [portalEl, setPortalEl] = useState<Element | null>(null)
 
   useEffect(() => {
-    setMounted(true)
+    setPortalEl(document.getElementById('app-root'))
     setTimeout(() => inputRef.current?.focus(), 300)
   }, [])
 
@@ -157,7 +124,6 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
       if (!result.ok) { toast.error(result.error ?? '댓글 작성에 실패했습니다'); return }
       setText('')
       queryClient.invalidateQueries({ queryKey: ['comments', review.id] })
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
     },
     onError: () => toast.error('댓글 작성에 실패했습니다'),
   })
@@ -166,22 +132,22 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
     mutationFn: (commentId: string) => deleteComment(commentId),
     onSuccess: (result, commentId) => {
       if (!result.ok) { toast.error(result.error ?? '삭제에 실패했습니다'); return }
-      queryClient.setQueryData<CommentDto[]>(['comments', review.id], (prev) =>
-        prev?.filter((c) => c.id !== commentId) ?? []
+      queryClient.setQueryData<CommentDto[]>(['comments', review.id],
+        (prev) => prev?.filter((c) => c.id !== commentId) ?? []
       )
-      queryClient.invalidateQueries({ queryKey: ['reviews'] })
     },
   })
 
-  if (!mounted) return null
+  if (!portalEl) return null
 
   const author = review.users
   const authorName = author?.nickname ?? '익명'
 
-  const sheet = (
-    <div className="fixed inset-0 z-[300] flex flex-col justify-end bg-black/40 backdrop-blur-sm"
+  return createPortal(
+    // fixed → absolute, 기준점 #app-root (relative)
+    <div className="absolute inset-0 z-[300] flex flex-col justify-end bg-black/40 backdrop-blur-sm"
       onClick={onClose}>
-      <div className="flex max-h-[80vh] flex-col rounded-t-2xl bg-bg-card border-t border-border-main shadow-xl"
+      <div className="flex max-h-[80%] flex-col rounded-t-2xl bg-bg-card border-t border-border-main shadow-xl"
         onClick={(e) => e.stopPropagation()}>
 
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
@@ -212,10 +178,10 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
           {isLoading ? (
             [0, 1, 2].map((i) => (
               <div key={i} className="flex gap-2.5 animate-pulse">
-                <div className="h-8 w-8 flex-shrink-0 rounded-full bg-bg-sub skeleton-shimmer" />
+                <div className="h-8 w-8 flex-shrink-0 rounded-full bg-bg-sub" />
                 <div className="flex-1 space-y-1.5 pt-1">
-                  <div className="h-2.5 w-20 rounded bg-bg-sub skeleton-shimmer" />
-                  <div className="h-3 w-full rounded bg-bg-sub skeleton-shimmer" />
+                  <div className="h-2.5 w-20 rounded bg-bg-sub" />
+                  <div className="h-3 w-full rounded bg-bg-sub" />
                 </div>
               </div>
             ))
@@ -229,26 +195,18 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
               const isMe = user?.id === comment.users?.id
               const name = comment.users?.nickname ?? '익명'
               const avatar = comment.users?.avatar_url
-              const dateStr = new Date(comment.created_at).toLocaleDateString('ko-KR', {
-                month: 'numeric', day: 'numeric',
-              })
+              const dateStr = new Date(comment.created_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })
               return (
                 <div key={comment.id} className="flex gap-2.5">
-                  <Link href={`/users/${comment.users?.id}`}
-                    className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub"
-                    onClick={(e) => e.stopPropagation()}>
+                  <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
                     {avatar
                       ? <img src={avatar} alt={name} className="h-full w-full object-cover" />
                       : <div className="flex h-full w-full items-center justify-center"><BiUser size={14} className="text-text-muted" /></div>
                     }
-                  </Link>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-baseline gap-2">
-                      <Link href={`/users/${comment.users?.id}`}
-                        className="text-[12px] font-black text-text-main hover:text-point transition"
-                        onClick={(e) => e.stopPropagation()}>
-                        {name}
-                      </Link>
+                      <span className="text-[12px] font-black text-text-main">{name}</span>
                       <span className="text-[10px] text-text-muted">{dateStr}</span>
                     </div>
                     <p className="mt-0.5 text-[12px] leading-relaxed text-text-sub whitespace-pre-wrap">
@@ -256,9 +214,7 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
                     </p>
                   </div>
                   {isMe && (
-                    <button
-                      onClick={() => deleteMutation.mutate(comment.id)}
-                      disabled={deleteMutation.isPending}
+                    <button onClick={() => deleteMutation.mutate(comment.id)} disabled={deleteMutation.isPending}
                       className="flex-shrink-0 p-1 text-text-muted transition hover:text-danger active:scale-90">
                       <BiTrash size={14} />
                     </button>
@@ -269,7 +225,7 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
           )}
         </div>
 
-        <div className="flex-shrink-0 border-t border-border-subtle px-4 py-3 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <div className="flex-shrink-0 border-t border-border-subtle px-4 py-3">
           {user ? (
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
@@ -278,39 +234,30 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
                   : <div className="flex h-full w-full items-center justify-center"><BiUser size={14} className="text-text-muted" /></div>
                 }
               </div>
-              <input
-                ref={inputRef}
-                type="text"
-                value={text}
+              <input ref={inputRef} type="text" value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && text.trim() && createMutation.mutate()}
-                placeholder="댓글 달기..."
-                maxLength={500}
+                placeholder="댓글 달기..." maxLength={500}
                 className="flex-1 rounded-full border border-border-main bg-bg-sub px-3.5 py-2 text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-point transition"
               />
-              <button
-                onClick={() => createMutation.mutate()}
-                disabled={!text.trim() || createMutation.isPending}
+              <button onClick={() => createMutation.mutate()} disabled={!text.trim() || createMutation.isPending}
                 className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-point text-white transition active:scale-90 disabled:opacity-40">
                 {createMutation.isPending
                   ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  : <BiSend size={14} />
-                }
+                  : <BiSend size={14} />}
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => { onClose(); router.push('/login') }}
+            <button onClick={() => { onClose(); router.push('/login') }}
               className="w-full rounded-full border border-border-main bg-bg-sub py-2.5 text-[13px] font-bold text-text-sub transition active:scale-[0.98]">
               로그인하고 댓글 달기
             </button>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    portalEl
   )
-
-  return createPortal(sheet, document.body)
 }
 
 /* ── ReviewCard ──────────────────────────────────────────── */
@@ -330,30 +277,22 @@ function ReviewCard({ review, saunaId, likeStatus }: {
   const displayText = expanded || !isLong ? content : content.slice(0, MAX_CHARS) + '…'
 
   const dateStr = review.visit_date
-    ? new Date(review.visit_date).toLocaleDateString('ko-KR', {
-        year: 'numeric', month: 'long', day: 'numeric',
-      })
+    ? new Date(review.visit_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
 
   return (
     <>
       <div className="border-b border-border-subtle px-4 py-4 transition hover:bg-bg-sub">
         <div className="flex items-center gap-2.5">
-          <Link href={`/users/${author?.id}`}
-            className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub"
-            onClick={(e) => e.stopPropagation()}>
+          <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
             {avatar
               ? <img src={avatar} alt={displayName} className="h-full w-full object-cover" />
               : <div className="flex h-full w-full items-center justify-center"><BiUser size={16} className="text-text-muted" /></div>
             }
-          </Link>
+          </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-baseline gap-2">
-              <Link href={`/users/${author?.id}`}
-                className="text-[13px] font-black text-text-main hover:text-point transition"
-                onClick={(e) => e.stopPropagation()}>
-                {displayName}
-              </Link>
+              <span className="text-[13px] font-black text-text-main">{displayName}</span>
               {dateStr && <span className="text-[10px] text-text-muted">{dateStr}</span>}
             </div>
             {review.rating > 0 && (
@@ -384,22 +323,6 @@ function ReviewCard({ review, saunaId, likeStatus }: {
           </div>
         )}
 
-        {review.sessions?.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1.5">
-            {review.sessions.map((s, i) => (
-              <span key={i} className={`rounded-full px-2.5 py-1 text-[10px] font-black ${
-                s.type === 'sauna' ? 'bg-sauna-bg text-sauna'
-                : s.type === 'cold' ? 'bg-cold-bg text-cold'
-                : 'bg-bg-sub text-text-sub'
-              }`}>
-                {s.type === 'sauna' ? '♨' : s.type === 'cold' ? '❄' : '🌿'}
-                {s.temp ? ` ${s.temp}°` : ''}
-                {s.duration_minutes ? ` ${s.duration_minutes}분` : ''}
-              </span>
-            ))}
-          </div>
-        )}
-
         {review.images?.length > 0 && (
           <div className="mt-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
             {review.images.map((img, i) => (
@@ -417,21 +340,15 @@ function ReviewCard({ review, saunaId, likeStatus }: {
             initialLiked={likeStatus.liked}
             initialCount={likeStatus.count}
           />
-          <button
-            onClick={() => setShowComments(true)}
-            className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold text-text-muted transition hover:bg-bg-sub hover:text-text-sub active:scale-95"
-          >
+          <button onClick={() => setShowComments(true)}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[11px] font-bold text-text-muted transition hover:bg-bg-sub hover:text-text-sub active:scale-95">
             <BiComment size={14} />
-            {(review.comment_count ?? 0) > 0 && (
-              <span className="tabular-nums">{review.comment_count}</span>
-            )}
+            {(review.comment_count ?? 0) > 0 && <span className="tabular-nums">{review.comment_count}</span>}
           </button>
         </div>
       </div>
 
-      {showComments && (
-        <CommentSheet review={review} onClose={() => setShowComments(false)} />
-      )}
+      {showComments && <CommentSheet review={review} onClose={() => setShowComments(false)} />}
     </>
   )
 }
@@ -443,19 +360,15 @@ function ReviewSkeleton() {
       {[0, 1, 2].map((i) => (
         <div key={i} className="animate-pulse px-4 py-4">
           <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 flex-shrink-0 rounded-full bg-bg-sub skeleton-shimmer" />
+            <div className="h-9 w-9 flex-shrink-0 rounded-full bg-bg-sub" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3 w-24 rounded bg-bg-sub skeleton-shimmer" />
-              <div className="h-2.5 w-16 rounded bg-bg-sub skeleton-shimmer" />
+              <div className="h-3 w-24 rounded bg-bg-sub" />
+              <div className="h-2.5 w-16 rounded bg-bg-sub" />
             </div>
           </div>
           <div className="mt-2.5 space-y-1.5">
-            <div className="h-3 w-full rounded bg-bg-sub skeleton-shimmer" />
-            <div className="h-3 w-4/5 rounded bg-bg-sub skeleton-shimmer" />
-          </div>
-          <div className="mt-2.5 flex gap-2">
-            <div className="h-7 w-14 rounded-full bg-bg-sub skeleton-shimmer" />
-            <div className="h-7 w-14 rounded-full bg-bg-sub skeleton-shimmer" />
+            <div className="h-3 w-full rounded bg-bg-sub" />
+            <div className="h-3 w-4/5 rounded bg-bg-sub" />
           </div>
         </div>
       ))}
@@ -479,13 +392,11 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
 
   const reviewIds = reviews.map((r) => r.id)
 
-  // queryKey를 saunaId만으로 단순화
-  // → LikeButton이 setQueryData할 때 같은 key를 참조하게 됨
   const { data: likeStatuses = {} } = useQuery({
     queryKey: ['review-likes', saunaId],
     queryFn: () => getReviewLikeStatuses(reviewIds),
     enabled: reviewIds.length > 0,
-    staleTime: 1000 * 60 * 5,  // 5분 — 탭 이동 후 돌아와도 재요청 안 함
+    staleTime: 1000 * 60 * 5,
   })
 
   if (isLoading) return <ReviewSkeleton />
@@ -515,9 +426,7 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
           key={review.id}
           review={review}
           saunaId={saunaId}
-          likeStatus={
-            likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }
-          }
+          likeStatus={likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }}
         />
       ))}
     </div>
