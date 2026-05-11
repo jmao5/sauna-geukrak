@@ -59,8 +59,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectUrl)
   }
 
-  // public.users 레코드 보장 — 트리거가 실패했을 경우를 대비해 직접 upsert
+  // public.users 레코드 보장
   const authUser = sessionData?.user
+  let isNewUser = false
   if (authUser) {
     const nickname =
       authUser.user_metadata?.name ??
@@ -69,17 +70,29 @@ export async function GET(request: NextRequest) {
       '익명'
     const avatar_url = authUser.user_metadata?.avatar_url ?? null
 
-    await supabase.from('users').upsert(
-      { id: authUser.id, nickname, avatar_url },
-      { onConflict: 'id', ignoreDuplicates: false }
-    )
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id, nickname')
+      .eq('id', authUser.id)
+      .single()
+
+    if (!existing) {
+      // 신규 유저 — insert
+      await supabase.from('users').insert({ id: authUser.id, nickname, avatar_url })
+      isNewUser = true
+    } else {
+      // 기존 유저 — avatar만 갱신
+      await supabase.from('users').update({ avatar_url }).eq('id', authUser.id)
+    }
   }
 
   // oauth_redirect_next 쿠키 삭제
+  const finalNext = isNewUser ? `/onboarding?next=${encodeURIComponent(next)}` : next
+
   const response = NextResponse.redirect(
     process.env.NODE_ENV === 'development'
-      ? `${origin}${next}`
-      : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}${next}`
+      ? `${origin}${finalNext}`
+      : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}${finalNext}`
   )
   response.cookies.delete('oauth_redirect_next')
 
