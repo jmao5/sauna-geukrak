@@ -6,16 +6,81 @@ import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
 
-export async function getSaunas(page = 0, pageSize = 20): Promise<SaunaSummaryDto[]> {
+export interface GetSaunasParams {
+  page?: number
+  pageSize?: number
+  keyword?: string
+  region?: string
+  conditions?: string[]
+  sort?: string
+}
+
+export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSummaryDto[]> {
+  const { page = 0, pageSize = 20, keyword, region, conditions = [], sort = 'default' } = params
   try {
     const supabase = await createClient()
     const from = page * pageSize
     const to = from + pageSize - 1
-    const { data, error } = await supabase
+    
+    let query = supabase
       .from('saunas')
       .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
-      .order('created_at', { ascending: false })
-      .range(from, to)
+
+    if (keyword) {
+      const kw = keyword.trim()
+      query = query.or(`name.ilike.%${kw}%,address.ilike.%${kw}%`)
+    }
+    if (region) {
+      query = query.ilike('address', `%${region}%`)
+    }
+
+    const isFemale = conditions.includes('female')
+    const isMale = conditions.includes('male')
+    const pref = (isFemale && !isMale) ? 'female' : (!isFemale && isMale) ? 'male' : null
+
+    for (const cond of conditions) {
+      switch (cond) {
+        case 'autoloyly':
+          if (pref) {
+             query = query.or(`sauna_rooms.cs.[{"has_auto_loyly":true,"gender":"${pref}"}],sauna_rooms.cs.[{"has_auto_loyly":true,"gender":"both"}]`)
+          } else {
+             query = query.contains('sauna_rooms', '[{"has_auto_loyly":true}]')
+          }
+          break
+        case 'groundwater':
+          if (pref) {
+             query = query.or(`cold_baths.cs.[{"is_groundwater":true,"gender":"${pref}"}],cold_baths.cs.[{"is_groundwater":true,"gender":"both"}]`)
+          } else {
+             query = query.contains('cold_baths', '[{"is_groundwater":true}]')
+          }
+          break
+        case 'jjimjilbang':
+          query = query.contains('kr_specific', '{"has_jjimjilbang":true}')
+          break
+        case 'tattoo':
+          query = query.contains('rules', '{"tattoo_allowed":true}')
+          break
+        case 'female':
+          query = query.contains('rules', '{"female_allowed":true}')
+          break
+        case 'male':
+          query = query.contains('rules', '{"male_allowed":true}')
+          break
+        case 'parking':
+          query = query.eq('parking', true)
+          break
+      }
+    }
+
+    switch (sort) {
+      case 'rating': query = query.order('avg_rating', { ascending: false, nullsFirst: false }); break
+      case 'reviews': query = query.order('review_count', { ascending: false, nullsFirst: false }); break
+      default: query = query.order('created_at', { ascending: false }); break
+    }
+
+    query = query.range(from, to)
+
+    const { data, error } = await query
     if (error) throw new Error(error.message)
     return (data as SaunaSummaryDto[]).map((row) => ({
       ...row,

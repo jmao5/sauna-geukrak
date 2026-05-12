@@ -25,7 +25,7 @@ export default async function HomePage() {
   await queryClient.prefetchInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
     queryFn: async () => {
-      const result = await getSaunas(0, PAGE_SIZE)
+      const result = await getSaunas({ page: 0, pageSize: PAGE_SIZE })
       return Array.isArray(result) ? result : []
     },
     initialPageParam: 0,
