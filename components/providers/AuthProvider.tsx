@@ -1,63 +1,67 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserStore } from '@/stores/userStore'
+import type { Session } from '@supabase/supabase-js'
 
 /**
  * AuthProvider
  *
- * 개선: getSession()으로 초기 세션을 로컬 JWT 파싱으로 즉시 읽고,
- * onAuthStateChange는 이후 상태 변화(로그인/로그아웃/토큰 갱신)만 담당합니다.
- *
- * 기존 문제:
- *   onAuthStateChange의 INITIAL_SESSION은 Supabase Auth 서버 왕복 후 발화
- *   → 그 동안 isLoading: true가 유지되어 모든 화면이 로딩 UI를 표시
- *
- * 개선 결과:
- *   getSession()은 쿠키의 JWT를 로컬에서 파싱 → 네트워크 왕복 없음
- *   → 마운트 즉시 isLoading: false, 화면 즉시 렌더
- *   → onAuthStateChange는 보조 역할로 토큰 갱신/로그아웃 처리만 수행
+ * 개선 내용:
+ * 서버(layout.tsx)에서 받아온 초기 session을 Props로 전달받습니다.
+ * 컴포넌트 마운트 전(render phase)에 Zustand 스토어를 동기적으로 초기화하여
+ * 페이지 첫 진입 시 깜빡임(Flickering) 없이 즉시 로그인 상태를 렌더링합니다.
  */
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
+export default function AuthProvider({
+  session,
+  children,
+}: {
+  session: Session | null
+  children: React.ReactNode
+}) {
   const { setSession, setRole, clearSession } = useUserStore()
+  const initialized = useRef(false)
+
+  // ── 1. 서버 사이드 렌더링 또는 초기 클라이언트 렌더링 시 스토어 즉시 초기화 ──
+  if (!initialized.current) {
+    useUserStore.setState({
+      session,
+      user: session?.user ?? null,
+      isLoading: false,
+      role:
+        (session?.user?.app_metadata?.role as 'user' | 'admin' | undefined) ??
+        (session?.user?.user_metadata?.role as 'user' | 'admin' | undefined) ??
+        'user',
+    })
+    initialized.current = true
+  }
 
   useEffect(() => {
     const supabase = createClient()
 
-    // ── 1. 초기 세션: 로컬 JWT 파싱, 네트워크 왕복 없음 ──────────
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
+    // ── 2. 이후 상태 변화만 구독 (로그인/로그아웃/토큰 갱신) ──────
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // 서버에서 전달받은 초기 상태는 이미 적용되었으므로 스킵
+      if (event === 'INITIAL_SESSION') return
 
-      const role =
-        (session?.user?.app_metadata?.role as 'user' | 'admin' | undefined) ??
-        (session?.user?.user_metadata?.role as 'user' | 'admin' | undefined) ??
-        'user'
-      setRole(role)
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setSession(session)
+
+        const role =
+          (session?.user?.app_metadata?.role as 'user' | 'admin' | undefined) ??
+          (session?.user?.user_metadata?.role as 'user' | 'admin' | undefined) ??
+          'user'
+        setRole(role)
+      } else if (event === 'SIGNED_OUT') {
+        clearSession()
+      }
     })
 
-    // ── 2. 이후 상태 변화만 구독 (로그인/로그아웃/토큰 갱신) ──────
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // INITIAL_SESSION은 getSession()이 이미 처리했으므로 스킵
-        if (event === 'INITIAL_SESSION') return
-
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          setSession(session)
-
-          const role =
-            (session?.user?.app_metadata?.role as 'user' | 'admin' | undefined) ??
-            (session?.user?.user_metadata?.role as 'user' | 'admin' | undefined) ??
-            'user'
-          setRole(role)
-        } else if (event === 'SIGNED_OUT') {
-          clearSession()
-        }
-      }
-    )
-
     return () => subscription.unsubscribe()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return <>{children}</>

@@ -377,7 +377,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
         {/* ── 히어로 이미지 ── */}
         <div className="relative w-full flex-shrink-0 bg-bg-sub" style={{ height: 220 }}>
           {thumbnail ? (
-            <Image src={thumbnail} alt={sauna.name} fill className="object-cover" sizes="100vw" priority />
+            <Image src={thumbnail} alt={sauna.name} fill className="object-cover" sizes="(max-width: 576px) 100vw, 576px" priority loading="eager" />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
               <span className="text-7xl opacity-10">🧖</span>

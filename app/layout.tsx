@@ -11,6 +11,7 @@ import AppFrame from '@/components/layout/AppFrame'
 import { Toaster } from 'react-hot-toast'
 import { Suspense } from 'react'
 import Loading from '@/components/ui/Loading'
+import { createClient } from '@/lib/supabase/server'
 
 const pretendard = localFont({
   src: './fonts/Pretendard-Regular.woff2',
@@ -67,7 +68,10 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
   return (
     <html lang="ko" suppressHydrationWarning className={`${pretendard.variable} ${juache.variable}`}>
       <head>
@@ -94,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <ThemeProvider>
             <MotionProvider>
-              <AuthProvider>
+              <AuthProvider session={session}>
                 <AppFrame>
                   <Suspense fallback={<Loading message="준비 중입니다..." />}>
                     <ClientLayout>{children}</ClientLayout>
