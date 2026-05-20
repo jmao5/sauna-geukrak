@@ -4,6 +4,7 @@ import { clsx } from 'clsx'
 import Lottie from 'lottie-react'; // 🚀 lottie-react 라이브러리 추가
 import Image from 'next/image'
 import { ReactNode, useEffect, useState } from 'react'
+import waitingLottie from '@/public/lottie/waiting.json'
 
 // 1. 'lottie' 타입을 추가합니다.
 type LoadingVariant = 'spinner' | 'dots' | 'image' | 'lottie'
@@ -26,7 +27,7 @@ interface LoadingProps {
   /** 🖼️ 이미지/Lottie 너비 및 높이 (기본값: 150) */
   imageSize?: number
   /** ✨ [추가됨] Lottie 애니메이션 JSON 데이터 */
-  animationData?: unknown
+  animationData?: any
 }
 
 /**
@@ -41,21 +42,10 @@ export default function Loading({
   color = '#ea580c',
   imageSrc = '/sauna-loading.png',
   imageSize = 100,
-  animationData, // 외부에서 안 넘겨주면 빈 값으로 둠
+  animationData = waitingLottie, // 기본 Lottie 데이터
 }: LoadingProps) {
   const [mounted, setMounted] = useState(false)
   const [showMessage, setShowMessage] = useState(false)
-  const [lottieData, setLottieData] = useState<unknown>(animationData)
-
-  useEffect(() => {
-    // 만약 animationData가 안 넘어왔고, lottie 스타일이라면 JSON을 fetch 해옵니다.
-    if (!animationData && variant === 'lottie' && !lottieData) {
-      fetch('/lottie/waiting.json')
-        .then((res) => res.json())
-        .then((data) => setLottieData(data))
-        .catch((err) => console.error('Lottie load error:', err))
-    }
-  }, [animationData, variant, lottieData])
 
   useEffect(() => {
     setMounted(true)
@@ -79,22 +69,14 @@ export default function Loading({
         className
       )}
     >
-      {variant === 'lottie' && (
+      {variant === 'lottie' && !!animationData && (
         <div className="relative flex items-center justify-center">
-          {lottieData ? (
-            <Lottie
-              animationData={lottieData}
-              loop={true}
-              style={{ width: imageSize, height: imageSize }}
-              rendererSettings={{ preserveAspectRatio: 'xMidYMid slice' }}
-            />
-          ) : (
-            // Lottie 로딩 전까지는 스피너 표시 (CPU 절약)
-            <div 
-              className="animate-loading-spin rounded-full border-4 border-border-main border-t-point" 
-              style={{ width: 40, height: 40 }} 
-            />
-          )}
+          <Lottie
+            animationData={animationData}
+            loop={true}
+            style={{ width: imageSize, height: imageSize }}
+            rendererSettings={{ preserveAspectRatio: 'xMidYMid slice' }}
+          />
         </div>
       )}
 
