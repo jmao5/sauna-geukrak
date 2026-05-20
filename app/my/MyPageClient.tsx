@@ -79,6 +79,81 @@ export default function MyPageClient() {
     staleTime: 1000 * 60 * 3,
   })
 
+  // 사우나 기록 통계 산출
+  let totalSets = 0
+  let totalSaunaMinutes = 0
+  let totalColdMinutes = 0
+  let coldSessionsCount = 0
+
+  records.forEach((r) => {
+    if (r.sessions && Array.isArray(r.sessions)) {
+      r.sessions.forEach((s) => {
+        if (s.type === 'sauna') {
+          totalSaunaMinutes += s.duration_minutes || 0
+          totalSets++
+        } else if (s.type === 'cold') {
+          totalColdMinutes += s.duration_minutes || 0
+          coldSessionsCount++
+        } else if (s.type === 'rest') {
+          // 휴식 등 기타 세션 처리
+        }
+      })
+    }
+  })
+
+  const BADGES = [
+    {
+      id: 'rookie',
+      name: '입문 사우너',
+      emoji: '🐣',
+      desc: '첫 사활을 성공적으로 기록함',
+      unlocked: records.length >= 1,
+      hint: '사활 1회 작성',
+      color: 'from-[#fff3ee] to-[#ffdecb]',
+      textColor: 'text-[#e05a00]',
+    },
+    {
+      id: 'veteran',
+      name: '불가마 숙련자',
+      emoji: '🔥',
+      desc: '뜨거운 사우나에 익숙해진 사우너',
+      unlocked: records.length >= 5,
+      hint: '사활 5회 작성',
+      color: 'from-[#fff0f0] to-[#ffcccc]',
+      textColor: 'text-red-600',
+    },
+    {
+      id: 'emperor',
+      name: '극락의 지배자',
+      emoji: '🧖',
+      desc: '진정한 사우나의 극락을 깨달은 마스터',
+      unlocked: records.length >= 15,
+      hint: '사활 15회 작성',
+      color: 'from-[#f5e6ff] to-[#ebb3ff]',
+      textColor: 'text-purple-600',
+    },
+    {
+      id: 'cold_lord',
+      name: '냉탕의 황제',
+      emoji: '❄️',
+      desc: '차가운 냉탕을 완벽히 정복한 지배자',
+      unlocked: coldSessionsCount >= 10,
+      hint: '냉탕 10회 이상 이용',
+      color: 'from-[#eef3ff] to-[#ccd9ff]',
+      textColor: 'text-[#0051e0]',
+    },
+    {
+      id: 'bookmark_master',
+      name: '찜 마스터',
+      emoji: '💖',
+      desc: '가고 싶은 사우나를 꼼꼼히 저장한 수집가',
+      unlocked: favorites.length >= 5,
+      hint: '사우나 찜 5회 이상',
+      color: 'from-[#fff0f6] to-[#ffccd8]',
+      textColor: 'text-pink-600',
+    },
+  ]
+
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -173,6 +248,52 @@ export default function MyPageClient() {
           <BiPlus size={16} />
           새 사우나 등록하기
         </Link>
+      </div>
+
+      {/* 누적 통계 보드 */}
+      {records.length > 0 && (
+        <div className="mx-4 mb-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
+          <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">My Sauna Stats</p>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-xl bg-bg-main py-3">
+              <p className="text-[9px] font-bold text-text-muted mb-0.5">누적 세트</p>
+              <p className="text-[14px] font-black text-text-main tabular-nums">{totalSets}세트</p>
+            </div>
+            <div className="rounded-xl bg-bg-main py-3">
+              <p className="text-[9px] font-bold text-text-muted mb-0.5">사우나 총합</p>
+              <p className="text-[14px] font-black text-text-main tabular-nums">{totalSaunaMinutes}분</p>
+            </div>
+            <div className="rounded-xl bg-bg-main py-3">
+              <p className="text-[9px] font-bold text-text-muted mb-0.5">냉탕 총합</p>
+              <p className="text-[14px] font-black text-text-main tabular-nums">{totalColdMinutes}분</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 명예 배지 섹션 */}
+      <div className="mx-4 mb-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
+        <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">Sauner Badges</p>
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+          {BADGES.map((badge) => (
+            <div
+              key={badge.id}
+              className={`flex w-24 flex-shrink-0 flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
+                badge.unlocked
+                  ? `border-border-main bg-gradient-to-br ${badge.color} shadow-sm`
+                  : 'border-border-subtle bg-bg-main/30 opacity-40'
+              }`}
+            >
+              <span className="text-2xl mb-1.5">{badge.emoji}</span>
+              <p className={`text-[10px] font-black truncate w-full ${badge.unlocked ? badge.textColor : 'text-text-muted'}`}>
+                {badge.name}
+              </p>
+              <p className="mt-0.5 text-[8px] font-medium text-text-muted leading-tight">
+                {badge.unlocked ? '획득 완료' : badge.hint}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 메뉴 목록 */}

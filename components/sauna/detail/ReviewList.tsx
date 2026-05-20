@@ -11,7 +11,70 @@ import { useUserStore } from '@/stores/userStore'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import type { ReviewDto } from '@/types/sauna'
+import type { ReviewDto, Session } from '@/types/sauna'
+
+function RenderSessions({ sessions }: { sessions?: Session[] }) {
+  if (!sessions || sessions.length === 0) return null
+
+  const pattern: string[] = []
+  let isPatternMatched = true
+
+  for (let i = 0; i < sessions.length; i++) {
+    const s = sessions[i]
+    if (i > 0 && s.type === sessions[0].type) {
+      break
+    }
+    pattern.push(s.type)
+  }
+
+  const patternLength = pattern.length
+  const setLength = sessions.length / patternLength
+
+  if (patternLength > 0 && sessions.length % patternLength === 0 && setLength >= 1) {
+    for (let i = 0; i < sessions.length; i++) {
+      if (sessions[i].type !== pattern[i % patternLength]) {
+        isPatternMatched = false
+        break
+      }
+    }
+  } else {
+    isPatternMatched = false
+  }
+
+  if (isPatternMatched && setLength > 0) {
+    const firstSet = sessions.slice(0, patternLength)
+    const sauna = firstSet.find((s) => s.type === 'sauna')
+    const cold = firstSet.find((s) => s.type === 'cold')
+    const rest = firstSet.find((s) => s.type === 'rest')
+
+    return (
+      <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-sub/50 px-3 py-2 text-[11px] font-bold text-text-sub">
+        <span className="text-point font-black text-[9px] uppercase tracking-wider bg-point/10 px-1.5 py-0.5 rounded">ROUTINE</span>
+        <div className="flex items-center gap-1">
+          {sauna && <span>🧖 {sauna.duration_minutes}분</span>}
+          {cold && <span>➡️ ❄️ {cold.duration_minutes}분</span>}
+          {rest && <span>➡️ 🍃 {rest.duration_minutes}분</span>}
+        </div>
+        <span className="ml-auto text-[10px] font-black text-point">
+          {setLength}세트
+        </span>
+      </div>
+    )
+  }
+
+  const emojiMap = { sauna: '🧖', cold: '❄️', rest: '🍃' }
+  const labelMap = { sauna: '사우나', cold: '냉탕', rest: '휴식' }
+
+  return (
+    <div className="mt-2.5 flex flex-wrap gap-1.5">
+      {sessions.map((s, idx) => (
+        <span key={idx} className="rounded-lg border border-border-main bg-bg-sub px-2.5 py-1 text-[10px] font-bold text-text-sub">
+          {emojiMap[s.type as keyof typeof emojiMap] || '🧖'} {labelMap[s.type as keyof typeof labelMap] || '사우나'} {s.duration_minutes}분
+        </span>
+      ))}
+    </div>
+  )
+}
 
 const VISIT_TIME_LABELS: Record<string, string> = {
   morning:   '🌅 아침',
@@ -309,6 +372,8 @@ function ReviewCard({ review, saunaId, likeStatus }: {
             )}
           </div>
         </div>
+
+        <RenderSessions sessions={review.sessions} />
 
         {content && (
           <div className="mt-2.5">

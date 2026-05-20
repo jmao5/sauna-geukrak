@@ -9,7 +9,7 @@ import { createReview } from '@/app/actions/review.actions'
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
-import type { SaunaDto } from '@/types/sauna'
+import type { SaunaDto, Session } from '@/types/sauna'
 
 const VISIT_TIMES = [
   { id: 'morning',   label: '아침', emoji: '🌅' },
@@ -155,6 +155,14 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
   const [content,     setContent]     = useState('')
   const [visitDate,   setVisitDate]   = useState(new Date().toISOString().slice(0, 10))
   const [visitTime,   setVisitTime]   = useState<VisitTime>('afternoon')
+  const [congestion,  setCongestion]  = useState<'비어있음' | '보통' | '혼잡' | '대기' | null>(null)
+
+  const [useRoutine,  setUseRoutine]  = useState(false)
+  const [saunaTime,   setSaunaTime]   = useState(10)
+  const [coldTime,    setColdTime]    = useState(1)
+  const [restTime,    setRestTime]    = useState(10)
+  const [setsCount,   setSetsCount]   = useState(3)
+
   const [portalEl,    setPortalEl]    = useState<Element | null>(null)
 
   const imgUpload = useReviewImageUpload()
@@ -168,6 +176,17 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
   const mutation = useMutation({
     mutationFn: () => {
       if (!user) throw new Error('로그인 필요')
+
+      let sessionsList: Session[] | undefined = undefined
+      if (useRoutine) {
+        sessionsList = []
+        for (let i = 0; i < setsCount; i++) {
+          sessionsList.push({ type: 'sauna', duration_minutes: saunaTime })
+          sessionsList.push({ type: 'cold', duration_minutes: coldTime })
+          sessionsList.push({ type: 'rest', duration_minutes: restTime })
+        }
+      }
+
       return createReview({
         sauna_id:   sauna.id,
         user_id:    user.id,
@@ -175,6 +194,8 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
         content:    content.trim() || undefined,
         visit_date: visitDate,
         visit_time: visitTime,
+        congestion: congestion || undefined,
+        sessions:   sessionsList,
         images:     imgUpload.images,
       })
     },
@@ -296,6 +317,140 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
 
           {/* 사진 */}
           <ReviewImageUploader {...imgUpload} />
+
+          {/* 혼잡도 */}
+          <div>
+            <p className="mb-2 text-[11px] font-black text-text-muted tracking-widest uppercase">Congestion</p>
+            <div className="grid grid-cols-4 gap-2">
+              {(['비어있음', '보통', '혼잡', '대기'] as const).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setCongestion(congestion === level ? null : level)}
+                  className={`rounded-xl border py-2.5 text-[11px] font-bold transition active:scale-95 ${
+                    congestion === level
+                      ? level === '대기'
+                        ? 'border-red-500 bg-red-500/5 text-red-500 shadow-sm'
+                        : 'border-point bg-point/5 text-point shadow-sm'
+                      : 'border-border-main bg-bg-main text-text-sub hover:bg-bg-sub'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 사우나 루틴 세트 메이커 */}
+          <div className="rounded-2xl border border-border-main bg-bg-main/50 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[12px] font-black text-text-main">사활 세트 기록</p>
+                <p className="text-[10px] text-text-muted">사우나 루틴 세트를 간편하게 입력합니다</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUseRoutine(!useRoutine)}
+                className={`rounded-full px-3 py-1.5 text-[10px] font-black transition ${
+                  useRoutine ? 'bg-point text-white' : 'border border-border-main bg-bg-card text-text-sub'
+                }`}
+              >
+                {useRoutine ? '기록 중' : '기록하기'}
+              </button>
+            </div>
+
+            {useRoutine && (
+              <div className="mt-4 space-y-3.5 border-t border-border-subtle pt-4">
+                {/* 사우나 시간 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-text-sub">🧖 사우나 시간</span>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setSaunaTime(Math.max(1, saunaTime - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      -
+                    </button>
+                    <span className="w-12 text-center text-[12px] font-black text-text-main">{saunaTime}분</span>
+                    <button
+                      type="button"
+                      onClick={() => setSaunaTime(saunaTime + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 냉탕 시간 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-text-sub">❄️ 냉탕 시간</span>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setColdTime(Math.max(1, coldTime - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      -
+                    </button>
+                    <span className="w-12 text-center text-[12px] font-black text-text-main">{coldTime}분</span>
+                    <button
+                      type="button"
+                      onClick={() => setColdTime(coldTime + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 휴식 시간 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-text-sub">🍃 휴식 시간</span>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setRestTime(Math.max(1, restTime - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      -
+                    </button>
+                    <span className="w-12 text-center text-[12px] font-black text-text-main">{restTime}분</span>
+                    <button
+                      type="button"
+                      onClick={() => setRestTime(restTime + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* 세트 수 */}
+                <div className="flex items-center justify-between border-t border-border-subtle pt-3">
+                  <span className="text-[11px] font-black text-point">🔥 반복 세트 수</span>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setSetsCount(Math.max(1, setsCount - 1))}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      -
+                    </button>
+                    <span className="w-12 text-center text-[12px] font-black text-point">{setsCount}세트</span>
+                    <button
+                      type="button"
+                      onClick={() => setSetsCount(setsCount + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* 메모 */}
           <div>

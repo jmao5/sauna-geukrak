@@ -129,6 +129,7 @@ export interface SaunaSummaryDto {
   longitude: number
   sauna_rooms: SaunaRoom[]
   cold_baths: ColdBath[]
+  resting_area?: RestingArea
   pricing?: Pricing
   rules?: Rules
   kr_specific?: KrSpecific

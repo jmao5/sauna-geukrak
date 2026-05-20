@@ -104,7 +104,7 @@ export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSumm
     
     let query = supabase
       .from('saunas')
-      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
 
     if (keyword) {
       const kw = keyword.trim()
@@ -182,7 +182,7 @@ export async function getSaunasByLocation(
     const delta = radiusKm / 111
     const { data, error } = await supabase
       .from('saunas')
-      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured')
       .gte('latitude',  lat - delta)
       .lte('latitude',  lat + delta)
       .gte('longitude', lng - delta)
@@ -252,7 +252,7 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('saunas')
-      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, pricing, rules, kr_specific, images, avg_rating, review_count')
+      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count')
       .textSearch('search_vector', query.trim().split(/\s+/).join(' & '))
       .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)

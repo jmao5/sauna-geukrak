@@ -13,13 +13,16 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useKakaoReady } from '@/hooks/useKakaoReady'
 import Link from 'next/link'
 
-type Filter = 'female' | 'male' | 'tattoo' | 'autoloyly'
+type Filter = 'female' | 'male' | 'tattoo' | 'autoloyly' | 'groundwater' | 'deepcold' | 'infinitychair'
 
 const FILTER_OPTIONS: { id: Filter; label: string }[] = [
   { id: 'female', label: '여성가능' },
   { id: 'male', label: '남성가능' },
   { id: 'tattoo', label: '타투OK' },
   { id: 'autoloyly', label: '오토 로우리' },
+  { id: 'groundwater', label: '지하수 냉탕' },
+  { id: 'deepcold', label: '깊은 냉탕(1m+)' },
+  { id: 'infinitychair', label: '인피니티 체어' },
 ]
 
 const PANEL_PEEK = 52
@@ -221,6 +224,27 @@ export default function MapClient() {
       } else {
         if (!s.sauna_rooms?.some(r => r.has_auto_loyly)) return false
       }
+    }
+    if (activeFilters.includes('groundwater')) {
+      if (isFemale && !isMale) {
+        if (!s.cold_baths?.some(b => b.is_groundwater && ((b as any).gender === 'female' || (b as any).gender === 'both'))) return false
+      } else if (isMale && !isFemale) {
+        if (!s.cold_baths?.some(b => b.is_groundwater && ((b as any).gender === 'male' || (b as any).gender === 'both'))) return false
+      } else {
+        if (!s.cold_baths?.some(b => b.is_groundwater)) return false
+      }
+    }
+    if (activeFilters.includes('deepcold')) {
+      if (isFemale && !isMale) {
+        if (!s.cold_baths?.some(b => b.depth >= 100 && ((b as any).gender === 'female' || (b as any).gender === 'both'))) return false
+      } else if (isMale && !isFemale) {
+        if (!s.cold_baths?.some(b => b.depth >= 100 && ((b as any).gender === 'male' || (b as any).gender === 'both'))) return false
+      } else {
+        if (!s.cold_baths?.some(b => b.depth >= 100)) return false
+      }
+    }
+    if (activeFilters.includes('infinitychair')) {
+      if (!s.resting_area?.infinity_chairs || s.resting_area.infinity_chairs <= 0) return false
     }
     return true
   })
