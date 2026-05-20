@@ -51,8 +51,8 @@ function InstagramBanner() {
 // ── 스켈레톤 ──────────────────────────────────────────────────
 function RowSkeleton() {
   return (
-    <div className="flex gap-3 border-b border-border-subtle px-4 py-4">
-      <Skeleton className="skeleton-shimmer flex-shrink-0 rounded-xl" width={80} height={80} variant="rect" />
+    <div className="flex gap-3.5 border-b border-border-subtle px-4 py-4">
+      <Skeleton className="skeleton-shimmer flex-shrink-0 rounded-xl" width={84} height={84} variant="rect" />
       <div className="flex-1 space-y-2 pt-1">
         <Skeleton className="skeleton-shimmer h-3 w-2/3" variant="text" />
         <Skeleton className="skeleton-shimmer h-2.5 w-1/2" variant="text" />

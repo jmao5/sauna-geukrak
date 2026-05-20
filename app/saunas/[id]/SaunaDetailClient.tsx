@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -11,6 +11,7 @@ import {
 } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
+import { motion } from 'framer-motion'
 import type { SaunaDto } from '@/types/sauna'
 import { DetailSkeleton } from '@/components/sauna/detail/DetailPrimitives'
 import { ReviewList } from '@/components/sauna/detail/ReviewList'
@@ -18,7 +19,7 @@ import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { CongestionSection } from '@/components/sauna/detail/CongestionSection'
 import InfoTab from '@/components/sauna/detail/InfoTab'
 import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
-import { getSaunaById } from '@/app/actions/sauna.actions'
+import { getSaunaById, updateSaunaImages } from '@/app/actions/sauna.actions'
 import { checkFavorite, addFavorite, removeFavorite, getFavoriteCount } from '@/app/actions/favorite.actions'
 
 
@@ -113,10 +114,17 @@ export function SaunaDetailClient({ id }: { id: string }) {
     enabled: !!id,
     staleTime: 1000 * 60 * 5,
   })
-
   const { data: kakaoImage } = useKakaoSaunaImage(sauna?.name ?? '', sauna?.address, sauna?.images?.[0])
 
+  // ── 카카오 검색 이미지 DB 지연 동기화 (Lazy Syncing) ──
+  useEffect(() => {
+    if (sauna && !sauna.images?.[0] && kakaoImage) {
+      updateSaunaImages(sauna.id, [kakaoImage]).catch(() => {})
+    }
+  }, [sauna, kakaoImage])
+
   if (isLoading) return <DetailSkeleton />
+
   if (isError || !sauna) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-bg-main p-6 text-center">
@@ -217,19 +225,31 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
         {/* ── 탭 바 ── */}
         <div className="sticky top-0 z-20 flex border-b border-border-main bg-bg-main">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3.5 text-[14px] font-black transition ${
-                activeTab === tab.id ? 'border-b-2 border-point text-text-main' : 'text-text-muted'
-              }`}
-            >
-              {tab.id === 'reviews'
-                ? `사활 ${reviewCount > 0 ? reviewCount : ''}`
-                : tab.label}
-            </button>
-          ))}
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex-1 py-3.5 text-[14px] font-black transition ${
+                  isActive ? 'text-text-main' : 'text-text-muted'
+                }`}
+              >
+                <span className="relative z-10">
+                  {tab.id === 'reviews'
+                    ? `사활 ${reviewCount > 0 ? reviewCount : ''}`
+                    : tab.label}
+                </span>
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabUnderline"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-point"
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* ── 탭 콘텐츠 ── */}

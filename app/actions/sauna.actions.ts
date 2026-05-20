@@ -347,3 +347,55 @@ export async function updateSauna(
     return { ok: false, error: error instanceof Error ? error.message : '사우나 수정에 실패했습니다.' }
   }
 }
+
+/**
+ * 카카오 검색 이미지 캐싱용 Lazy Syncing 서버 액션
+ * 이미지가 완전히 비어있는 사우나에 대해, 크롤링된 카카오 이미지를 자동으로 DB에 보존합니다.
+ */
+export async function updateSaunaImages(
+  id: string,
+  imageUrls: string[]
+): Promise<ActionResult<void>> {
+  try {
+    if (!id || !imageUrls || imageUrls.length === 0) {
+      return { ok: false, error: '유효하지 않은 요청 데이터입니다.' }
+    }
+
+    const supabase = await createClient()
+    
+    // 1. 기존 사우나의 이미지가 비어있는지 조회
+    const { data: sauna, error: fetchError } = await supabase
+      .from('saunas')
+      .select('images')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !sauna) {
+      return { ok: false, error: fetchError?.message || '사우나를 찾을 수 없습니다.' }
+    }
+
+    // 기존 이미지가 이미 존재한다면 중복 업데이트 방지 스킵
+    if (sauna.images && sauna.images.length > 0) {
+      return { ok: true, data: undefined }
+    }
+
+    // 2. 이미지 업데이트 실행
+    const { error: updateError } = await supabase
+      .from('saunas')
+      .update({ images: imageUrls })
+      .eq('id', id)
+
+    if (updateError) {
+      return { ok: false, error: updateError.message }
+    }
+
+    // 캐시 즉시 무효화
+    revalidatePath('/')
+    revalidatePath(`/saunas/${id}`)
+
+    return { ok: true, data: undefined }
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : '이미지 동기화에 실패했습니다.' }
+  }
+}
+

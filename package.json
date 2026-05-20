@@ -53,7 +53,9 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "sharp": "^0.34.5",
     "tailwindcss": "^4.1.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wawoff2": "^2.0.1",
+    "woff-tools": "^0.1.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

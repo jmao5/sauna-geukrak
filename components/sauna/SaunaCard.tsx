@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
+import { updateSaunaImages } from '@/app/actions/sauna.actions'
+import { motion } from 'framer-motion'
 
 interface SaunaCardProps {
   sauna: SaunaSummaryDto
@@ -114,6 +116,13 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
   const { data: kakaoImage } = useKakaoSaunaImage(sauna.name, sauna.address, thumbnail, isVisible)
   const displayImage = thumbnail ?? kakaoImage
 
+  // ── 카카오 검색 이미지 DB 지연 동기화 (Lazy Syncing) ──
+  useEffect(() => {
+    if (!thumbnail && kakaoImage) {
+      updateSaunaImages(sauna.id, [kakaoImage]).catch(() => {})
+    }
+  }, [sauna.id, thumbnail, kakaoImage])
+
   const hasMale   = sauna.rules?.male_allowed !== false
   const hasFemale = !!sauna.rules?.female_allowed
 
@@ -123,10 +132,15 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
     const femaleData = hasFemale && (!preferredGender || preferredGender === 'female') ? getGenderData(sauna, 'female') : null
 
     return (
-      <Link
-        href={`/saunas/${sauna.id}`}
-        className={`flex gap-3.5 px-4 py-4 border-b border-border-subtle bg-bg-card transition active:opacity-70 ${className}`}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
       >
+        <Link
+          href={`/saunas/${sauna.id}`}
+          className={`flex gap-3.5 px-4 py-4 border-b border-border-subtle bg-bg-card transition active:opacity-70 ${className}`}
+        >
         {/* 썸네일 */}
         <div
           ref={observerRef}
@@ -196,12 +210,18 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
           )}
         </div>
       </Link>
+      </motion.div>
     )
   }
 
   /* ── grid ── */
   return (
-    <Link href={`/saunas/${sauna.id}`} className={`sauna-card group block ${className}`}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      <Link href={`/saunas/${sauna.id}`} className={`sauna-card group block ${className}`}>
       {/* 이미지 */}
       <div ref={observerRef} className="relative w-full overflow-hidden bg-bg-sub" style={{ height: 130 }}>
         {displayImage ? (
@@ -294,5 +314,6 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
         )}
       </div>
     </Link>
+    </motion.div>
   )
 }

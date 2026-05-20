@@ -22,7 +22,7 @@ const pretendard = localFont({
 })
 
 const juache = localFont({
-  src: './fonts/Juache.woff',
+  src: './fonts/Juache.woff2',
   variable: '--font-juache',
   display: 'swap',
   weight: '400'
