@@ -11,7 +11,7 @@ import {
 } from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 import type { SaunaDto } from '@/types/sauna'
 import { DetailSkeleton } from '@/components/sauna/detail/DetailPrimitives'
 import { ReviewList } from '@/components/sauna/detail/ReviewList'
@@ -241,7 +241,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
                     : tab.label}
                 </span>
                 {isActive && (
-                  <motion.div
+                  <m.div
                     layoutId="activeTabUnderline"
                     className="absolute bottom-0 left-0 right-0 h-[2px] bg-point"
                     transition={{ type: 'spring', stiffness: 380, damping: 30 }}

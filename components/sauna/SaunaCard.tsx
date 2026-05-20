@@ -7,7 +7,7 @@ import { SaunaSummaryDto } from '@/types/sauna'
 import { useKakaoSaunaImage } from '@/hooks/useKakaoSaunaImage'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 import { updateSaunaImages } from '@/app/actions/sauna.actions'
-import { motion } from 'framer-motion'
+import { m } from 'framer-motion'
 
 interface SaunaCardProps {
   sauna: SaunaSummaryDto
@@ -132,7 +132,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
     const femaleData = hasFemale && (!preferredGender || preferredGender === 'female') ? getGenderData(sauna, 'female') : null
 
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -210,13 +210,13 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
           )}
         </div>
       </Link>
-      </motion.div>
+      </m.div>
     )
   }
 
   /* ── grid ── */
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -314,6 +314,6 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
         )}
       </div>
     </Link>
-    </motion.div>
+    </m.div>
   )
 }
