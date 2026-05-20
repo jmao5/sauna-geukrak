@@ -202,7 +202,7 @@ export default function MyPageClient() {
   }
 
   return (
-    <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide bg-bg-main">
+    <div data-scroll-main className="h-full overflow-y-auto scrollbar-hide bg-bg-main">
       {/* 프로필 헤더 */}
       <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
         <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main shadow-md">
