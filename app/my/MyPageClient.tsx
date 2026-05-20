@@ -202,7 +202,7 @@ export default function MyPageClient() {
   }
 
   return (
-    <div className="flex h-full flex-col bg-bg-main">
+    <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide bg-bg-main">
       {/* 프로필 헤더 */}
       <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
         <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main shadow-md">
@@ -272,7 +272,7 @@ export default function MyPageClient() {
       )}
 
       {/* 명예 배지 섹션 */}
-      <div className="mx-4 mb-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
+      <div className="mx-4 mb-6 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
         <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">Sauner Badges</p>
         <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
           {BADGES.map((badge) => (
@@ -297,7 +297,7 @@ export default function MyPageClient() {
       </div>
 
       {/* 메뉴 목록 */}
-      <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide px-4 space-y-2">
+      <div className="px-4 space-y-2 pb-24">
         {MENU_ITEMS.map((item) => (
           <button
             key={item.href}
