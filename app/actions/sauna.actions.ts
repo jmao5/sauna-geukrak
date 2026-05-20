@@ -271,7 +271,7 @@ export async function createSauna(
   try {
     const parsed = saunaSchema.safeParse(payload)
     if (!parsed.success) {
-      return { ok: false, error: parsed.error.errors[0]?.message || '잘못된 입력 양식입니다.' }
+      return { ok: false, error: parsed.error.issues[0]?.message || '잘못된 입력 양식입니다.' }
     }
     const validatedPayload = parsed.data
 
@@ -321,7 +321,7 @@ export async function updateSauna(
   try {
     const parsed = saunaSchema.safeParse(payload)
     if (!parsed.success) {
-      return { ok: false, error: parsed.error.errors[0]?.message || '잘못된 입력 양식입니다.' }
+      return { ok: false, error: parsed.error.issues[0]?.message || '잘못된 입력 양식입니다.' }
     }
     const validatedPayload = parsed.data
 

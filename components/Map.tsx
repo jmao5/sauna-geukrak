@@ -19,7 +19,7 @@ export default function SaunaMap() {
 
   const { data: saunas = [], isLoading, isError } = useQuery({
     queryKey: ['saunas'],
-    queryFn: () => getSaunas(0, 200), // Map 화면에서는 좀 더 많이 불러오거나 전부 불러와야 할 수 있습니다. (임시로 200개)
+    queryFn: () => getSaunas({ page: 0, pageSize: 200 }), // Map 화면에서는 좀 더 많이 불러오거나 전부 불러와야 할 수 있습니다. (임시로 200개)
   })
 
   useEffect(() => {
