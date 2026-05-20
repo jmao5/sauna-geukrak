@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
+import { z } from 'zod'
 
 export interface GetSaunasParams {
   page?: number
@@ -14,6 +15,85 @@ export interface GetSaunasParams {
   conditions?: string[]
   sort?: string
 }
+
+const saunaRoomSchema = z.object({
+  type: z.string().min(1, '사우나실 종류를 입력해주세요.'),
+  gender: z.enum(['male', 'female', 'both']),
+  temp: z.number().min(0, '온도는 0도 이상이어야 합니다.'),
+  capacity: z.number().min(0, '수용인원은 0명 이상이어야 합니다.'),
+  has_tv: z.boolean(),
+  has_auto_loyly: z.boolean(),
+  has_self_loyly: z.boolean().optional(),
+})
+
+const coldBathSchema = z.object({
+  temp: z.number().min(0, '온도는 0도 이상이어야 합니다.'),
+  gender: z.enum(['male', 'female', 'both']),
+  capacity: z.number().min(0, '수용인원은 0명 이상이어야 합니다.'),
+  is_groundwater: z.boolean(),
+  depth: z.number().min(0, '수심은 0cm 이상이어야 합니다.'),
+})
+
+const restingAreaSchema = z.object({
+  indoor_seats: z.number().min(0),
+  outdoor_seats: z.number().min(0),
+  infinity_chairs: z.number().min(0),
+  deck_chairs: z.number().min(0),
+})
+
+const amenitiesSchema = z.object({
+  towel: z.boolean(),
+  shampoo: z.boolean(),
+  body_wash: z.boolean(),
+  hair_dryer: z.boolean(),
+  water_dispenser: z.boolean().optional(),
+})
+
+const rulesSchema = z.object({
+  tattoo_allowed: z.boolean(),
+  female_allowed: z.boolean(),
+  male_allowed: z.boolean(),
+})
+
+const krSpecificSchema = z.object({
+  has_jjimjilbang: z.boolean(),
+  sesin_price_male: z.number().min(0),
+  sesin_price_female: z.number().min(0),
+  food: z.array(z.string()).optional().nullable(),
+})
+
+const pricingSchema = z.object({
+  adult_day: z.number().min(0),
+  adult_night: z.number().min(0),
+  child: z.number().min(0),
+})
+
+const instagramMediaSchema = z.object({
+  url: z.string().url('올바른 URL을 입력해주세요.'),
+  type: z.enum(['reel', 'post']),
+  caption: z.string().optional().nullable(),
+  thumbnail_url: z.string().optional().nullable(),
+})
+
+const saunaSchema = z.object({
+  name: z.string().min(1, '시설명을 입력해주세요.'),
+  address: z.string().min(1, '주소를 입력해주세요.'),
+  latitude: z.number(),
+  longitude: z.number(),
+  contact: z.string().optional().nullable(),
+  business_hours: z.string().optional().nullable(),
+  parking: z.boolean().optional(),
+  images: z.array(z.string()).optional(),
+  floor_plan_images: z.array(z.string()).optional(),
+  instagram_media: z.array(instagramMediaSchema).optional(),
+  sauna_rooms: z.array(saunaRoomSchema),
+  cold_baths: z.array(coldBathSchema),
+  resting_area: restingAreaSchema,
+  amenities: amenitiesSchema,
+  rules: rulesSchema,
+  kr_specific: krSpecificSchema,
+  pricing: pricingSchema,
+})
 
 export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSummaryDto[]> {
   const { page = 0, pageSize = 20, keyword, region, conditions = [], sort = 'default' } = params
@@ -189,14 +269,20 @@ export async function createSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
 ): Promise<ActionResult<SaunaDto>> {
   try {
+    const parsed = saunaSchema.safeParse(payload)
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.errors[0]?.message || '잘못된 입력 양식입니다.' }
+    }
+    const validatedPayload = parsed.data
+
     const supabase = await createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
-    let finalImages = payload.images ?? []
+    let finalImages = validatedPayload.images ?? []
     if (finalImages.length === 0) {
       try {
-        const kakaoImageUrl = await getKakaoPlaceImage(payload.name, payload.address)
+        const kakaoImageUrl = await getKakaoPlaceImage(validatedPayload.name, validatedPayload.address)
         if (kakaoImageUrl) {
           const downloaded = await downloadImageBuffer(kakaoImageUrl)
           if (downloaded) {
@@ -213,7 +299,7 @@ export async function createSauna(
 
     const { data, error } = await supabase
       .from('saunas')
-      .insert({ ...payload, images: finalImages })
+      .insert({ ...validatedPayload, images: finalImages })
       .select()
       .single()
 
@@ -233,13 +319,19 @@ export async function updateSauna(
   payload: Omit<SaunaDto, 'id' | 'created_at'>
 ): Promise<ActionResult<SaunaDto>> {
   try {
+    const parsed = saunaSchema.safeParse(payload)
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.errors[0]?.message || '잘못된 입력 양식입니다.' }
+    }
+    const validatedPayload = parsed.data
+
     const supabase = await createClient()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return { ok: false, error: '로그인이 필요합니다.' }
 
     const { data, error } = await supabase
       .from('saunas')
-      .update(payload)
+      .update(validatedPayload)
       .eq('id', id)
       .select()
       .single()

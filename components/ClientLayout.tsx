@@ -1,9 +1,10 @@
 'use client'
 
-import { ReactNode, Suspense, useRef } from 'react'
+import { ReactNode, useRef } from 'react'
 import { clsx } from 'clsx'
-import dynamic from 'next/dynamic'
 import { shouldHideNavbar } from '@/constants/layout'
+import Navbar from '@/components/Navbar'
+import FloatingActions from '@/components/ui/FloatingActions'
 import { usePathname } from 'next/navigation'
 import { useStatusBar } from '@/hooks/useStatusBar'
 import { ScrollRefContext } from '@/contexts/ScrollRefContext'
@@ -20,15 +21,7 @@ import { ScrollRefContext } from '@/contexts/ScrollRefContext'
  *   Navbar loading으로 동일 높이(56px)의 placeholder 유지 → 레이아웃 안 밀림.
  *   FloatingActions는 위치가 fixed라 placeholder 불필요, null 유지.
  */
-const Navbar = dynamic(() => import('@/components/Navbar'), {
-  ssr: false,
-  loading: () => <div className="h-[56px] w-full bg-bg-sub" />,
-})
 
-const FloatingActions = dynamic(
-  () => import('@/components/ui/FloatingActions'),
-  { ssr: false }
-)
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -50,9 +43,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      <Suspense fallback={null}>
-        <FloatingActions />
-      </Suspense>
+      <FloatingActions />
 
       {!isNavbarHidden && (
         <div className="border-border-main bg-bg-sub absolute bottom-0 z-50 w-full border-t pb-[env(safe-area-inset-bottom)]">
