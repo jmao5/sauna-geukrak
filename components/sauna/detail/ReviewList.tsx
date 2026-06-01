@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { ReviewDto, Session } from '@/types/sauna'
+import { ReviewBottomSheet } from './ReviewBottomSheet'
 
 function RenderSessions({ sessions }: { sessions?: Session[] }) {
   if (!sessions || sessions.length === 0) return null
@@ -329,9 +330,14 @@ function ReviewCard({ review, saunaId, likeStatus }: {
   saunaId: string
   likeStatus: { liked: boolean; count: number }
 }) {
+  const { user } = useUserStore()
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const [expanded, setExpanded] = useState(false)
   const [showComments, setShowComments] = useState(false)
+  const [showEditSheet, setShowEditSheet] = useState(false)
 
+  const isMe = user?.id === review.users?.id
   const author = review.users
   const displayName = author?.nickname ?? '익명'
   const avatar = author?.avatar_url ?? null
@@ -342,6 +348,27 @@ function ReviewCard({ review, saunaId, likeStatus }: {
   const dateStr = review.visit_date
     ? new Date(review.visit_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })
     : null
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { deleteReview: _delete } = await import('@/app/actions/review.actions')
+      const res = await _delete(review.id)
+      if (!res.ok) throw new Error(res.error)
+    },
+    onSuccess: () => {
+      toast.success('사활 기록이 삭제되었습니다 🗑️')
+      queryClient.invalidateQueries({ queryKey: ['reviews', saunaId] })
+      queryClient.invalidateQueries({ queryKey: ['review-count', saunaId] })
+      queryClient.invalidateQueries({ queryKey: ['sauna', saunaId] })
+    },
+    onError: (e: Error) => toast.error(e.message || '삭제 중 오류가 발생했습니다'),
+  })
+
+  const handleDelete = () => {
+    if (window.confirm('이 사활 기록을 삭제하시겠습니까?')) {
+      deleteMutation.mutate()
+    }
+  }
 
   return (
     <>
@@ -383,6 +410,23 @@ function ReviewCard({ review, saunaId, likeStatus }: {
               </div>
             )}
           </div>
+          {isMe && (
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button
+                onClick={() => setShowEditSheet(true)}
+                className="text-[11px] font-bold text-text-sub hover:text-point px-2 py-1 rounded-md border border-border-main bg-bg-sub transition active:scale-95"
+              >
+                수정
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+                className="text-[11px] font-bold text-danger hover:bg-danger/5 px-2 py-1 rounded-md border border-danger/20 bg-bg-sub transition active:scale-95 disabled:opacity-40"
+              >
+                삭제
+              </button>
+            </div>
+          )}
         </div>
 
         <RenderSessions sessions={review.sessions} />
@@ -426,6 +470,13 @@ function ReviewCard({ review, saunaId, likeStatus }: {
       </div>
 
       {showComments && <CommentSheet review={review} onClose={() => setShowComments(false)} />}
+      {showEditSheet && (
+        <ReviewBottomSheet
+          sauna={{ id: saunaId, name: '' } as any}
+          initialReview={review}
+          onClose={() => setShowEditSheet(false)}
+        />
+      )}
     </>
   )
 }

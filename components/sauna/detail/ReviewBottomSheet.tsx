@@ -9,7 +9,7 @@ import { createReview } from '@/app/actions/review.actions'
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
-import type { SaunaDto, Session } from '@/types/sauna'
+import type { SaunaDto, Session, ReviewDto } from '@/types/sauna'
 
 const VISIT_TIMES = [
   { id: 'morning',   label: '아침', emoji: '🌅' },
@@ -36,8 +36,8 @@ const MAX_IMAGES = 5
 const BUCKET = 'sauna-geukrak'
 
 /* ── 이미지 업로드 훅 ─────────────────────────────────────── */
-function useReviewImageUpload() {
-  const [images,  setImages]  = useState<string[]>([])
+function useReviewImageUpload(initialImages: string[] = []) {
+  const [images,  setImages]  = useState<string[]>(initialImages)
   const [pending, setPending] = useState<{ preview: string }[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
   const canAdd = images.length + pending.length < MAX_IMAGES
@@ -156,27 +156,48 @@ function ReviewImageUploader({ images, pending, canAdd, fileInputRef, upload, re
 }
 
 /* ── 메인 ─────────────────────────────────────────────────── */
-export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose: () => void }) {
+export function ReviewBottomSheet({
+  sauna,
+  onClose,
+  initialReview,
+}: {
+  sauna: SaunaDto
+  onClose: () => void
+  initialReview?: ReviewDto
+}) {
   const { user } = useUserStore()
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const [rating,      setRating]      = useState(0)
+  const [rating,      setRating]      = useState(initialReview?.rating ?? 0)
   const [hoverRating, setHoverRating] = useState(0)
-  const [content,     setContent]     = useState('')
-  const [visitDate,   setVisitDate]   = useState(new Date().toISOString().slice(0, 10))
-  const [visitTime,   setVisitTime]   = useState<VisitTime>('afternoon')
-  const [congestion,  setCongestion]  = useState<'비어있음' | '보통' | '혼잡' | '대기' | null>(null)
+  const [content,     setContent]     = useState(initialReview?.content ?? '')
+  const [visitDate,   setVisitDate]   = useState(initialReview?.visit_date ?? new Date().toISOString().slice(0, 10))
+  const [visitTime,   setVisitTime]   = useState<VisitTime>(initialReview?.visit_time as VisitTime ?? 'afternoon')
+  const [congestion,  setCongestion]  = useState<'비어있음' | '보통' | '혼잡' | '대기' | null>(initialReview?.congestion as any ?? null)
 
-  const [useRoutine,  setUseRoutine]  = useState(false)
-  const [saunaTime,   setSaunaTime]   = useState(10)
-  const [coldTime,    setColdTime]    = useState(1)
-  const [restTime,    setRestTime]    = useState(10)
-  const [setsCount,   setSetsCount]   = useState(3)
+  const hasInitialSessions = !!(initialReview?.sessions && initialReview.sessions.length > 0)
+  const [useRoutine,  setUseRoutine]  = useState(hasInitialSessions)
+
+  const parseInitialSessions = () => {
+    if (!hasInitialSessions || !initialReview?.sessions) return { sauna: 10, cold: 1, rest: 10, sets: 3 }
+    const sessions = initialReview.sessions
+    const sTime = sessions.find((s: Session) => s.type === 'sauna')?.duration_minutes ?? 10
+    const cTime = sessions.find((s: Session) => s.type === 'cold')?.duration_minutes ?? 1
+    const rTime = sessions.find((s: Session) => s.type === 'rest')?.duration_minutes ?? 10
+    const sets = sessions.filter((s: Session) => s.type === 'sauna').length || 3
+    return { sauna: sTime, cold: cTime, rest: rTime, sets }
+  }
+
+  const initData = parseInitialSessions()
+  const [saunaTime,   setSaunaTime]   = useState(initData.sauna)
+  const [coldTime,    setColdTime]    = useState(initData.cold)
+  const [restTime,    setRestTime]    = useState(initData.rest)
+  const [setsCount,   setSetsCount]   = useState(initData.sets)
 
   const [portalEl,    setPortalEl]    = useState<Element | null>(null)
 
-  const imgUpload = useReviewImageUpload()
+  const imgUpload = useReviewImageUpload(initialReview?.images ?? [])
 
   // portal 대상: #app-root (앱 컨테이너)
   // document.body 대신 사용 → 웹에서 앱 너비에 맞게 렌더됨
@@ -184,8 +205,10 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
     setPortalEl(document.getElementById('app-root'))
   }, [])
 
+  const isEditMode = !!initialReview
+
   const mutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!user) throw new Error('로그인 필요')
 
       let sessionsList: Session[] | undefined = undefined
@@ -198,9 +221,7 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
         }
       }
 
-      return createReview({
-        sauna_id:   sauna.id,
-        user_id:    user.id,
+      const payload = {
         rating,
         content:    content.trim() || undefined,
         visit_date: visitDate,
@@ -208,10 +229,23 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
         congestion: congestion || undefined,
         sessions:   sessionsList,
         images:     imgUpload.images,
-      })
+      }
+
+      if (isEditMode) {
+        const { updateReview: _update } = await import('@/app/actions/review.actions')
+        const res = await _update(initialReview.id, payload)
+        if (!res.ok) throw new Error(res.error)
+        return res.data
+      } else {
+        return createReview({
+          ...payload,
+          sauna_id:   sauna.id,
+          user_id:    user.id,
+        })
+      }
     },
     onSuccess: () => {
-      toast.success('사활 기록 완료! 🔥')
+      toast.success(isEditMode ? '사활 수정 완료! ✏️' : '사활 기록 완료! 🔥')
       queryClient.invalidateQueries({ queryKey: ['reviews', sauna.id] })
       queryClient.invalidateQueries({ queryKey: ['review-count', sauna.id] })
       queryClient.invalidateQueries({ queryKey: ['sauna', sauna.id] })
@@ -265,7 +299,7 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
         <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
           <div>
             <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Review</p>
-            <p className="text-[14px] font-black text-text-main">{sauna.name} 사활 기록</p>
+            <p className="text-[14px] font-black text-text-main">{sauna.name} 사활 {isEditMode ? '수정' : '기록'}</p>
           </div>
           <button onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-main text-text-sub transition active:scale-90">
@@ -504,7 +538,7 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-point py-4 text-[13px] font-black text-white transition active:scale-[0.97] disabled:opacity-40">
             {mutation.isPending ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : imgUpload.pending.length > 0 ? '📷 사진 업로드 중...' : '🔥 사활 기록 저장'}
+            ) : imgUpload.pending.length > 0 ? '📷 사진 업로드 중...' : isEditMode ? '✏️ 사활 수정 완료' : '🔥 사활 기록 저장'}
           </button>
 
           {rating === 0 && (

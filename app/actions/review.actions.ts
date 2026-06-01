@@ -92,3 +92,64 @@ export async function createReview(review: {
     throw new Error(error instanceof Error ? error.message : '리뷰 작성에 실패했습니다.')
   }
 }
+
+export async function updateReview(
+  reviewId: string,
+  review: {
+    rating: number
+    content?: string
+    visit_date: string
+    visit_time?: string
+    congestion?: string
+    sessions?: Session[]
+    images?: string[]
+  }
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('로그인이 필요합니다.')
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({
+        rating: review.rating,
+        content: review.content ?? null,
+        visit_date: review.visit_date,
+        visit_time: review.visit_time ?? null,
+        congestion: review.congestion ?? null,
+        sessions: review.sessions ?? [],
+        images: review.images ?? [],
+      })
+      .eq('id', reviewId)
+      .eq('user_id', session.user.id)
+      .select()
+      .single()
+
+    if (error) throw new Error(error.message)
+    return { ok: true, data }
+  } catch (error) {
+    console.error('리뷰 수정 에러:', error)
+    return { ok: false, error: error instanceof Error ? error.message : '리뷰 수정에 실패했습니다.' }
+  }
+}
+
+export async function deleteReview(reviewId: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('로그인이 필요합니다.')
+
+    const { error } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', reviewId)
+      .eq('user_id', session.user.id)
+
+    if (error) throw new Error(error.message)
+    return { ok: true }
+  } catch (error) {
+    console.error('리뷰 삭제 에러:', error)
+    return { ok: false, error: error instanceof Error ? error.message : '리뷰 삭제에 실패했습니다.' }
+  }
+}
