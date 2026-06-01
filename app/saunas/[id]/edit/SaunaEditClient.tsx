@@ -325,7 +325,10 @@ export default function SaunaEditClient({ id }: { id: string }) {
               <div key={key}>
                 <label className="mb-1 block text-[10px] font-bold text-text-sub">{label}</label>
                 <input type="number" value={form.pricing[key] ?? ''} placeholder="0"
-                  onChange={(e) => onChange({ pricing: { ...form.pricing, [key]: e.target.value ? Number(e.target.value) : undefined } })}
+                  onChange={(e) => {
+                    const val = e.target.value === '' ? (key === 'jjimjilbang' ? undefined : 0) : Number(e.target.value)
+                    onChange({ pricing: { ...form.pricing, [key]: val } })
+                  }}
                   className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
               </div>
             ))}
