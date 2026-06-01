@@ -61,7 +61,12 @@ export default function SaunaEditClient({ id }: { id: string }) {
         amenities: sauna.amenities ?? { towel: false, shampoo: false, body_wash: false, hair_dryer: false, water_dispenser: false },
         rules: sauna.rules ?? { tattoo_allowed: false, female_allowed: true, male_allowed: true },
         kr_specific: sauna.kr_specific ?? { has_jjimjilbang: false, sesin_price_male: 0, sesin_price_female: 0, food: [] },
-        pricing: sauna.pricing ?? { adult_day: 0, adult_night: 0, child: 0 },
+        pricing: {
+          adult_day: sauna.pricing?.adult_day ?? 0,
+          adult_night: sauna.pricing?.adult_night ?? 0,
+          child: sauna.pricing?.child ?? 0,
+          jjimjilbang: sauna.pricing?.jjimjilbang,
+        },
         business_hours: sauna.business_hours ?? '',
         contact: sauna.contact ?? '',
         parking: sauna.parking ?? false,
@@ -310,16 +315,17 @@ export default function SaunaEditClient({ id }: { id: string }) {
 
         {/* 요금 */}
         <SectionCard title="이용 요금" emoji="💳">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {([
               ['adult_day', '성인 (낮)'],
               ['adult_night', '성인 (야간)'],
               ['child', '어린이'],
+              ['jjimjilbang', '찜질방 이용료 (추가)'],
             ] as [keyof typeof form.pricing, string][]).map(([key, label]) => (
               <div key={key}>
                 <label className="mb-1 block text-[10px] font-bold text-text-sub">{label}</label>
-                <input type="number" value={form.pricing[key] || ''} placeholder="0"
-                  onChange={(e) => onChange({ pricing: { ...form.pricing, [key]: Number(e.target.value) } })}
+                <input type="number" value={form.pricing[key] ?? ''} placeholder="0"
+                  onChange={(e) => onChange({ pricing: { ...form.pricing, [key]: e.target.value ? Number(e.target.value) : undefined } })}
                   className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
               </div>
             ))}
