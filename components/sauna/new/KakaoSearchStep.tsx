@@ -39,7 +39,7 @@ export default function KakaoSearchStep({
 
     const ps = new window.kakao.maps.services.Places()
     ps.keywordSearch(
-      query + ' 사우나',
+      query,
       (data: KakaoPlace[], status: string) => {
         setIsSearching(false)
         if (status === window.kakao.maps.services.Status.OK) {
