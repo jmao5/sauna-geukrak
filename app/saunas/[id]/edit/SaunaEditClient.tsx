@@ -93,7 +93,7 @@ export default function SaunaEditClient({ id }: { id: string }) {
       queryClient.setQueryData(['sauna', id], updated)
       queryClient.invalidateQueries({ queryKey: ['saunas'] })
       toast.success('수정 완료! ✅')
-      router.push(`/saunas/${id}`)
+      router.push(`/saunas/${id}?from=edit`)
     },
     onError: (e: Error) => {
       toast.error(e.message || '수정 중 오류가 발생했습니다')

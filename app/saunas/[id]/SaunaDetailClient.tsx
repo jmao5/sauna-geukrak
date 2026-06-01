@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -34,8 +34,18 @@ const TABS: { id: Tab; label: string }[] = [
 // ── 메인 ─────────────────────────────────────────────────────
 export function SaunaDetailClient({ id }: { id: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useUserStore()
+
+  const fromEdit = searchParams.get('from') === 'edit'
+  const handleBack = () => {
+    if (fromEdit) {
+      router.push('/')
+    } else {
+      router.back()
+    }
+  }
   const [showReview, setShowReview] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('info')
 
@@ -130,7 +140,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-bg-main p-6 text-center">
         <span className="text-4xl">😢</span>
         <p className="font-bold text-text-main">사우나 정보를 찾을 수 없어요</p>
-        <button onClick={() => router.back()} className="rounded-full bg-point px-5 py-2.5 text-sm font-bold text-white">돌아가기</button>
+        <button onClick={handleBack} className="rounded-full bg-point px-5 py-2.5 text-sm font-bold text-white">돌아가기</button>
       </div>
     )
   }
@@ -155,7 +165,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
           <div className="absolute left-4 top-4 z-10">
-            <button onClick={() => router.back()}
+            <button onClick={handleBack}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition active:scale-90">
               <BiChevronLeft size={22} />
             </button>

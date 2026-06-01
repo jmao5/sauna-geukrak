@@ -525,10 +525,10 @@ export function ReviewBottomSheet({
               Memo <span className="font-medium normal-case tracking-normal">(선택)</span>
             </p>
             <textarea value={content} onChange={(e) => setContent(e.target.value)}
-              placeholder="오늘의 극락 한 줄 기록..." rows={3} maxLength={500}
+              placeholder="오늘의 극락 한 줄 기록..." rows={3} maxLength={1000}
               className="w-full resize-none rounded-xl border border-border-main bg-bg-main px-3.5 py-3 text-[13px] text-text-main placeholder:text-text-muted outline-none focus:border-point focus:ring-2 focus:ring-point/20"
             />
-            <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/500</p>
+            <p className="mt-1 text-right text-[10px] text-text-muted">{content.length}/1000</p>
           </div>
 
           {/* 저장 */}
