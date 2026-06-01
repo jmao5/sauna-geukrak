@@ -48,6 +48,7 @@ export interface Pricing {
   adult_day: number
   adult_night: number
   child: number
+  jjimjilbang?: number
 }
 
 export interface InstagramMedia {

@@ -66,6 +66,7 @@ const pricingSchema = z.object({
   adult_day: z.number().min(0),
   adult_night: z.number().min(0),
   child: z.number().min(0),
+  jjimjilbang: z.number().min(0).optional().nullable(),
 })
 
 const instagramMediaSchema = z.object({

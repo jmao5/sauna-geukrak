@@ -194,6 +194,9 @@ export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
           {sauna.pricing.adult_day   > 0 && <InfoRow label="성인 (낮)"  value={`${sauna.pricing.adult_day.toLocaleString()}원`} />}
           {sauna.pricing.adult_night > 0 && <InfoRow label="성인 (야간)" value={`${sauna.pricing.adult_night.toLocaleString()}원`} />}
           {sauna.pricing.child       > 0 && <InfoRow label="어린이"     value={`${sauna.pricing.child.toLocaleString()}원`} />}
+          {sauna.pricing.jjimjilbang !== undefined && sauna.pricing.jjimjilbang !== null && sauna.pricing.jjimjilbang > 0 && (
+            <InfoRow label="찜질방 이용료 (추가)" value={`${sauna.pricing.jjimjilbang.toLocaleString()}원`} />
+          )}
         </div>
       )}
 

@@ -226,7 +226,7 @@ export default function DetailFormStep({
 
       {/* ── 요금 ── */}
       <SectionCard title="이용 요금" emoji="💳">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1 block text-[10px] font-bold text-text-sub">성인 (낮)</label>
             <input type="number" value={form.pricing.adult_day || ''} onChange={(e) => onChange({ pricing: { ...form.pricing, adult_day: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
@@ -238,6 +238,10 @@ export default function DetailFormStep({
           <div>
             <label className="mb-1 block text-[10px] font-bold text-text-sub">어린이</label>
             <input type="number" value={form.pricing.child || ''} onChange={(e) => onChange({ pricing: { ...form.pricing, child: Number(e.target.value) } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-bold text-text-sub">찜질방 이용료 (추가)</label>
+            <input type="number" value={form.pricing.jjimjilbang ?? ''} onChange={(e) => onChange({ pricing: { ...form.pricing, jjimjilbang: e.target.value ? Number(e.target.value) : undefined } })} placeholder="0" className="h-10 w-full rounded-xl border border-border-main bg-bg-main px-3 text-sm text-text-main outline-none focus:border-point" />
           </div>
         </div>
       </SectionCard>
