@@ -3,7 +3,7 @@
 import { useTransition, useOptimistic } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { BiChevronLeft, BiUser, BiHeart } from 'react-icons/bi'
+import { BiChevronLeft, BiUser, BiHeart, BiStar, BiSolidStar, BiSolidStarHalf } from 'react-icons/bi'
 import { useQuery } from '@tanstack/react-query'
 import { toggleFollow, getFollowStatus, UserProfileDto } from '@/app/actions/follow.actions'
 import { useUserStore } from '@/stores/userStore'
@@ -93,9 +93,21 @@ function ReviewMiniCard({ review }: { review: MyReviewDto }) {
         {/* 별점 */}
         {review.rating > 0 && (
           <div className="mt-0.5 flex items-center gap-0.5">
-            {[1,2,3,4,5].map(n => (
-              <span key={n} className={`text-[10px] ${n <= review.rating ? 'text-gold' : 'text-border-main'}`}>★</span>
-            ))}
+            {[1, 2, 3, 4, 5].map((n) => {
+              const isFull = review.rating >= n
+              const isHalf = review.rating === n - 0.5
+              return (
+                <span key={n} className="text-gold">
+                  {isFull ? (
+                    <BiSolidStar size={13} className="inline drop-shadow-sm" />
+                  ) : isHalf ? (
+                    <BiSolidStarHalf size={13} className="inline drop-shadow-sm" />
+                  ) : (
+                    <BiStar size={13} className="text-border-main inline" />
+                  )}
+                </span>
+              )
+            })}
           </div>
         )}
 

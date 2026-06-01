@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { BiUser, BiChevronDown, BiHeart, BiSolidHeart, BiComment, BiSend, BiX, BiTrash } from 'react-icons/bi'
+import { BiUser, BiChevronDown, BiHeart, BiSolidHeart, BiComment, BiSend, BiX, BiTrash, BiStar, BiSolidStar, BiSolidStarHalf } from 'react-icons/bi'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
 import { getReviewLikeStatuses, toggleReviewLike } from '@/app/actions/like.actions'
@@ -360,9 +360,21 @@ function ReviewCard({ review, saunaId, likeStatus }: {
             </div>
             {review.rating > 0 && (
               <div className="mt-0.5 flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <span key={n} className={`text-[10px] ${n <= review.rating ? 'text-gold' : 'text-border-strong'}`}>★</span>
-                ))}
+                {[1, 2, 3, 4, 5].map((n) => {
+                  const isFull = review.rating >= n
+                  const isHalf = review.rating === n - 0.5
+                  return (
+                    <span key={n} className="text-gold">
+                      {isFull ? (
+                        <BiSolidStar size={13} className="inline drop-shadow-sm" />
+                      ) : isHalf ? (
+                        <BiSolidStarHalf size={13} className="inline drop-shadow-sm" />
+                      ) : (
+                        <BiStar size={13} className="text-border-strong inline" />
+                      )}
+                    </span>
+                  )
+                })}
                 {review.visit_time && (
                   <span className="ml-2 text-[10px] text-text-muted">
                     {VISIT_TIME_LABELS[review.visit_time] ?? review.visit_time}
