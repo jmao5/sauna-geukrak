@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/stores/userStore'
 import { createSauna } from '@/app/actions/sauna.actions'
@@ -21,6 +21,7 @@ type Step = 'search' | 'detail'
 
 export default function SaunaNewClient() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { user } = useUserStore()
   const [step, setStep] = useState<Step>('search')
   const [selectedPlace, setSelectedPlace] = useState<KakaoPlace | null>(null)
@@ -58,6 +59,8 @@ export default function SaunaNewClient() {
       return result.data
     },
     onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ['saunas'] })
+      router.refresh()
       toast.success(`${created.name} 등록 완료! 🎉`)
       router.push(`/saunas/${created.id}`)
     },
