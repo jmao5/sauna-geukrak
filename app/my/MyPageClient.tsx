@@ -274,7 +274,7 @@ export default function MyPageClient() {
       {/* 명예 배지 섹션 */}
       <div className="mx-4 mb-6 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
         <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">Sauner Badges</p>
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+        <div className="flex flex-row gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
           {BADGES.map((badge) => (
             <div
               key={badge.id}
