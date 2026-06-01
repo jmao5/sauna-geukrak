@@ -13,6 +13,55 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { ReviewDto, Session } from '@/types/sauna'
 import { ReviewBottomSheet } from './ReviewBottomSheet'
+import { motion, AnimatePresence } from 'framer-motion'
+
+// ── ImagePreviewModal ───────────────────────────────────────────
+function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void }) {
+  const [portalEl, setPortalEl] = useState<Element | null>(null)
+
+  useEffect(() => {
+    setPortalEl(document.getElementById('app-root'))
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  if (!portalEl) return null
+
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[400] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 cursor-zoom-out"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute right-4 top-4 z-[410] flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition active:scale-90 hover:bg-white/20"
+      >
+        <BiX size={24} />
+      </button>
+
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="relative max-h-[85%] max-w-full overflow-hidden rounded-lg shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={src}
+          alt="사활 이미지 크게보기"
+          className="max-h-[80vh] w-auto max-w-full object-contain"
+        />
+      </motion.div>
+    </motion.div>,
+    portalEl
+  )
+}
 
 function RenderSessions({ sessions }: { sessions?: Session[] }) {
   if (!sessions || sessions.length === 0) return null
@@ -336,6 +385,7 @@ function ReviewCard({ review, saunaId, likeStatus }: {
   const [expanded, setExpanded] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showEditSheet, setShowEditSheet] = useState(false)
+  const [activeImage, setActiveImage] = useState<string | null>(null)
 
   const isMe = user?.id === review.users?.id
   const author = review.users
@@ -447,7 +497,11 @@ function ReviewCard({ review, saunaId, likeStatus }: {
         {review.images?.length > 0 && (
           <div className="mt-2.5 flex gap-2 overflow-x-auto scrollbar-hide">
             {review.images.map((img, i) => (
-              <div key={i} className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl border border-border-main">
+              <div
+                key={i}
+                onClick={() => setActiveImage(img)}
+                className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-border-main cursor-zoom-in active:opacity-80 transition"
+              >
                 <img src={img} alt="" className="h-full w-full object-cover" />
               </div>
             ))}
@@ -477,6 +531,11 @@ function ReviewCard({ review, saunaId, likeStatus }: {
           onClose={() => setShowEditSheet(false)}
         />
       )}
+      <AnimatePresence>
+        {activeImage && (
+          <ImagePreviewModal src={activeImage} onClose={() => setActiveImage(null)} />
+        )}
+      </AnimatePresence>
     </>
   )
 }
