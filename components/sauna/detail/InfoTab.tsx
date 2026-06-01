@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { BiLinkExternal, BiLogoInstagram, BiPlay } from 'react-icons/bi'
+import { BiLinkExternal, BiLogoInstagram, BiPlay, BiX } from 'react-icons/bi'
 import { useInstagramOEmbed } from '@/hooks/useInstagramOEmbed'
 import type { SaunaDto, InstagramMedia } from '@/types/sauna'
+import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 // ── InfoRow ───────────────────────────────────────────────────
 function InfoRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
@@ -165,8 +167,57 @@ function InstagramCard({ item }: { item: InstagramMedia }) {
   )
 }
 
+// ── ImagePreviewModal ───────────────────────────────────────────
+function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void }) {
+  const [portalEl, setPortalEl] = useState<Element | null>(null)
+
+  useEffect(() => {
+    setPortalEl(document.getElementById('app-root'))
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
+
+  if (!portalEl) return null
+
+  return createPortal(
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-[400] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 cursor-zoom-out"
+      onClick={onClose}
+    >
+      <button
+        onClick={onClose}
+        className="absolute right-4 top-4 z-[410] flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition active:scale-90 hover:bg-white/20"
+      >
+        <BiX size={24} />
+      </button>
+
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="relative max-h-[85%] max-w-full overflow-hidden rounded-2xl shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img
+          src={src}
+          alt="모형도 크게보기"
+          className="max-h-[80vh] w-auto max-w-full object-contain"
+        />
+      </motion.div>
+    </motion.div>,
+    portalEl
+  )
+}
+
 // ── InfoTab ───────────────────────────────────────────────────
 export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
+  const [showPreview, setShowPreview] = useState(false)
   return (
     <div className="divide-y divide-border-subtle pb-4">
       <TempSection sauna={sauna} />
@@ -228,8 +279,22 @@ export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
         <div>
           <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Floor Plan</p>
           <div className="px-4">
-            <img src={sauna.floor_plan_images[0]} alt="모형도" className="w-full rounded-xl object-contain" style={{ maxHeight: 240 }} />
+            <img
+              src={sauna.floor_plan_images[0]}
+              alt="모형도"
+              onClick={() => setShowPreview(true)}
+              className="w-full rounded-xl object-contain cursor-zoom-in transition hover:opacity-90 active:scale-[0.99]"
+              style={{ maxHeight: 240 }}
+            />
           </div>
+          <AnimatePresence>
+            {showPreview && (
+              <ImagePreviewModal
+                src={sauna.floor_plan_images[0]}
+                onClose={() => setShowPreview(false)}
+              />
+            )}
+          </AnimatePresence>
         </div>
       )}
 
