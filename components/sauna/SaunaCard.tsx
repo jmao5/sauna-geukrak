@@ -74,12 +74,12 @@ function GenderRow({ label, color, data }: {
 
       {/* 외기욕 — 있을 때만 */}
       {data.hasOutdoor && (
-        <span className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">외기욕</span>
+        <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">외기욕</span>
       )}
 
       {/* 로우리 — 있을 때만 */}
       {data.hasLoyly && (
-        <span className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로우리</span>
+        <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로우리</span>
       )}
     </div>
   )
@@ -144,7 +144,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
         {/* 썸네일 */}
         <div
           ref={observerRef}
-          className="relative flex-shrink-0 overflow-hidden rounded-xl border border-border-main"
+          className="relative flex-shrink-0 overflow-hidden rounded-md border border-border-main"
           style={{ width: 84, height: 84, background: 'var(--bg-sub)' }}
         >
           {displayImage ? (
@@ -179,7 +179,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
               <GenderRow label="남" color="var(--point-color)" data={maleData} />
             )}
             {femaleData && (
-              <GenderRow label="여" color="#ec4899" data={femaleData} />
+              <GenderRow label="여" color="#f43f5e" data={femaleData} />
             )}
           </div>
 
@@ -193,7 +193,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
             {features.slice(0, 2).map((f) => (
               <span
                 key={f}
-                className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub"
+                className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub"
               >
                 {f}
               </span>
@@ -223,7 +223,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
     >
       <Link href={`/saunas/${sauna.id}`} className={`sauna-card group block ${className}`}>
       {/* 이미지 */}
-      <div ref={observerRef} className="relative w-full overflow-hidden bg-bg-sub" style={{ height: 130 }}>
+      <div ref={observerRef} className="relative w-full overflow-hidden bg-bg-sub rounded-md" style={{ height: 130 }}>
         {displayImage ? (
           <Image
             src={displayImage}
@@ -244,13 +244,13 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
 
         {/* 성별 뱃지 */}
         <div className="absolute left-2 top-2 flex gap-1">
-          {hasMale   && <span className="rounded-md bg-point/90 px-1.5 py-0.5 text-[9px] font-black text-white">남</span>}
-          {hasFemale && <span className="rounded-md bg-pink-500/90 px-1.5 py-0.5 text-[9px] font-black text-white">여</span>}
+          {hasMale   && <span className="rounded bg-point px-1.5 py-0.5 text-[9px] font-black text-white">남</span>}
+          {hasFemale && <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[9px] font-black text-white">여</span>}
         </div>
 
         {/* 별점 */}
         {avgRating != null && (
-          <div className="absolute right-2 top-2 flex items-center gap-0.5 rounded-md bg-black/50 px-1.5 py-0.5">
+          <div className="absolute right-2 top-2 flex items-center gap-0.5 rounded-sm bg-black/50 px-1.5 py-0.5">
             <span className="text-[9px] text-gold">★</span>
             <span className="temp-number text-[10px] text-white">{avgRating.toFixed(1)}</span>
           </div>
@@ -277,7 +277,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
             )}
           </div>
           {price != null && price > 0 && (
-            <span className="rounded-md bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-white/90">
+            <span className="rounded-sm bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-white/90">
               {price.toLocaleString()}원~
             </span>
           )}
@@ -306,7 +306,7 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
         {features.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {features.slice(0, 2).map((f) => (
-              <span key={f} className="rounded-md border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">
+              <span key={f} className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">
                 {f}
               </span>
             ))}

@@ -65,59 +65,59 @@
 /* ── 라이트 ─────────────────────────────────────── */
 :root {
   --bg-main:     #ffffff;
-  --bg-sub:      #f7f7f7;
+  --bg-sub:      #f2f8fc;
   --bg-card:     #ffffff;
   --bg-elevated: #ffffff;
 
-  --text-main:  #111111;
-  --text-sub:   #555555;
-  --text-muted: #aaaaaa;
+  --text-main:  #111b27;
+  --text-sub:   #4b5966;
+  --text-muted: #8fa0b0;
 
-  --point-color: #1055d4;
-  --point-hover: #0d44b0;
-  --point-ring:  #90aef5;
+  --point-color: #0098d8;
+  --point-hover: #0082ba;
+  --point-ring:  #aee2f9;
 
-  --border-main:   #e8e8e8;
-  --border-subtle: #f0f0f0;
-  --border-strong: #cccccc;
+  --border-main:   #e2eff7;
+  --border-subtle: #f0f7fc;
+  --border-strong: #b0d2e8;
 
-  --sauna-color: #e84040;
-  --sauna-bg:    #fff5f5;
-  --sauna-text:  #c62828;
+  --sauna-color: #ff5c5c;
+  --sauna-bg:    #fff1f2;
+  --sauna-text:  #be123c;
 
-  --cold-color: #1055d4;
-  --cold-bg:    #eff4ff;
-  --cold-text:  #0d44b0;
+  --cold-color: #0098d8;
+  --cold-bg:    #eef7fc;
+  --cold-text:  #0073a8;
 
   @media screen and (max-width: 320px) { font-size: 14px; }
 }
 
 /* ── 다크 ─────────────────────────────────────── */
 .dark {
-  --bg-main:     #0a0a0a;
-  --bg-sub:      #161616;
-  --bg-card:     #111111;
-  --bg-elevated: #1c1c1c;
+  --bg-main:     #0c141f;
+  --bg-sub:      #121e2e;
+  --bg-card:     #132135;
+  --bg-elevated: #1a2b44;
 
-  --text-main:  #f5f5f5;
-  --text-sub:   #aaaaaa;
-  --text-muted: #555555;
+  --text-main:  #f0f6fc;
+  --text-sub:   #b1c2d9;
+  --text-muted: #6882a1;
 
-  --point-color: #4d82f5;
-  --point-hover: #6b99f7;
-  --point-ring:  #1055d4;
+  --point-color: #38bdf8;
+  --point-hover: #7dd3fc;
+  --point-ring:  #0369a1;
 
-  --border-main:   #2a2a2a;
-  --border-subtle: #1e1e1e;
-  --border-strong: #404040;
+  --border-main:   #1e2f47;
+  --border-subtle: #17253a;
+  --border-strong: #38bdf8;
 
-  --sauna-color: #ef6c00;
-  --sauna-bg:    #0f0700;
-  --sauna-text:  #ef6c00;
+  --sauna-color: #fb923c;
+  --sauna-bg:    #2c1609;
+  --sauna-text:  #fb923c;
 
-  --cold-color: #4d82f5;
-  --cold-bg:    #050c1e;
-  --cold-text:  #90aef5;
+  --cold-color: #38bdf8;
+  --cold-bg:    #082f49;
+  --cold-text:  #7dd3fc;
 }
 
 /* ── 리셋 ──────────────────────────────────────── */
@@ -184,7 +184,7 @@ body {
 .sauna-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-main);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   /* transition은 카드에만 한정 — 전체 DOM에 걸지 않음 */
   transition: border-color 0.12s ease, box-shadow 0.12s ease;

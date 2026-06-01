@@ -21,11 +21,11 @@ function InstagramBanner() {
       href={LINKS.INSTAGRAM}
       target="_blank"
       rel="noopener noreferrer"
-      className="mx-4 my-1.5 flex items-center gap-3.5 rounded-2xl border border-border-main bg-bg-card px-4 py-3.5 transition active:opacity-70"
+      className="mx-4 my-1.5 flex items-center gap-3.5 rounded-lg border border-border-main bg-bg-card px-4 py-3.5 transition active:opacity-70"
       style={{ boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}
     >
       <div
-        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl"
+        className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-md"
         style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -39,7 +39,7 @@ function InstagramBanner() {
         <p className="mt-0.5 text-[11px] leading-snug text-text-muted">사우나 극락 인스타그램 · 새 사우나 소식</p>
       </div>
       <div
-        className="flex-shrink-0 rounded-full px-3.5 py-1.5 text-[11px] font-black text-white"
+        className="flex-shrink-0 rounded-md px-3.5 py-1.5 text-[11px] font-black text-white"
         style={{ background: 'linear-gradient(135deg, #f09433, #dc2743, #bc1888)' }}
       >
         팔로우
@@ -117,7 +117,7 @@ export default function SaunaList({
           </p>
           <button
             onClick={() => setSortOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3 py-1.5 transition active:scale-95"
+            className="flex items-center gap-1.5 rounded-md border border-border-main bg-bg-sub px-3 py-1.5 transition active:scale-95"
           >
             <BiSortAlt2 size={13} className="text-text-sub" />
             <span className="text-[11px] font-bold text-text-sub">{currentSort.label}</span>
@@ -136,7 +136,7 @@ export default function SaunaList({
             <p className="text-[14px] font-bold text-text-sub">해당 조건의 사우나가 없어요</p>
             <button
               onClick={resetAll}
-              className="rounded-full bg-point px-5 py-2 text-[12px] font-bold text-white transition active:scale-95"
+              className="rounded-md bg-point px-5 py-2 text-[12px] font-bold text-white transition active:scale-95"
             >
               필터 초기화
             </button>

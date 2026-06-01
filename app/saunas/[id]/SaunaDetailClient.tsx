@@ -140,7 +140,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
       <div className="flex h-full flex-col items-center justify-center gap-4 bg-bg-main p-6 text-center">
         <span className="text-4xl">😢</span>
         <p className="font-bold text-text-main">사우나 정보를 찾을 수 없어요</p>
-        <button onClick={handleBack} className="rounded-full bg-point px-5 py-2.5 text-sm font-bold text-white">돌아가기</button>
+        <button onClick={handleBack} className="rounded-md bg-point px-5 py-2.5 text-sm font-bold text-white">돌아가기</button>
       </div>
     )
   }
@@ -198,8 +198,8 @@ export function SaunaDetailClient({ id }: { id: string }) {
                 {sauna.address}
               </p>
               <div className="flex gap-1">
-                {hasMale   && <span className="rounded-full bg-point/90 px-2 py-0.5 text-[10px] font-black text-white">남</span>}
-                {hasFemale && <span className="rounded-full bg-pink-500/90 px-2 py-0.5 text-[10px] font-black text-white">여</span>}
+                {hasMale   && <span className="rounded bg-point/90 px-2 py-0.5 text-[10px] font-black text-white">남</span>}
+                {hasFemale && <span className="rounded bg-rose-500/90 px-2 py-0.5 text-[10px] font-black text-white">여</span>}
               </div>
             </div>
           </div>
@@ -223,7 +223,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
           <div className="ml-auto">
             <button
               onClick={toggleFav}
-              className={`flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-black transition active:scale-95 ${
+              className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[11px] font-black transition active:scale-95 ${
                 isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
               }`}
             >
@@ -272,7 +272,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
       <div className="flex-shrink-0 border-t border-border-main bg-bg-main px-4 py-3 pb-safe flex items-center gap-3">
         <button
           onClick={toggleFav}
-          className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-[13px] font-black transition active:scale-95 ${
+          className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-[13px] font-black transition active:scale-95 ${
             isFav ? 'border-point bg-point/10 text-point' : 'border-border-main bg-bg-main text-text-sub'
           }`}
         >
@@ -281,7 +281,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
         </button>
         <button
           onClick={() => setShowReview(true)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-point py-3 text-[13px] font-black text-white transition active:scale-95"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-point py-3 text-[13px] font-black text-white transition active:scale-95"
         >
           <BiPlus size={16} />
           사활 투고

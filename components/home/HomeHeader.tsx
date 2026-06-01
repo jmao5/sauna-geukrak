@@ -25,7 +25,7 @@ export default function HomeHeader() {
         </h1>
         <Link
           href="/map"
-          className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3.5 py-2 text-[12px] font-bold text-text-sub transition active:opacity-70"
+          className="flex items-center gap-1.5 rounded-md border border-border-main bg-bg-sub px-3.5 py-2 text-[12px] font-bold text-text-sub transition active:opacity-70"
         >
           <BiMap size={14} /> 지도
         </Link>
@@ -39,7 +39,7 @@ export default function HomeHeader() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="사우나 이름, 지역으로 검색..."
-            className="w-full rounded-xl border border-border-main bg-bg-sub py-2.5 pl-9 pr-9 text-[13px] font-bold text-text-main outline-none transition placeholder:text-text-muted focus:border-point focus:ring-2 focus:ring-point/15"
+            className="w-full rounded-lg border border-border-main bg-bg-sub py-2.5 pl-9 pr-9 text-[13px] font-bold text-text-main outline-none transition placeholder:text-text-muted focus:border-point focus:ring-1 focus:ring-point"
           />
           {keyword && (
             <button onClick={() => setKeyword('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -52,7 +52,7 @@ export default function HomeHeader() {
       <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
         <button
           onClick={() => setRegionOpen(true)}
-          className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+          className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
             selectedRegion ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
           }`}
         >
@@ -63,7 +63,7 @@ export default function HomeHeader() {
           <button
             key={opt.id}
             onClick={() => toggleCondition(opt.id)}
-            className={`flex flex-shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
+            className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${
               selectedConds.includes(opt.id)
                 ? 'bg-point text-white'
                 : 'border border-border-main bg-bg-main text-text-sub'
@@ -75,7 +75,7 @@ export default function HomeHeader() {
         ))}
         <button
           onClick={() => setShowMoreFilters((v) => !v)}
-          className="flex flex-shrink-0 items-center gap-1 rounded-full border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95"
+          className="flex flex-shrink-0 items-center gap-1 rounded-md border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95"
         >
           {showMoreFilters ? '접기' : '더보기'}
           <BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
