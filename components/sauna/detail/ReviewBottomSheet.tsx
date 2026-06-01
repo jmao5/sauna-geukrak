@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { BiStar, BiSolidStar, BiX, BiImageAlt, BiPlus } from 'react-icons/bi'
+import { BiStar, BiSolidStar, BiSolidStarHalf, BiX, BiImageAlt, BiPlus } from 'react-icons/bi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { createReview } from '@/app/actions/review.actions'
@@ -20,7 +20,18 @@ const VISIT_TIMES = [
 
 type VisitTime = (typeof VISIT_TIMES)[number]['id']
 
-const RATING_LABELS = ['', '별로예요', '그저그래요', '괜찮아요', '좋아요', '극락이에요']
+const RATING_LABELS: Record<number, string> = {
+  0.5: '매우 아쉬워요 😢',
+  1.0: '별로예요 😕',
+  1.5: '조금 아쉬워요 🤨',
+  2.0: '그저그래요 😐',
+  2.5: '보통이에요 🙂',
+  3.0: '괜찮아요 😊',
+  3.5: '살짝 추천해요 😏',
+  4.0: '좋아요 🥰',
+  4.5: '강력 추천해요 😘',
+  5.0: '극락이에요 👼',
+}
 const MAX_IMAGES = 5
 const BUCKET = 'sauna-geukrak'
 
@@ -267,20 +278,42 @@ export function ReviewBottomSheet({ sauna, onClose }: { sauna: SaunaDto; onClose
           <div>
             <p className="mb-2.5 text-[11px] font-black text-text-muted tracking-widest uppercase">Rating</p>
             <div className="flex items-center gap-1.5">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} type="button"
-                  onClick={(e) => { e.stopPropagation(); setRating(n) }}
-                  onMouseEnter={() => setHoverRating(n)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="transition-transform duration-100 hover:scale-110 active:scale-95">
-                  {n <= displayRating
-                    ? <BiSolidStar size={30} className="text-gold drop-shadow-sm" />
-                    : <BiStar size={30} className="text-border-strong" />}
-                </button>
-              ))}
+              {[1, 2, 3, 4, 5].map((n) => {
+                const isFull = displayRating >= n
+                const isHalf = displayRating === n - 0.5
+
+                return (
+                  <div
+                    key={n}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="relative transition-transform duration-100 hover:scale-110 active:scale-95 select-none"
+                  >
+                    {/* 별 아이콘 표시 */}
+                    {isFull ? (
+                      <BiSolidStar size={30} className="text-gold drop-shadow-sm" />
+                    ) : isHalf ? (
+                      <BiSolidStarHalf size={30} className="text-gold drop-shadow-sm" />
+                    ) : (
+                      <BiStar size={30} className="text-border-strong" />
+                    )}
+
+                    {/* 투명 마우스/터치 감지 영역 분할 (좌측 절반: n - 0.5, 우측 절반: n) */}
+                    <div
+                      className="absolute left-0 top-0 h-full w-1/2 cursor-pointer z-10"
+                      onClick={(e) => { e.stopPropagation(); setRating(n - 0.5) }}
+                      onMouseEnter={() => setHoverRating(n - 0.5)}
+                    />
+                    <div
+                      className="absolute right-0 top-0 h-full w-1/2 cursor-pointer z-10"
+                      onClick={(e) => { e.stopPropagation(); setRating(n) }}
+                      onMouseEnter={() => setHoverRating(n)}
+                    />
+                  </div>
+                )
+              })}
               {displayRating > 0 && (
                 <span className="ml-2 text-[12px] font-bold text-text-sub">
-                  {RATING_LABELS[displayRating]}
+                  {(RATING_LABELS as any)[displayRating]}
                 </span>
               )}
             </div>
