@@ -39,27 +39,31 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SaunaDetailPage({ params }: Props) {
   const { id } = await params
+  const queryClient = getQueryClient()
 
-  let queryClient
   try {
-    // fetchQuery: 이미 generateMetadata가 캐시를 채웠으면 재요청 없음 (#2)
-    queryClient = await prefetchSauna(id)
+    // 사우나 상세 정보와 리뷰 목록을 병렬(Promise.all)로 프리페치하여 네트워크 워터폴 해결
+    await Promise.all([
+      queryClient.fetchQuery({
+        queryKey: ['sauna', id],
+        queryFn: () => getSaunaById(id),
+        staleTime: 1000 * 60 * 5,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['reviews', id],
+        queryFn: () => getReviewsBySaunaId(id),
+        staleTime: 1000 * 60 * 2,
+      })
+    ])
   } catch {
     notFound()
   }
 
-  const sauna = queryClient!.getQueryData(['sauna', id])
+  const sauna = queryClient.getQueryData(['sauna', id])
   if (!sauna) notFound()
 
-  // #5 Fix: 리뷰도 SSR 시점에 prefetch → 클라이언트 첫 렌더에서 추가 왕복 없음
-  await queryClient!.prefetchQuery({
-    queryKey: ['reviews', id],
-    queryFn: () => getReviewsBySaunaId(id),
-    staleTime: 1000 * 60 * 2,
-  })
-
   return (
-    <HydrationBoundary state={dehydrate(queryClient!)}>
+    <HydrationBoundary state={dehydrate(queryClient)}>
       <SaunaDetailClient id={id} />
     </HydrationBoundary>
   )
