@@ -95,3 +95,46 @@ self.addEventListener('fetch', (event) => {
       })
   )
 })
+
+// ── Push: 웹 푸시 알림 수신 및 클릭 ───────────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  try {
+    const payload = event.data.json()
+    const options = {
+      body: payload.body,
+      icon: '/icons/icon-192x192.png',
+      badge: '/icons/icon-192x192.png',
+      vibrate: [100, 50, 100],
+      data: {
+        url: payload.url || '/'
+      }
+    }
+
+    event.waitUntil(
+      self.registration.showNotification(payload.title, options)
+    )
+  } catch (err) {
+    console.error('푸시 데이터 파싱 에러:', err)
+  }
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      const targetUrl = event.notification.data.url
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i]
+        if (client.url === targetUrl && 'focus' in client) {
+          return client.focus()
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl)
+      }
+    })
+  )
+})

@@ -6,6 +6,7 @@ import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
 import { z } from 'zod'
+import webpush from 'web-push'
 
 export interface GetSaunasParams {
   page?: number
@@ -305,6 +306,42 @@ export async function createSauna(
       .single()
 
     if (error) return { ok: false, error: error.message }
+
+    // ── 가입된 유저들에게 웹 푸시 알림 전송 ──
+    try {
+      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+      const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+      
+      if (vapidPublicKey && vapidPrivateKey) {
+        webpush.setVapidDetails(
+          'mailto:support@sauna-geukrak.com',
+          vapidPublicKey,
+          vapidPrivateKey
+        )
+
+        // 모든 활성 푸시 구독 조회
+        const { data: subs } = await supabase
+          .from('push_subscriptions')
+          .select('subscription')
+
+        if (subs && subs.length > 0) {
+          const pushPayload = JSON.stringify({
+            title: '♨️ 새로운 사우나가 등록되었어요!',
+            body: `내 주변에 새로운 사우나 [${data.name}]이(가) 등록되었습니다. 시설 정보를 확인해보세요!`,
+            url: `/saunas/${data.id}`
+          })
+
+          // 비동기로 모든 구독자에게 푸시 전송 (실패하는 일부 기기는 무시)
+          await Promise.allSettled(
+            subs.map((sub: any) => 
+              webpush.sendNotification(sub.subscription, pushPayload)
+            )
+          )
+        }
+      }
+    } catch (pushErr) {
+      console.error('[createSauna] 푸시 알림 전송 오류 (사우나 등록은 성공했으므로 무시):', pushErr)
+    }
 
     // ISR 캐시 즉시 무효화
     revalidatePath('/')
