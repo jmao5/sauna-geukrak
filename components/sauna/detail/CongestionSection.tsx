@@ -85,7 +85,7 @@ export function CongestionSection({ saunaId }: { saunaId: string }) {
     staleTime: 1000 * 60 * 3,
   })
 
-  const heatmap = React.useMemo(() => buildHeatmap(reviews), [reviews])
+  const heatmap = buildHeatmap(reviews)
   const dayData = heatmap[selectedDay] ?? {}
   const hasData = reviews.some((r) => r.congestion && r.visit_date)
 

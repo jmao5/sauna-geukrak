@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk'
 import { useQuery } from '@tanstack/react-query'
 import { getSaunasByLocation } from '@/app/actions/sauna.actions'
@@ -255,35 +255,35 @@ export default function MapClient() {
     ? 'male'
     : undefined
 
-  const updateBounds = useCallback((map: kakao.maps.Map) => {
+  const updateBounds = (map: kakao.maps.Map) => {
     const bounds = map.getBounds()
     const sw = bounds.getSouthWest()
     const ne = bounds.getNorthEast()
     setMapBounds({ swLat: sw.getLat(), swLng: sw.getLng(), neLat: ne.getLat(), neLng: ne.getLng() })
-  }, [])
+  }
 
-  const handleMapCreate = useCallback((map: kakao.maps.Map) => {
+  const handleMapCreate = (map: kakao.maps.Map) => {
     mapRef.current = map
     updateBounds(map)
-  }, [updateBounds])
+  }
 
-  const handleCenterChanged = useCallback((map: kakao.maps.Map) => {
+  const handleCenterChanged = (map: kakao.maps.Map) => {
     currentCenterRef.current = { lat: map.getCenter().getLat(), lng: map.getCenter().getLng() }
-  }, [])
+  }
 
-  const handleDragEnd = useCallback(() => {
+  const handleDragEnd = () => {
     const { lat, lng } = currentCenterRef.current
     const dist = Math.sqrt(
       Math.pow(lat - prevCenterRef.current.lat, 2) +
       Math.pow(lng - prevCenterRef.current.lng, 2)
     )
     setShowResearch(dist > 0.01)
-  }, [])
+  }
 
-  const handleIdle = useCallback((map: kakao.maps.Map) => {
+  const handleIdle = (map: kakao.maps.Map) => {
     updateBounds(map)
     setCenter(currentCenterRef.current)
-  }, [updateBounds])
+  }
 
   const handleResearch = () => {
     const current = currentCenterRef.current

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { searchSaunas, getPopularKeywords } from '@/app/actions/sauna.actions'
 import { BiSearch, BiX, BiHistory, BiTrendingUp } from 'react-icons/bi'
@@ -71,10 +71,10 @@ export default function SearchClient() {
     staleTime: 1000 * 60 * 2,
   })
 
-  const handleSelect = useCallback((kw: string) => {
+  const handleSelect = (kw: string) => {
     setKeyword(kw)
     setRecentKeywords(saveRecent(kw))
-  }, [])
+  }
 
   // 검색어 확정 시 (엔터 or debounce 후 결과 있을 때) 저장
   useEffect(() => {

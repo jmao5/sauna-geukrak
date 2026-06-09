@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import Image from 'next/image'
@@ -332,7 +332,7 @@ export default function FavoritesClient() {
   })
 
   /* 필터 + 정렬 */
-  const processed = useMemo(() => {
+  const processed = (() => {
     let items = [...data]
 
     // 필터
@@ -363,7 +363,7 @@ export default function FavoritesClient() {
     })
 
     return items
-  }, [data, filter, sort])
+  })()
 
   /* 통계 */
   const wantCount    = data.filter((f) => (f.status ?? 'want') === 'want').length

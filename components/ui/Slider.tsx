@@ -16,7 +16,7 @@ interface SliderProps {
 
 export function JmanaSlider({ value, min, max, step = 1, onChange, label, icon }: SliderProps) {
   // Base UI Slider typically expects an array for controlled value
-  const sliderValue = React.useMemo(() => [value], [value])
+  const sliderValue = [value]
   const id = React.useId()
 
   return (

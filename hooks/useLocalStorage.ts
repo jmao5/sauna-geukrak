@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useSyncExternalStore } from 'react'
+import { useSyncExternalStore } from 'react'
 
 // 커스텀 이벤트 이름
 const STORAGE_EVENT = 'local-storage-change'
@@ -20,7 +20,7 @@ export default function useLocalStorage<T>(key: string, initialValue: T) {
   const getServerSnapshot = () => JSON.stringify(initialValue)
 
   // 3. [구독] 데이터가 변하면 리액트에게 알림
-  const subscribe = useCallback((notify: () => void) => {
+  const subscribe = (notify: () => void) => {
     // 다른 탭에서의 변경 감지
     window.addEventListener('storage', notify)
     // 같은 탭에서의 변경 감지 (우리가 발생시킬 이벤트)
@@ -30,7 +30,7 @@ export default function useLocalStorage<T>(key: string, initialValue: T) {
       window.removeEventListener('storage', notify)
       window.removeEventListener(STORAGE_EVENT, notify)
     }
-  }, [])
+  }
 
   // 4. 훅 실행 (문자열 상태로 동기화됨)
   // 이 훅은 Hydration Mismatch를 내부적으로 알아서 처리합니다.
