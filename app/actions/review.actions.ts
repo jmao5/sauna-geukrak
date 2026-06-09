@@ -1,11 +1,11 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { ReviewDto, MyReviewDto, ReviewUser, Session } from '@/types/sauna'
 
 export async function getReviewsBySaunaId(saunaId: string): Promise<ReviewDto[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('reviews')
       .select(`
@@ -52,7 +52,7 @@ export async function getReviewsByUserId(userId: string): Promise<MyReviewDto[]>
 
 export async function getReviewCount(saunaId: string): Promise<number> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { count, error } = await supabase
       .from('reviews')
       .select('*', { count: 'exact', head: true })

@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
@@ -99,7 +99,7 @@ const saunaSchema = z.object({
 export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSummaryDto[]> {
   const { page = 0, pageSize = 20, keyword, region, conditions = [], sort = 'default' } = params
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const from = page * pageSize
     const to = from + pageSize - 1
     
@@ -179,7 +179,7 @@ export async function getSaunasByLocation(
   radiusKm = 10
 ): Promise<SaunaSummaryDto[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const delta = radiusKm / 111
     const { data, error } = await supabase
       .from('saunas')
@@ -208,7 +208,7 @@ export async function getSaunasByLocation(
 
 export async function getSaunaById(id: string): Promise<SaunaDto> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('saunas')
       .select('*')
@@ -229,7 +229,7 @@ export async function getReviewsBySaunaId(id: string) {
 
 export async function getPopularKeywords(): Promise<string[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('saunas')
       .select('name, address, review_count')
@@ -250,7 +250,7 @@ export async function getPopularKeywords(): Promise<string[]> {
 
 export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('saunas')
       .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count')

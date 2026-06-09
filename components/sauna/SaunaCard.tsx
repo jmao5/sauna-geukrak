@@ -20,18 +20,18 @@ interface SaunaCardProps {
 // 성별별 데이터 추출
 function getGenderData(sauna: SaunaSummaryDto, gender: 'male' | 'female') {
   const rooms = (sauna.sauna_rooms ?? []).filter((r) => {
-    const g = (r as any).gender ?? 'male'
+    const g = r.gender ?? 'male'
     return g === 'both' || g === gender
   })
   const baths = (sauna.cold_baths ?? []).filter((b) => {
-    const g = (b as any).gender ?? 'male'
+    const g = b.gender ?? 'male'
     return g === 'both' || g === gender
   })
 
   const saunaTemp  = rooms.length ? Math.max(...rooms.map((r) => r.temp)) : null
   const coldTemp   = baths.length ? Math.min(...baths.map((b) => b.temp)) : null
-  const hasOutdoor = (sauna as any).resting_area
-    ? ((sauna as any).resting_area.outdoor_seats ?? 0) > 0
+  const hasOutdoor = sauna.resting_area
+    ? (sauna.resting_area.outdoor_seats ?? 0) > 0
     : false
   const hasLoyly   = rooms.some((r) => r.has_auto_loyly || r.has_self_loyly)
 
@@ -87,10 +87,10 @@ function GenderRow({ label, color, data }: {
 
 export default function SaunaCard({ sauna, className = '', variant = 'grid', preferredGender, priority = false }: SaunaCardProps) {
   const filteredRooms = preferredGender 
-    ? (sauna.sauna_rooms ?? []).filter(r => (r as any).gender === 'both' || (r as any).gender === preferredGender)
+    ? (sauna.sauna_rooms ?? []).filter(r => r.gender === 'both' || r.gender === preferredGender)
     : sauna.sauna_rooms
   const filteredBaths = preferredGender 
-    ? (sauna.cold_baths ?? []).filter(b => (b as any).gender === 'both' || (b as any).gender === preferredGender)
+    ? (sauna.cold_baths ?? []).filter(b => b.gender === 'both' || b.gender === preferredGender)
     : sauna.cold_baths
 
   const maxSaunaTemp = filteredRooms?.length ? Math.max(...filteredRooms.map((r) => r.temp)) : null

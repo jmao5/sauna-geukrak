@@ -1,4 +1,5 @@
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
+import getQueryClient from '@/lib/getQueryClient'
 import { getSaunas } from './actions/sauna.actions'
 import HomeClient from './HomeClient'
 
@@ -20,7 +21,7 @@ export const revalidate = 60
 const PAGE_SIZE = 20
 
 export default async function HomePage() {
-  const queryClient = new QueryClient()
+  const queryClient = getQueryClient()
 
   await queryClient.prefetchInfiniteQuery({
     queryKey: ['saunas', 'infinite'],
