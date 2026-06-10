@@ -1,5 +1,29 @@
 import { ImageResponse } from 'next/og'
-import { getSaunaById } from '@/app/actions/sauna.actions'
+import { createClient } from '@supabase/supabase-js'
+import type { SaunaRoom, ColdBath } from '@/types/sauna'
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+interface SaunaOGData {
+  name: string
+  address: string
+  images: string[] | null
+  sauna_rooms: SaunaRoom[] | null
+  cold_baths: ColdBath[] | null
+}
+
+async function getSaunaForOG(id: string): Promise<SaunaOGData> {
+  const { data, error } = await supabase
+    .from('saunas')
+    .select('name, address, images, sauna_rooms, cold_baths')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data as unknown as SaunaOGData
+}
 
 export const runtime = 'edge'
 export const size = { width: 1200, height: 630 }
@@ -15,15 +39,15 @@ export default async function OGImage({ params }: { params: Promise<{ id: string
   let minColdTemp: number | null = null
 
   try {
-    const sauna = await getSaunaById(id)
+    const sauna = await getSaunaForOG(id)
     name = sauna.name
     address = sauna.address
     imageUrl = sauna.images?.[0] ?? null
     maxSaunaTemp = sauna.sauna_rooms?.length
-      ? Math.max(...sauna.sauna_rooms.map(r => r.temp))
+      ? Math.max(...sauna.sauna_rooms.map((r: SaunaRoom) => r.temp))
       : null
     minColdTemp = sauna.cold_baths?.length
-      ? Math.min(...sauna.cold_baths.map(b => b.temp))
+      ? Math.min(...sauna.cold_baths.map((b: ColdBath) => b.temp))
       : null
   } catch {
     // 에러 시 기본값 사용
