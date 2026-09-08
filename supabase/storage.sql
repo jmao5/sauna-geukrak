@@ -22,11 +22,18 @@ create policy "인증된 사용자 업로드" on storage.objects
     and auth.role() = 'authenticated'
   );
 
--- 업데이트 (upsert)
+-- 업데이트 (업로드한 본인 파일만)
 create policy "인증된 사용자 업데이트" on storage.objects
   for update using (
     bucket_id = 'sauna-images'
-    and auth.role() = 'authenticated'
+    and owner_id = auth.uid()::text
+  );
+
+-- 삭제 (업로드한 본인 파일만)
+create policy "인증된 사용자 삭제" on storage.objects
+  for delete using (
+    bucket_id = 'sauna-images'
+    and owner_id = auth.uid()::text
   );
 
 -- 조회: 누구나 가능 (공개 버킷)

@@ -33,7 +33,7 @@ const RATING_LABELS: Record<number, string> = {
   5.0: '극락이에요 👼',
 }
 const MAX_IMAGES = 5
-const BUCKET = 'sauna-geukrak'
+const BUCKET = 'sauna-images'
 
 /* ── 이미지 업로드 훅 ─────────────────────────────────────── */
 function useReviewImageUpload(initialImages: string[] = []) {
