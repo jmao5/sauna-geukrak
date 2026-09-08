@@ -19,6 +19,33 @@ const HEADERS = {
   'Cache-Control': 'no-cache',
 }
 
+const INSTAGRAM_HOSTS = new Set([
+  'instagram.com',
+  'www.instagram.com',
+  'm.instagram.com',
+])
+
+function parseInstagramMediaUrl(value: string): URL | null {
+  try {
+    const parsed = new URL(value)
+    const isMediaPath = /^\/(?:p|reel)\/[A-Za-z0-9_-]+\/?$/.test(parsed.pathname)
+
+    if (
+      parsed.protocol !== 'https:' ||
+      !INSTAGRAM_HOSTS.has(parsed.hostname.toLowerCase()) ||
+      parsed.username ||
+      parsed.password ||
+      !isMediaPath
+    ) {
+      return null
+    }
+
+    return parsed
+  } catch {
+    return null
+  }
+}
+
 function extractMeta(html: string, property: string): string | null {
   // og:image, og:title 등 메타태그 추출
   const patterns = [
@@ -47,11 +74,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ thumbnail_url: null, title: null, author_name: null }, { status: 400 })
   }
 
+  const mediaUrl = parseInstagramMediaUrl(url)
+  if (!mediaUrl) {
+    return NextResponse.json({ thumbnail_url: null, title: null, author_name: null }, { status: 400 })
+  }
+
   try {
     // ── 1. 인스타그램 페이지 HTML에서 og:image 파싱 ─────────────────
-    const pageRes = await fetch(url, {
+    const pageRes = await fetch(mediaUrl, {
       headers: HEADERS,
       next: { revalidate: 60 * 60 * 24 }, // 24시간 CDN 캐시
+      redirect: 'error',
     })
 
     if (pageRes.ok) {
@@ -85,8 +118,11 @@ export async function GET(request: NextRequest) {
 
     // ── 2. fallback: 공식 oEmbed (토큰 없이 author_name 정도는 되는 경우) ──
     const oembedRes = await fetch(
-      `https://www.instagram.com/oembed?url=${encodeURIComponent(url)}&omitscript=true`,
-      { headers: { 'User-Agent': HEADERS['User-Agent'], Accept: 'application/json' } }
+      `https://www.instagram.com/oembed?url=${encodeURIComponent(mediaUrl.toString())}&omitscript=true`,
+      {
+        headers: { 'User-Agent': HEADERS['User-Agent'], Accept: 'application/json' },
+        redirect: 'error',
+      }
     )
     if (oembedRes.ok) {
       const data = await oembedRes.json()
