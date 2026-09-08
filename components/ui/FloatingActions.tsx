@@ -85,9 +85,10 @@ export default function FloatingActions() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           onClick={handleAddSauna}
-          className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-lg text-white active:scale-90"
+          className="absolute right-4 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-point shadow-[0_4px_16px_rgba(0,152,216,0.35)] text-white transition-all active:scale-90 hover:brightness-105"
           style={{ bottom: 'calc(4rem + 1rem)' }}
           aria-label="사우나 등록"
+          title="새로운 사우나 등록하기"
         >
           <BiPlus size={24} />
         </m.button>

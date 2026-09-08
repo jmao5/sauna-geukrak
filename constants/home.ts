@@ -7,10 +7,10 @@ export const REGIONS = [
 ]
 
 export const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
-  { id: 'autoloyly',   label: '오토 로우리', emoji: '💦' },
+  { id: 'autoloyly',   label: '오토 로울리', emoji: '💦' },
   { id: 'groundwater', label: '지하수 냉탕', emoji: '🏔️' },
   { id: 'jjimjilbang', label: '찜질방',      emoji: '🧖' },
-  { id: 'tattoo',      label: '타투 OK',     emoji: '🖋️' },
+  { id: 'tattoo',      label: '타투 가능',   emoji: '🖋️' },
   { id: 'female',      label: '여성 가능',   emoji: '👩' },
   { id: 'male',        label: '남성 가능',   emoji: '👨' },
   { id: 'parking',     label: '주차',        emoji: '🅿️' },

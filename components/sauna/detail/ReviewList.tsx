@@ -596,7 +596,7 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
         <p className="text-[12px] text-text-muted">첫 번째 사활을 남겨보세요!</p>
         <button onClick={onWrite}
           className="mt-2 rounded-full bg-point px-6 py-2.5 text-[13px] font-black text-white transition active:scale-95">
-          사활 투고하기
+          사활 기록하기
         </button>
       </div>
     )

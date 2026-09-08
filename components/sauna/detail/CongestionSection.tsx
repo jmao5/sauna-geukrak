@@ -230,7 +230,7 @@ export function CongestionSection({ saunaId }: { saunaId: string }) {
       {/* 안내 */}
       {hasData && (
         <p className="px-4 py-3 text-[11px] text-text-muted">
-          * 방문 사우너들의 사활 투고 데이터 ({reviews.length}건)를 기반으로 산출된 통계입니다.
+          * 방문 사우너들의 사활 방문 기록 데이터 ({reviews.length}건)를 기반으로 산출된 통계입니다.
         </p>
       )}
     </div>

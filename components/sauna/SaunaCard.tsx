@@ -58,17 +58,17 @@ function GenderRow({ label, color, data }: {
 
       {/* 사우나 온도 — 있을 때만 */}
       {data.saunaTemp !== null && (
-        <span className="flex items-center gap-0.5">
-          <span className="text-[10px] text-text-muted">사</span>
-          <span className="temp-number text-[12px] font-black text-sauna">{data.saunaTemp}</span>
+        <span className="flex items-center gap-1 rounded bg-sauna/10 px-1.5 py-0.5 border border-sauna/20">
+          <span className="text-[10px]">🔥</span>
+          <span className="temp-number text-[12px] font-black text-sauna">{data.saunaTemp}°</span>
         </span>
       )}
 
       {/* 냉탕 온도 — 있을 때만 */}
       {data.coldTemp !== null && (
-        <span className="flex items-center gap-0.5">
-          <span className="text-[10px] text-text-muted">냉</span>
-          <span className="temp-number text-[12px] font-black text-cold">{data.coldTemp}</span>
+        <span className="flex items-center gap-1 rounded bg-cold/10 px-1.5 py-0.5 border border-cold/20">
+          <span className="text-[10px]">❄️</span>
+          <span className="temp-number text-[12px] font-black text-cold">{data.coldTemp}°</span>
         </span>
       )}
 
@@ -77,9 +77,9 @@ function GenderRow({ label, color, data }: {
         <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">외기욕</span>
       )}
 
-      {/* 로우리 — 있을 때만 */}
+      {/* 로울리 — 있을 때만 */}
       {data.hasLoyly && (
-        <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로우리</span>
+        <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로울리</span>
       )}
     </div>
   )
@@ -97,10 +97,10 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
   const minColdTemp = filteredBaths?.length ? Math.min(...filteredBaths.map((b) => b.temp)) : null
 
   const features: string[] = []
-  if (sauna.sauna_rooms?.some((r) => r.has_auto_loyly)) features.push('오토 로우리')
+  if (sauna.sauna_rooms?.some((r) => r.has_auto_loyly)) features.push('오토 로울리')
   if (sauna.cold_baths?.some((b) => b.is_groundwater))  features.push('지하수')
   if (sauna.kr_specific?.has_jjimjilbang)               features.push('찜질방')
-  if (sauna.rules?.tattoo_allowed)                       features.push('타투 OK')
+  if (sauna.rules?.tattoo_allowed)                       features.push('타투 가능')
 
   const thumbnail   = sauna.images?.[0]
   const price       = sauna.pricing?.adult_day

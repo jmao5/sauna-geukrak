@@ -53,18 +53,21 @@ export default function HomeHeader({ resultCount, isLoading }: HomeHeaderProps) 
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
-        <button onClick={() => setRegionOpen(true)} className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${selectedRegion ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'}`}>
-          {selectedRegion ?? '지역'}<BiChevronDown size={12} />
-        </button>
-        {visibleConds.map((option) => (
-          <button key={option.id} onClick={() => toggleCondition(option.id)} className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${selectedConds.includes(option.id) ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'}`}>
-            <span>{option.emoji}</span>{option.label}
+      <div className="relative">
+        <div className="flex items-center gap-2 overflow-x-auto px-4 pb-3 scrollbar-hide">
+          <button onClick={() => setRegionOpen(true)} className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${selectedRegion ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'}`}>
+            {selectedRegion ?? '지역'}<BiChevronDown size={12} />
           </button>
-        ))}
-        <button onClick={() => setShowMoreFilters((value) => !value)} className="flex flex-shrink-0 items-center gap-1 rounded-md border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95">
-          {showMoreFilters ? '접기' : '더보기'}<BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
-        </button>
+          {visibleConds.map((option) => (
+            <button key={option.id} onClick={() => toggleCondition(option.id)} className={`flex flex-shrink-0 items-center gap-1 rounded-md px-3 py-1.5 text-[11px] font-bold transition active:scale-95 ${selectedConds.includes(option.id) ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'}`}>
+              <span>{option.emoji}</span>{option.label}
+            </button>
+          ))}
+          <button onClick={() => setShowMoreFilters((value) => !value)} className="flex flex-shrink-0 items-center gap-1 rounded-md border border-border-main bg-bg-main px-3 py-1.5 text-[11px] font-bold text-text-muted transition active:scale-95">
+            {showMoreFilters ? '접기' : '더보기'}<BiChevronDown size={12} className={`transition-transform ${showMoreFilters ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
+        <div className="pointer-events-none absolute right-0 top-0 bottom-3 w-5 bg-gradient-to-l from-bg-main to-transparent" />
       </div>
 
       {hasSelection && (

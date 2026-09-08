@@ -205,7 +205,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* ── 찜 + 사활 카운트 — 실제 데이터 ── */}
+        {/* ── 찜 + 사활 + 평점 카운트 ── */}
         <div className="flex items-center gap-4 border-b border-border-subtle bg-bg-card px-4 py-3">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-black text-text-muted">찜</span>
@@ -220,17 +220,17 @@ export function SaunaDetailClient({ id }: { id: string }) {
               {reviewCount.toLocaleString()}
             </span>
           </div>
-          <div className="ml-auto">
-            <button
-              onClick={toggleFav}
-              className={`flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[11px] font-black transition active:scale-95 ${
-                isFav ? 'bg-point text-white' : 'border border-border-main bg-bg-main text-text-sub'
-              }`}
-            >
-              {isFav ? <BiSolidBookmark size={13} /> : <BiBookmark size={13} />}
-              찜하기
-            </button>
-          </div>
+          {sauna.avg_rating !== null && sauna.avg_rating !== undefined && (
+            <>
+              <div className="h-3 w-px bg-border-main" />
+              <div className="flex items-center gap-1">
+                <span className="text-amber-500 text-[12px]">★</span>
+                <span className="text-[13px] font-black text-text-main tabular-nums">
+                  {sauna.avg_rating.toFixed(1)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* ── 탭 바 ── */}
@@ -277,14 +277,14 @@ export function SaunaDetailClient({ id }: { id: string }) {
           }`}
         >
           {isFav ? <BiSolidBookmark size={16} /> : <BiBookmark size={16} />}
-          찜하기
+          {isFav ? '찜됨' : '찜하기'}
         </button>
         <button
           onClick={() => setShowReview(true)}
           className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-point py-3 text-[13px] font-black text-white transition active:scale-95"
         >
           <BiPlus size={16} />
-          사활 투고
+          사활 기록하기
         </button>
       </div>
 
