@@ -93,7 +93,7 @@ export function CongestionSection({ saunaId }: { saunaId: string }) {
     <div className="pb-24">
       {/* 범례 */}
       <div className="flex items-center justify-between border-b border-border-subtle bg-bg-main px-4 py-3.5">
-        <span className="text-[12px] font-black text-text-main">시간대별 혼잡 혼합도</span>
+        <span className="text-[12px] font-black text-text-main">시간대별 혼잡도</span>
         <div className="flex gap-2">
           <span className="flex items-center gap-1 text-[10px] font-bold text-text-sub">
             <span className="inline-block h-2.5 w-2.5 rounded bg-[#3b82f6]" />

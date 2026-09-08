@@ -19,7 +19,7 @@ const FILTER_OPTIONS: { id: Filter; label: string }[] = [
   { id: 'female', label: '여성가능' },
   { id: 'male', label: '남성가능' },
   { id: 'tattoo', label: '타투OK' },
-  { id: 'autoloyly', label: '오토 로우리' },
+  { id: 'autoloyly', label: '오토 로울리' },
   { id: 'groundwater', label: '지하수 냉탕' },
   { id: 'deepcold', label: '깊은 냉탕(1m+)' },
   { id: 'infinitychair', label: '인피니티 체어' },
@@ -68,7 +68,7 @@ function SwipePanel({
 
   return (
     <m.div
-      className="absolute bottom-0 left-0 right-0 z-20 rounded-t-2xl border-t border-border-main bg-bg-card shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+      className="absolute bottom-[56px] left-0 right-0 z-20 rounded-t-2xl border-t border-border-main bg-bg-card shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
       animate={{ height: currentSnap }}
       transition={{ type: 'spring', stiffness: 400, damping: 38, mass: 0.8 }}
       style={{ overflow: 'hidden', touchAction: 'none' }}
@@ -361,7 +361,7 @@ export default function MapClient() {
               <input
                 type="text" value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                placeholder="에리어·시설명 검색"
+                placeholder="지역·사우나명 검색"
                 className="flex-1 bg-transparent text-[13px] text-text-main placeholder:text-text-muted outline-none"
               />
               {searchQuery && (
@@ -471,7 +471,7 @@ export default function MapClient() {
       </AnimatePresence>
 
       {/* 현재 위치 버튼 */}
-      <div className="absolute right-3 z-20 transition-all duration-300" style={{ bottom: panelSnap + 12 }}>
+      <div className="absolute right-3 z-20 transition-all duration-300" style={{ bottom: panelSnap + 56 + 12 }}>
         <button onClick={handleLocate} disabled={isLocating}
           className="flex h-10 w-10 items-center justify-center rounded-full border border-border-main bg-bg-card shadow-card transition active:scale-90">
           {isLocating

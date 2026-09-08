@@ -77,7 +77,7 @@ function TempSection({ sauna }: { sauna: SaunaDto }) {
               </div>
               <p className="mt-1 text-[12px] font-bold text-sauna/50">°C</p>
               <p className="mt-2 text-center text-[10px] text-text-muted leading-relaxed">
-                {rooms.map(r => r.type).join(' · ')}
+                {Array.from(new Set(rooms.map(r => r.type))).join(' · ')}
               </p>
             </>
           ) : (
@@ -218,6 +218,20 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
 // ── InfoTab ───────────────────────────────────────────────────
 export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
   const [showPreview, setShowPreview] = useState(false)
+
+  const hasPricing = !!sauna.pricing && (
+    (sauna.pricing.adult_day ?? 0) > 0 ||
+    (sauna.pricing.adult_night ?? 0) > 0 ||
+    (sauna.pricing.child ?? 0) > 0 ||
+    ((sauna.pricing.jjimjilbang ?? 0) > 0)
+  )
+
+  const hasKrSpecific = !!sauna.kr_specific && (
+    (sauna.kr_specific.sesin_price_male ?? 0) > 0 ||
+    (sauna.kr_specific.sesin_price_female ?? 0) > 0 ||
+    (Array.isArray(sauna.kr_specific.food) && sauna.kr_specific.food.length > 0)
+  )
+
   return (
     <div className="divide-y divide-border-subtle pb-4">
       <TempSection sauna={sauna} />
@@ -239,7 +253,7 @@ export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
       )}
 
       {/* 가격 */}
-      {sauna.pricing && (
+      {hasPricing && sauna.pricing && (
         <div>
           <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Pricing</p>
           {sauna.pricing.adult_day   > 0 && <InfoRow label="성인 (낮)"  value={`${sauna.pricing.adult_day.toLocaleString()}원`} />}
@@ -252,7 +266,7 @@ export default function InfoTab({ sauna }: { sauna: SaunaDto }) {
       )}
 
       {/* 한국 특화 */}
-      {sauna.kr_specific && (
+      {hasKrSpecific && sauna.kr_specific && (
         <div>
           <p className="px-4 pt-4 pb-2 text-[10px] font-black tracking-widest text-text-muted uppercase">Korean Special</p>
           {sauna.kr_specific.sesin_price_male   > 0 && <InfoRow label="때밀이 (남)" value={`${sauna.kr_specific.sesin_price_male.toLocaleString()}원`} />}
