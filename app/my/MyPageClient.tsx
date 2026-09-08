@@ -165,25 +165,54 @@ export default function MyPageClient() {
   if (!isLoading && !user) {
     return (
       <div className="flex h-full flex-col bg-bg-main">
-        <div className="bg-bg-sub px-6 pb-10 pt-12 text-center border-b border-border-subtle">
-          <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-bg-main border border-border-main text-4xl shadow-sm">
+        <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle flex-shrink-0">
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-bg-main border border-border-main text-3xl shadow-sm">
             🧖
           </div>
-          <h1 className="mb-1 text-lg font-black text-text-main">로그인이 필요해요</h1>
-          <p className="text-[12px] text-text-sub mb-5">찜 목록과 방문 기록을 저장해보세요</p>
+          <h1 className="mb-1 text-[17px] font-black text-text-main">로그인이 필요해요</h1>
+          <p className="text-[12px] text-text-sub mb-4">찜 목록과 방문 기록을 저장해보세요</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-3 text-[13px] font-black text-white shadow-sm transition active:scale-[0.97]"
+            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-2.5 text-[13px] font-black text-white shadow-sm transition active:scale-[0.97] hover:bg-point-hover"
           >
             로그인 / 회원가입
           </Link>
         </div>
-        {/* 비로그인에도 인스타 블록 노출 */}
-        <div className="px-4 pt-5">
+
+        {/* 비로그인 안내 기능 프리뷰 */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 scrollbar-hide pb-20">
+          <div className="rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
+            <p className="text-[12px] font-black text-text-main mb-0.5">✨ 로그인하면 이런 기능을 쓸 수 있어요</p>
+            <p className="text-[11px] text-text-muted mb-3">나만의 사우나 라이프를 기록하고 관리해 보세요.</p>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
+                <span className="text-2xl flex-shrink-0">💖</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-black text-text-main">가고 싶은 사우나 찜하기</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">찜한 사우나를 모아보고 방문 상태를 체크하세요.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
+                <span className="text-2xl flex-shrink-0">⏱️</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-black text-text-main">사활 세션 루틴 기록</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">사우나·냉탕·휴식 시간을 분 단위로 기록하고 통계를 남겨요.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
+                <span className="text-2xl flex-shrink-0">🏆</span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-black text-text-main">사우너 업적 뱃지 획득</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">사활 작성 횟수와 냉탕 정복에 따라 특별 뱃지가 열려요.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <InstagramFollowBlock />
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-[12px] text-text-muted">로그인 후 이용 가능합니다</p>
         </div>
       </div>
     )

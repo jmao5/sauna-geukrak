@@ -215,9 +215,9 @@ export default function SearchClient() {
                   <p className="text-[11px] font-black text-text-muted tracking-widest uppercase">Results</p>
                   <p className="text-[11px] text-text-muted">{searchResults.length}곳</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3 p-4">
+                <div className="divide-y divide-border-subtle pb-20">
                   {searchResults.map((sauna, i) => (
-                    <SaunaCard key={sauna.id} sauna={sauna} priority={i < 2} />
+                    <SaunaCard key={sauna.id} sauna={sauna} variant="row" priority={i < 2} />
                   ))}
                 </div>
               </>
