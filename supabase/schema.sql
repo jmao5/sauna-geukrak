@@ -158,6 +158,12 @@ create policy "프로필 생성"      on public.users for insert with check (aut
 create policy "프로필 조회"      on public.users for select using (true);
 create policy "프로필 수정"      on public.users for update using (auth.uid() = id);
 
+-- 프로필 행을 수정할 수 있는 것과 권한(role)을 바꿀 수 있는 것은 별개다.
+-- 테이블 단위 UPDATE 권한을 회수한 뒤, 일반 사용자가 수정해야 하는 컬럼만
+-- 명시적으로 부여한다. role 승격은 Dashboard 또는 service_role만 수행한다.
+revoke update on table public.users from anon, authenticated;
+grant update (nickname, avatar_url, bio) on table public.users to authenticated;
+
 -- ==========================================
 -- 트리거 함수
 -- ==========================================

@@ -8,9 +8,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:9050'
 const ACCESS_TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 7   // 7일 — 쿠키는 오래 유지, JWT 만료 시 proxy가 자동 재발급
 const REFRESH_TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 7  // 7일  (BE refreshTokenExpireIn과 동일)
 
-// 동시 요청 Race Condition 방어 — 진행 중인 reissue promise를 공유
-let reissuePromise: Promise<{ accessToken: string; refreshToken: string } | null> | null = null
-
 async function doReissue(
   accessToken: string | undefined,
   refreshToken: string
@@ -84,14 +81,10 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     if (response.status === 401 && refreshToken) {
       logger.info(`[Proxy] 401 감지 (${pathString}). 토큰 갱신 시도...`)
 
-      // Race Condition 방어: 동시에 여러 요청이 401 받아도 reissue는 1번만 실행
-      if (!reissuePromise) {
-        reissuePromise = doReissue(accessToken, refreshToken).finally(() => {
-          reissuePromise = null
-        })
-      }
-
-      const tokens = await reissuePromise
+      // 토큰 갱신은 반드시 현재 요청의 refresh token으로만 수행한다.
+      // 모듈 전역 Promise를 공유하면 서로 다른 사용자의 동시 401 요청이
+      // 같은 갱신 결과를 받아 세션이 섞일 수 있다.
+      const tokens = await doReissue(accessToken, refreshToken)
 
       if (tokens) {
         logger.info('[Proxy] 토큰 갱신 성공. 요청 재시도...')
