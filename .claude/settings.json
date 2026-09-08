@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write|Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/protect_env.js"]
+          }
+        ]
+      }
+    ]
+  }
+}
