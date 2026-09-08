@@ -110,11 +110,7 @@ export default function SaunaList({
   return (
     <>
       {!isLoading && (
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border-subtle bg-bg-main px-4 py-2.5">
-          <p className="text-[13px] font-black text-text-main">
-            검색결과 <span className="text-point">{filtered.length.toLocaleString()}</span>
-            <span className="font-bold text-text-muted">건</span>
-          </p>
+        <div className="flex flex-shrink-0 justify-end border-b border-border-subtle bg-bg-main px-4 py-2.5">
           <button
             onClick={() => setSortOpen(true)}
             className="flex items-center gap-1.5 rounded-md border border-border-main bg-bg-sub px-3 py-1.5 transition active:scale-95"

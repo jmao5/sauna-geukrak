@@ -66,7 +66,7 @@ export default function HomeClient() {
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
-      <HomeHeader />
+      <HomeHeader resultCount={filtered.length} isLoading={isLoading} />
 
       <SaunaList
         filtered={filtered}

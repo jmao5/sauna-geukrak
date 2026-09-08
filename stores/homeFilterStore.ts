@@ -54,5 +54,6 @@ export const useHomeFilterStore = create<HomeFilterState>((set) => ({
     selectedRegion: null,
     selectedConds: [],
     sortKey: 'default',
+    showMoreFilters: false,
   }),
 }))
