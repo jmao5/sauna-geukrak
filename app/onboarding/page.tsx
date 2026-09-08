@@ -8,10 +8,15 @@ import toast from 'react-hot-toast'
 
 const EMOJI_OPTIONS = ['🔥', '🧖', '💧', '❄️', '♨️', '🏔️', '🌊', '😤']
 
+function getSafeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return '/'
+  return value
+}
+
 export default function OnboardingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const next = searchParams.get('next') ?? '/'
+  const next = getSafeNextPath(searchParams.get('next'))
   const { user } = useUserStore()
 
   const defaultNickname =

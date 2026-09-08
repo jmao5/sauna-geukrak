@@ -6,6 +6,11 @@ import { createClient } from '@/lib/supabase/client'
 import { useUserStore } from '@/stores/userStore'
 import { BiChevronLeft } from 'react-icons/bi'
 
+function getSafeNextPath(value: string | null): string {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return '/'
+  return value
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -22,7 +27,7 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    const next = searchParams.get('next') ?? '/'
+    const next = getSafeNextPath(searchParams.get('next'))
 
     // next 파라미터를 쿠키에 저장 (쿼리스트링으로 redirectTo에 붙이면 Supabase URL 검증 실패)
     document.cookie = `oauth_redirect_next=${encodeURIComponent(next)}; path=/; max-age=300; SameSite=Lax`

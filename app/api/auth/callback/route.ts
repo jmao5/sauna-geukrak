@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
+function getSafeNextPath(value: string | undefined): string {
+  if (!value) return '/'
+
+  try {
+    const decoded = decodeURIComponent(value)
+    if (!decoded.startsWith('/') || decoded.startsWith('//') || decoded.startsWith('/\\')) return '/'
+    return decoded
+  } catch {
+    return '/'
+  }
+}
+
 /**
  * Supabase Google OAuth 콜백 처리
  * Google이 이 URL로 code를 리다이렉트하면 세션으로 교환합니다.
@@ -27,7 +39,7 @@ export async function GET(request: NextRequest) {
 
   // 로그인 전에 저장해둔 next 경로 읽기 (없으면 홈)
   const rawNext = cookieStore.get('oauth_redirect_next')?.value
-  const next = rawNext ? decodeURIComponent(rawNext) : '/'
+  const next = getSafeNextPath(rawNext)
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -89,11 +101,7 @@ export async function GET(request: NextRequest) {
   // oauth_redirect_next 쿠키 삭제
   const finalNext = isNewUser ? `/onboarding?next=${encodeURIComponent(next)}` : next
 
-  const response = NextResponse.redirect(
-    process.env.NODE_ENV === 'development'
-      ? `${origin}${finalNext}`
-      : `https://${request.headers.get('x-forwarded-host') ?? new URL(origin).host}${finalNext}`
-  )
+  const response = NextResponse.redirect(new URL(finalNext, origin))
   response.cookies.delete('oauth_redirect_next')
 
   return response
