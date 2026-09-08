@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -48,6 +48,17 @@ export function SaunaDetailClient({ id }: { id: string }) {
   }
   const [showReview, setShowReview] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('info')
+  const [activeImgIndex, setActiveImgIndex] = useState(0)
+  const imageScrollRef = useRef<HTMLDivElement>(null)
+
+  const handleImageScroll = () => {
+    if (!imageScrollRef.current) return
+    const { scrollLeft, clientWidth } = imageScrollRef.current
+    if (clientWidth > 0) {
+      const idx = Math.round(scrollLeft / clientWidth)
+      setActiveImgIndex(idx)
+    }
+  }
 
   const { data: isFav = false } = useQuery({
     queryKey: ['favorite', id, user?.id],
@@ -145,7 +156,9 @@ export function SaunaDetailClient({ id }: { id: string }) {
     )
   }
 
-  const thumbnail  = sauna.images?.[0] ?? kakaoImage
+  const allImages = (sauna.images && sauna.images.length > 0)
+    ? sauna.images
+    : (kakaoImage ? [kakaoImage] : [])
   const hasMale    = sauna.rules?.male_allowed !== false
   const hasFemale  = sauna.rules?.female_allowed
 
@@ -153,16 +166,43 @@ export function SaunaDetailClient({ id }: { id: string }) {
     <div className="flex h-full flex-col bg-bg-main">
       <div data-scroll-main className="flex-1 overflow-y-auto scrollbar-hide">
 
-        {/* ── 히어로 이미지 ── */}
+        {/* ── 히어로 이미지 갤러리 ── */}
         <div className="relative w-full flex-shrink-0 bg-bg-sub" style={{ height: 220 }}>
-          {thumbnail ? (
-            <Image src={thumbnail} alt={sauna.name} fill className="object-cover" sizes="(max-width: 576px) 100vw, 576px" priority loading="eager" />
+          {allImages.length > 0 ? (
+            <div
+              ref={imageScrollRef}
+              onScroll={handleImageScroll}
+              className="flex h-full w-full overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+            >
+              {allImages.map((imgUrl, i) => (
+                <div key={i} className="relative h-full w-full flex-shrink-0 snap-center">
+                  <Image
+                    src={imgUrl}
+                    alt={`${sauna.name} 사진 ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 576px) 100vw, 576px"
+                    priority={i === 0}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sauna-bg to-cold-bg">
               <span className="text-7xl opacity-10">🧖</span>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+
+          {/* 사진 페이지 인디케이터 (2장 이상일 때) */}
+          {allImages.length > 1 && (
+            <div className="pointer-events-none absolute right-4 bottom-14 z-10 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+              <span>{activeImgIndex + 1}</span>
+              <span className="opacity-50">/</span>
+              <span>{allImages.length}</span>
+            </div>
+          )}
 
           <div className="absolute left-4 top-4 z-10">
             <button onClick={handleBack}
@@ -264,7 +304,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
         {/* ── 탭 콘텐츠 ── */}
         {activeTab === 'info'       && <InfoTab sauna={sauna} />}
-        {activeTab === 'reviews'    && <div className="pb-24"><ReviewList saunaId={id} onWrite={() => setShowReview(true)} /></div>}
+        {activeTab === 'reviews'    && <div className="pb-24"><ReviewList saunaId={id} saunaName={sauna.name} onWrite={() => setShowReview(true)} /></div>}
         {activeTab === 'congestion' && <CongestionSection saunaId={id} />}
       </div>
 

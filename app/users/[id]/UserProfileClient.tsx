@@ -112,11 +112,19 @@ function ReviewMiniCard({ review }: { review: MyReviewDto }) {
         )}
 
         {/* 온도 + 내용 미리보기 */}
-        <div className="mt-1 flex items-center gap-2">
-          {maxT !== null && <span className="text-[11px] font-black text-sauna">🔥{maxT}°</span>}
-          {minC !== null && <span className="text-[11px] font-black text-cold">❄️{minC}°</span>}
+        <div className="mt-1 flex items-center gap-1.5">
+          {maxT !== null && (
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-sauna-bg border border-sauna/20 px-1.5 py-0.5 text-[10px] font-black text-sauna">
+              🔥 {maxT}°
+            </span>
+          )}
+          {minC !== null && (
+            <span className="inline-flex items-center gap-0.5 rounded-md bg-cold-bg border border-cold/20 px-1.5 py-0.5 text-[10px] font-black text-cold">
+              ❄️ {minC}°
+            </span>
+          )}
           {review.content && (
-            <span className="truncate text-[11px] text-text-muted">{review.content}</span>
+            <span className="truncate text-[11px] text-text-muted ml-0.5">{review.content}</span>
           )}
         </div>
 

@@ -374,9 +374,10 @@ function CommentSheet({ review, onClose }: { review: ReviewDto; onClose: () => v
 }
 
 /* ── ReviewCard ──────────────────────────────────────────── */
-function ReviewCard({ review, saunaId, likeStatus }: {
+function ReviewCard({ review, saunaId, saunaName, likeStatus }: {
   review: ReviewDto
   saunaId: string
+  saunaName?: string
   likeStatus: { liked: boolean; count: number }
 }) {
   const { user } = useUserStore()
@@ -526,7 +527,7 @@ function ReviewCard({ review, saunaId, likeStatus }: {
       {showComments && <CommentSheet review={review} onClose={() => setShowComments(false)} />}
       {showEditSheet && (
         <ReviewBottomSheet
-          sauna={{ id: saunaId, name: '' } as any}
+          sauna={{ id: saunaId, name: saunaName || '' } as any}
           initialReview={review}
           onClose={() => setShowEditSheet(false)}
         />
@@ -564,7 +565,7 @@ function ReviewSkeleton() {
 }
 
 /* ── 메인 ── */
-export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () => void }) {
+export function ReviewList({ saunaId, saunaName, onWrite }: { saunaId: string; saunaName?: string; onWrite: () => void }) {
   const { data: reviews = [], isLoading } = useQuery<ReviewDto[]>({
     queryKey: ['reviews', saunaId],
     queryFn: () => getReviewsBySaunaId(saunaId),
@@ -613,6 +614,7 @@ export function ReviewList({ saunaId, onWrite }: { saunaId: string; onWrite: () 
           key={review.id}
           review={review}
           saunaId={saunaId}
+          saunaName={saunaName}
           likeStatus={likeStatuses[review.id] ?? { liked: false, count: review.like_count ?? 0 }}
         />
       ))}

@@ -16,9 +16,9 @@ import Link from 'next/link'
 type Filter = 'female' | 'male' | 'tattoo' | 'autoloyly' | 'groundwater' | 'deepcold' | 'infinitychair'
 
 const FILTER_OPTIONS: { id: Filter; label: string }[] = [
-  { id: 'female', label: '여성가능' },
-  { id: 'male', label: '남성가능' },
-  { id: 'tattoo', label: '타투OK' },
+  { id: 'female', label: '여성 가능' },
+  { id: 'male', label: '남성 가능' },
+  { id: 'tattoo', label: '타투 가능' },
   { id: 'autoloyly', label: '오토 로울리' },
   { id: 'groundwater', label: '지하수 냉탕' },
   { id: 'deepcold', label: '깊은 냉탕(1m+)' },
@@ -119,15 +119,13 @@ function SaunaBottomCard({ sauna, preferredGender }: { sauna: SaunaSummaryDto; p
         <p className="truncate text-[11px] text-text-sub mt-0.5">{sauna.address}</p>
         <div className="mt-1.5 flex items-center gap-2">
           {maxSaunaTemp !== null && (
-            <span className="flex items-center gap-0.5 rounded-md bg-[#fff3ee] px-1.5 py-0.5">
-              <span className="text-[10px]">🔥</span>
-              <span className="text-[11px] font-black text-sauna">{maxSaunaTemp}°</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-sauna-bg border border-sauna/20 px-1.5 py-0.5 text-[11px] font-black text-sauna">
+              🔥 {maxSaunaTemp}°
             </span>
           )}
           {minColdTemp !== null && (
-            <span className="flex items-center gap-0.5 rounded-md bg-[#eef3ff] px-1.5 py-0.5">
-              <span className="text-[10px]">❄️</span>
-              <span className="text-[11px] font-black text-cold">{minColdTemp}°</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-cold-bg border border-cold/20 px-1.5 py-0.5 text-[11px] font-black text-cold">
+              ❄️ {minColdTemp}°
             </span>
           )}
           {!!sauna.review_count && (
