@@ -207,6 +207,8 @@ export function ReviewBottomSheet({
   const [portalEl,    setPortalEl]    = useState<Element | null>(null)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
 
+  const imgUpload = useReviewImageUpload(initialReview?.images ?? [])
+
   const isDirty =
     rating !== (initialReview?.rating ?? 0) ||
     content.trim() !== (initialReview?.content ?? '') ||
@@ -220,8 +222,6 @@ export function ReviewBottomSheet({
       onClose()
     }
   }
-
-  const imgUpload = useReviewImageUpload(initialReview?.images ?? [])
 
   // portal 대상: #app-root (앱 컨테이너)
   // document.body 대신 사용 → 웹에서 앱 너비에 맞게 렌더됨
