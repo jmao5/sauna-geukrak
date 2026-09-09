@@ -35,6 +35,7 @@ const config: Config = {
         silver: '#9ca3af',
       },
       fontFamily: {
+        suit: ['var(--font-suit)', '-apple-system', 'sans-serif'],
         pretendard: ['var(--font-pretendard)', '-apple-system', 'sans-serif'],
         juache: ['var(--font-juache)', 'sans-serif'],
       },

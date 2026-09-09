@@ -84,8 +84,10 @@ export default function SaunaList({
   const { sortKey, setSortOpen, selectedConds, resetAll } = useHomeFilterStore()
   const currentSort = SORT_OPTIONS.find((o) => o.id === sortKey)!
 
-  const listItems: ListItem[] =
-    hasActiveFilter || filtered.length === 0 ? filtered : [INSTAGRAM_BANNER_ITEM, ...filtered]
+  // 인스타그램 배너 임시 주석 처리 (사우나 목록 바로 노출)
+  // const listItems: ListItem[] =
+  //   hasActiveFilter || filtered.length === 0 ? filtered : [INSTAGRAM_BANNER_ITEM, ...filtered]
+  const listItems: ListItem[] = filtered
 
   const parentRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({

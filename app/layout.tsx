@@ -13,12 +13,43 @@ import { Suspense } from 'react'
 import Loading from '@/components/ui/Loading'
 
 
-const pretendard = localFont({
-  src: './fonts/Pretendard-Regular.woff2',
-  variable: '--font-pretendard',
+const suit = localFont({
+  src: './fonts/SUIT-Variable.woff2',
+  variable: '--font-suit',
   display: 'swap',
   weight: '100 900',
-  fallback: ['-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+  fallback: [
+    'SUIT',
+    'Pretendard',
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'system-ui',
+    'Roboto',
+    'Helvetica Neue',
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    'sans-serif',
+  ],
+})
+
+const pretendard = localFont({
+  src: './fonts/PretendardVariable.woff2',
+  variable: '--font-pretendard',
+  display: 'swap',
+  weight: '45 920',
+  fallback: [
+    'Pretendard',
+    '-apple-system',
+    'BlinkMacSystemFont',
+    'system-ui',
+    'Roboto',
+    'Helvetica Neue',
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
+    'sans-serif',
+  ],
 })
 
 const juache = localFont({
@@ -70,7 +101,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning className={`${pretendard.variable} ${juache.variable}`}>
+    <html lang="ko" suppressHydrationWarning className={`${suit.variable} ${pretendard.variable} ${juache.variable}`}>
       <head>
         {/* 테마 플리커 방지 인라인 스크립트 */}
         <script

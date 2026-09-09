@@ -7,6 +7,7 @@
 
 /* ── @theme 브리지 ─────────────────────────────── */
 @theme {
+  --font-suit: var(--font-suit);
   --font-pretendard: var(--font-pretendard);
   --font-juache: var(--font-juache);
 
@@ -120,13 +121,7 @@
   --cold-text:  #7dd3fc;
 }
 
-/* ── 리셋 ──────────────────────────────────────── */
-/* ⚠️ 제거됨: * { @apply transition-colors } — 전체 DOM transition은 GPU 과부하 원인 */
-* {
-  font-family: var(--font-pretendard), var(--font-juache), -apple-system, sans-serif;
-  font-weight: normal;
-}
-
+/* ── 리셋 & 타이포그래피 ────────────────────────────── */
 @layer base {
   html, body {
     -webkit-tap-highlight-color: transparent;
@@ -136,7 +131,26 @@
     overflow: hidden;
     height: 100%;
     width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.022em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.03em;
+    word-break: keep-all;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    letter-spacing: -0.018em;
+  }
+
   input, textarea, [contenteditable="true"], .selectable {
     -webkit-user-select: text;
     user-select: text;
@@ -152,11 +166,17 @@ body {
   height: 100%;
   color: var(--text-main);
   background-color: #000;
+  font-family: var(--font-suit), var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  line-height: 1.5;
+  letter-spacing: -0.018em;
+  font-feature-settings: "tnum" 1;
 }
 
 /* ── 폰트 유틸 ─────────────────────────────────── */
+.font-suit       { font-family: var(--font-suit), -apple-system, sans-serif; }
 .font-pretendard { font-family: var(--font-pretendard), -apple-system, sans-serif; }
 .font-juache     { font-family: var(--font-juache), sans-serif; }
+.tabular-nums    { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
 
 /* ── 스크롤바 숨김 ─────────────────────────────── */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
