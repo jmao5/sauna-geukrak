@@ -245,31 +245,45 @@ export function SaunaDetailClient({ id }: { id: string }) {
           </div>
         </div>
 
-        {/* ── 찜 + 사활 + 평점 카운트 ── */}
-        <div className="flex items-center gap-4 border-b border-border-subtle bg-bg-card px-4 py-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-black text-text-muted">찜</span>
-            <span className="text-[13px] font-black text-point tabular-nums">
-              {favCount.toLocaleString()}
-            </span>
+        {/* ── 사우나 이키타이 스타일 소셜 액션 바 (가고싶다 & 사활) ── */}
+        <div className="flex items-center justify-between border-b border-border-main bg-bg-card px-4 py-2.5">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleFav}
+              disabled={favMutation.isPending}
+              aria-label={isFav ? '가고싶다 취소' : '가고싶다 등록'}
+              className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-black transition active:scale-95 border ${
+                isFav
+                  ? 'border-point bg-point text-white shadow-xs'
+                  : 'border-border-main bg-bg-sub text-text-main hover:border-point/40'
+              }`}
+            >
+              <span className="text-[13px]">{isFav ? '💙' : '🤍'}</span>
+              <span>가고싶다</span>
+              <span className={`tabular-nums font-black ${isFav ? 'text-white' : 'text-point'}`}>
+                {favCount.toLocaleString()}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('reviews')}
+              className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3 py-1.5 text-[12px] font-black text-text-main transition active:scale-95 hover:border-point/40"
+            >
+              <span className="text-[12px]">🧖</span>
+              <span>사활</span>
+              <span className="tabular-nums text-text-sub font-black">
+                {reviewCount.toLocaleString()}
+              </span>
+            </button>
           </div>
-          <div className="h-3 w-px bg-border-main" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-black text-text-muted">사활</span>
-            <span className="text-[13px] font-black text-point tabular-nums">
-              {reviewCount.toLocaleString()}
-            </span>
-          </div>
+
           {sauna.avg_rating !== null && sauna.avg_rating !== undefined && (
-            <>
-              <div className="h-3 w-px bg-border-main" />
-              <div className="flex items-center gap-1">
-                <span className="text-amber-500 text-[12px]">★</span>
-                <span className="text-[13px] font-black text-text-main tabular-nums">
-                  {sauna.avg_rating.toFixed(1)}
-                </span>
-              </div>
-            </>
+            <div className="flex items-center gap-1 text-[12px] font-black text-text-main bg-amber-500/10 border border-amber-500/20 rounded-full px-2.5 py-1">
+              <span className="text-amber-500">★</span>
+              <span className="tabular-nums">{sauna.avg_rating.toFixed(1)}</span>
+            </div>
           )}
         </div>
 
@@ -281,13 +295,13 @@ export function SaunaDetailClient({ id }: { id: string }) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex-1 py-3.5 text-[14px] font-black transition ${
-                  isActive ? 'text-text-main' : 'text-text-muted'
+                className={`relative flex-1 py-3.5 text-[13.5px] font-black transition ${
+                  isActive ? 'text-text-main' : 'text-text-muted hover:text-text-sub'
                 }`}
               >
                 <span className="relative z-10">
                   {tab.id === 'reviews'
-                    ? `사활 ${reviewCount > 0 ? reviewCount : ''}`
+                    ? `사활 ${reviewCount > 0 ? `(${reviewCount})` : ''}`
                     : tab.label}
                 </span>
                 {isActive && (
@@ -309,19 +323,22 @@ export function SaunaDetailClient({ id }: { id: string }) {
       </div>
 
       {/* ── 하단 CTA 바 ── */}
-      <div className="flex-shrink-0 border-t border-border-main bg-bg-main px-4 py-3 pb-safe flex items-center gap-3">
+      <div className="flex-shrink-0 border-t border-border-main bg-bg-main px-4 py-3 pb-safe flex items-center gap-2.5">
         <button
           onClick={toggleFav}
-          className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-[13px] font-black transition active:scale-95 ${
-            isFav ? 'border-point bg-point/10 text-point' : 'border-border-main bg-bg-main text-text-sub'
+          className={`flex items-center gap-1.5 rounded-xl border px-3.5 py-3 text-[13px] font-black transition active:scale-95 ${
+            isFav
+              ? 'border-point bg-point/10 text-point'
+              : 'border-border-main bg-bg-card text-text-sub hover:border-point/30'
           }`}
         >
-          {isFav ? <BiSolidBookmark size={16} /> : <BiBookmark size={16} />}
-          {isFav ? '찜됨' : '찜하기'}
+          {isFav ? <BiSolidBookmark size={17} /> : <BiBookmark size={17} />}
+          <span>{isFav ? '가고싶다' : '가고싶다'}</span>
+          <span className="tabular-nums text-xs opacity-70">({favCount})</span>
         </button>
         <button
           onClick={() => setShowReview(true)}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-point py-3 text-[13px] font-black text-white transition active:scale-95"
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-point py-3 text-[13px] font-black text-white transition active:scale-95 shadow-sm hover:bg-point-hover"
         >
           <BiPlus size={16} />
           사활 기록하기

@@ -34,8 +34,11 @@ function getGenderData(sauna: SaunaSummaryDto, gender: 'male' | 'female') {
     ? (sauna.resting_area.outdoor_seats ?? 0) > 0
     : false
   const hasLoyly   = rooms.some((r) => r.has_auto_loyly || r.has_self_loyly)
+  const isGroundwater = baths.some((b) => b.is_groundwater)
+  const maxDepth = baths.length ? Math.max(...baths.map((b) => b.depth ?? 0)) : 0
+  const mainType = rooms[0]?.type ?? null
 
-  return { saunaTemp, coldTemp, hasOutdoor, hasLoyly, hasRooms: rooms.length > 0 }
+  return { saunaTemp, coldTemp, hasOutdoor, hasLoyly, isGroundwater, maxDepth, mainType, hasRooms: rooms.length > 0 }
 }
 
 // 온도/시설 행 컴포넌트
@@ -47,37 +50,38 @@ function GenderRow({ label, color, data }: {
   if (!data.hasRooms && data.saunaTemp === null && data.coldTemp === null) return null
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex items-center gap-1.5 flex-wrap leading-none">
       {/* 성별 뱃지 */}
       <span
-        className="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-black text-white"
+        className="flex-shrink-0 rounded px-1.5 py-0.5 text-[9.5px] font-black text-white"
         style={{ background: color }}
       >
         {label}
       </span>
 
-      {/* 사우나 온도 — 있을 때만 */}
+      {/* 사우나 온도 */}
       {data.saunaTemp !== null && (
-        <span className="flex items-center gap-1 rounded bg-sauna/10 px-1.5 py-0.5 border border-sauna/20">
-          <span className="text-[10px]">🔥</span>
-          <span className="temp-number text-[12px] font-black text-sauna">{data.saunaTemp}°</span>
+        <span className="inline-flex items-center gap-0.5 rounded bg-sauna-bg border border-sauna/20 px-1.5 py-0.5 text-[11px] font-black text-sauna">
+          <span className="text-[9.5px]">🔥</span>{data.saunaTemp}°
+          {data.mainType && <span className="text-[9px] font-bold text-sauna/70 ml-0.5">({data.mainType})</span>}
         </span>
       )}
 
-      {/* 냉탕 온도 — 있을 때만 */}
+      {/* 냉탕 온도 */}
       {data.coldTemp !== null && (
-        <span className="flex items-center gap-1 rounded bg-cold/10 px-1.5 py-0.5 border border-cold/20">
-          <span className="text-[10px]">❄️</span>
-          <span className="temp-number text-[12px] font-black text-cold">{data.coldTemp}°</span>
+        <span className="inline-flex items-center gap-0.5 rounded bg-cold-bg border border-cold/20 px-1.5 py-0.5 text-[11px] font-black text-cold">
+          <span className="text-[9.5px]">❄️</span>{data.coldTemp}°
+          {data.isGroundwater && <span className="text-[9px] font-bold text-cold/80 ml-0.5">지하수</span>}
+          {data.maxDepth > 0 && <span className="text-[9px] font-bold text-cold/70 ml-0.5">{data.maxDepth}cm</span>}
         </span>
       )}
 
-      {/* 외기욕 — 있을 때만 */}
+      {/* 외기욕 */}
       {data.hasOutdoor && (
         <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">외기욕</span>
       )}
 
-      {/* 로울리 — 있을 때만 */}
+      {/* 로울리 */}
       {data.hasLoyly && (
         <span className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub">로울리</span>
       )}
@@ -168,12 +172,18 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
 
         {/* 텍스트 */}
         <div className="min-w-0 flex-1">
-          {/* 이름 */}
-          <p className="truncate text-[14px] font-black text-text-main leading-tight">{sauna.name}</p>
-          {/* 주소 */}
-          <p className="mt-0.5 truncate text-[11px] text-text-muted">{sauna.address}</p>
+          {/* 이름 & 지역 */}
+          <div className="flex items-baseline justify-between gap-1">
+            <p className="truncate text-[14px] font-black text-text-main leading-tight">{sauna.name}</p>
+            {sauna.kr_specific?.has_jjimjilbang && (
+              <span className="flex-shrink-0 text-[10px] font-bold text-text-muted">찜질방</span>
+            )}
+          </div>
+          <p className="mt-0.5 truncate text-[11px] text-text-muted">
+            {sauna.address.split(' ').slice(0, 3).join(' ')}
+          </p>
 
-          {/* 남/여 분리 온도 데이터 */}
+          {/* 남/여 분리 스펙 데이터 */}
           <div className="mt-2 space-y-1">
             {maleData && (
               <GenderRow label="남" color="var(--point-color)" data={maleData} />
@@ -183,31 +193,36 @@ export default function SaunaCard({ sauna, className = '', variant = 'grid', pre
             )}
           </div>
 
-          {/* 가격 + 피처 태그 */}
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            {price != null && price > 0 && (
-              <span className="text-[11px] font-bold text-text-sub">
-                💰 {price.toLocaleString()}원~
-              </span>
-            )}
-            {features.slice(0, 2).map((f) => (
-              <span
-                key={f}
-                className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9px] font-bold text-text-sub"
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-
-          {/* 사활 */}
-          {(reviewCount != null && reviewCount > 0) && (
-            <div className="mt-1.5 flex items-center gap-3">
-              <span className="text-[11px] text-text-muted">
-                사활 <span className="font-black text-point tabular-nums">{reviewCount.toLocaleString()}</span>
-              </span>
+          {/* 가격 + 피처 태그 & 사활/평점 */}
+          <div className="mt-2 flex items-center justify-between gap-2 flex-wrap text-[10.5px]">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {price != null && price > 0 && (
+                <span className="font-bold text-text-sub">
+                  💰 {price.toLocaleString()}원~
+                </span>
+              )}
+              {features.slice(0, 2).map((f) => (
+                <span
+                  key={f}
+                  className="rounded border border-border-main bg-bg-sub px-1.5 py-0.5 text-[9.5px] font-bold text-text-sub"
+                >
+                  {f}
+                </span>
+              ))}
             </div>
-          )}
+
+            {/* 사활 + 평점 메트릭 */}
+            <div className="flex items-center gap-2 font-bold text-text-muted">
+              {avgRating != null && avgRating > 0 && (
+                <span className="text-amber-500 font-black">★ {avgRating.toFixed(1)}</span>
+              )}
+              {(reviewCount != null && reviewCount > 0) && (
+                <span>
+                  사활 <span className="font-black text-point tabular-nums">{reviewCount}</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </Link>
       </m.div>

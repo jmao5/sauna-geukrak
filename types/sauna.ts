@@ -90,6 +90,15 @@ export interface MyReviewDto extends Omit<ReviewDto, 'users' | 'congestion' | 'i
   saunas: SaunaSummaryDto | null
 }
 
+export interface RecentReviewDto extends ReviewDto {
+  sauna_id: string
+  saunas: {
+    id: string
+    name: string
+    address: string
+  } | null
+}
+
 export interface MyFavoriteDto {
   sauna_id: string
   created_at: string

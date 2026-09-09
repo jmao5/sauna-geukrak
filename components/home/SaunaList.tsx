@@ -10,6 +10,7 @@ import { SaunaSummaryDto } from '@/types/sauna'
 import { useHomeFilterStore } from '@/stores/homeFilterStore'
 import { SORT_OPTIONS } from '@/constants/home'
 import { BiSortAlt2, BiChevronDown } from 'react-icons/bi'
+import LiveRoutineTicker from '@/components/home/LiveRoutineTicker'
 
 const INSTAGRAM_BANNER_ITEM = '__INSTAGRAM_BANNER__' as const
 type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM
@@ -109,11 +110,18 @@ export default function SaunaList({
 
   return (
     <>
+      {/* 사우나 이키타이 스타일 실시간 신착 사활 (필터 미적용 시 홈 상단 노출) */}
+      {!hasActiveFilter && !isLoading && <LiveRoutineTicker />}
+
       {!isLoading && (
-        <div className="flex flex-shrink-0 justify-end border-b border-border-subtle bg-bg-main px-4 py-2.5">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-border-subtle bg-bg-main px-4 py-2">
+          <p className="text-[11.5px] font-bold text-text-muted">
+            전체 사우나 <span className="text-point font-black">{filtered.length}</span>곳
+          </p>
           <button
             onClick={() => setSortOpen(true)}
-            className="flex items-center gap-1.5 rounded-md border border-border-main bg-bg-sub px-3 py-1.5 transition active:scale-95"
+            aria-label="정렬 기준 변경"
+            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-card px-3 py-1 transition active:scale-95 hover:bg-bg-sub"
           >
             <BiSortAlt2 size={13} className="text-text-sub" />
             <span className="text-[11px] font-bold text-text-sub">{currentSort.label}</span>

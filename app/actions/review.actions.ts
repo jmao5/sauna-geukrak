@@ -1,7 +1,33 @@
 'use server'
 
 import { createClient, createPublicClient } from '@/lib/supabase/server'
-import { ReviewDto, MyReviewDto, ReviewUser, Session } from '@/types/sauna'
+import { ReviewDto, MyReviewDto, RecentReviewDto, ReviewUser, Session } from '@/types/sauna'
+
+export async function getRecentReviews(limit = 8): Promise<RecentReviewDto[]> {
+  try {
+    const supabase = createPublicClient()
+    const { data, error } = await supabase
+      .from('reviews')
+      .select(`
+        id, sauna_id, rating, content, visit_date, visit_time, congestion,
+        sessions, images, created_at,
+        users!user_id (id, nickname, avatar_url),
+        saunas (id, name, address)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw new Error(error.message)
+    return (data as any[] ?? []).map((row) => ({
+      ...row,
+      users: Array.isArray(row.users) ? (row.users as ReviewUser[])[0] : row.users,
+      saunas: Array.isArray(row.saunas) ? row.saunas[0] : row.saunas,
+    })) as RecentReviewDto[]
+  } catch (error) {
+    console.error('최신 사활 피드 조회 에러:', error)
+    return []
+  }
+}
 
 export async function getReviewsBySaunaId(saunaId: string): Promise<ReviewDto[]> {
   try {
