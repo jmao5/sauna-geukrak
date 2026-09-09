@@ -13,7 +13,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { ReviewDto, Session } from '@/types/sauna'
 import { ReviewBottomSheet } from './ReviewBottomSheet'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 import { formatSessionDuration } from '@/lib/utils'
 import RoutineTimeline from '@/components/sauna/RoutineTimeline'
 
@@ -32,7 +32,7 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
   if (!portalEl) return null
 
   return createPortal(
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -46,7 +46,7 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
         <BiX size={24} />
       </button>
 
-      <motion.div
+      <m.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -59,8 +59,8 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
           alt="사활 이미지 크게보기"
           className="max-h-[80vh] w-auto max-w-full object-contain"
         />
-      </motion.div>
-    </motion.div>,
+      </m.div>
+    </m.div>,
     portalEl
   )
 }

@@ -6,7 +6,7 @@ import { BiLinkExternal, BiLogoInstagram, BiPlay, BiX } from 'react-icons/bi'
 import { useInstagramOEmbed } from '@/hooks/useInstagramOEmbed'
 import type { SaunaDto, InstagramMedia } from '@/types/sauna'
 import { createPortal } from 'react-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { m, AnimatePresence } from 'framer-motion'
 
 // ── InfoRow ───────────────────────────────────────────────────
 function InfoRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
@@ -260,7 +260,7 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
   if (!portalEl) return null
 
   return createPortal(
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -274,7 +274,7 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
         <BiX size={24} />
       </button>
 
-      <motion.div
+      <m.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
@@ -287,8 +287,8 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
           alt="모형도 크게보기"
           className="max-h-[80vh] w-auto max-w-full object-contain"
         />
-      </motion.div>
-    </motion.div>,
+      </m.div>
+    </m.div>,
     portalEl
   )
 }
