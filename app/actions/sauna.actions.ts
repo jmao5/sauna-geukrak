@@ -2,7 +2,7 @@
 
 import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { SaunaDto, SaunaSummaryDto } from '@/types/sauna'
+import { SaunaDto, SaunaSummaryDto, NearbyRestaurant } from '@/types/sauna'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
 import { z } from 'zod'
@@ -436,4 +436,55 @@ export async function updateSaunaImages(
     return { ok: false, error: error instanceof Error ? error.message : '이미지 동기화에 실패했습니다.' }
   }
 }
+
+/**
+ * 사우나 좌표 기준 반경 1km 이내 인기 로컬 음식점(사우나밥) 조회
+ */
+export async function getNearbyRestaurants(
+  lat: number,
+  lng: number,
+  radius = 1000
+): Promise<NearbyRestaurant[]> {
+  try {
+    const restApiKey = process.env.KAKAO_REST_API_KEY
+    if (!restApiKey || !lat || !lng) return []
+
+    const url = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=FD6&x=${lng}&y=${lat}&radius=${radius}&sort=distance&size=10`
+
+    const res = await fetch(url, {
+      headers: { Authorization: `KakaoAK ${restApiKey}` },
+      next: { revalidate: 3600 }, // 1시간 캐시
+    })
+
+    if (!res.ok) {
+      console.warn('[getNearbyRestaurants] 카카오 로컬 API 호출 실패:', res.status)
+      return []
+    }
+
+    const json = await res.json()
+    const docs = json.documents ?? []
+
+    return docs.map((d: any) => {
+      // "음식점 > 한식 > 육류,고기" -> "한식 > 육류,고기"
+      const catParts = (d.category_name ?? '').split('>').map((s: string) => s.trim())
+      const cleanCat = catParts.length > 1 ? catParts.slice(1).join(' · ') : catParts[0] || '음식점'
+
+      return {
+        id: d.id,
+        name: d.place_name,
+        category: cleanCat,
+        address: d.road_address_name || d.address_name || '',
+        phone: d.phone || undefined,
+        distanceMeters: parseInt(d.distance || '0', 10),
+        placeUrl: d.place_url || `https://map.kakao.com/link/map/${d.id}`,
+        lat: d.y ? parseFloat(d.y) : undefined,
+        lng: d.x ? parseFloat(d.x) : undefined,
+      }
+    })
+  } catch (err) {
+    console.warn('[getNearbyRestaurants] 오류 발생:', err)
+    return []
+  }
+}
+
 

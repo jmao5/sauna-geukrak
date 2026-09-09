@@ -18,16 +18,18 @@ import { ReviewList } from '@/components/sauna/detail/ReviewList'
 import { ReviewBottomSheet } from '@/components/sauna/detail/ReviewBottomSheet'
 import { CongestionSection } from '@/components/sauna/detail/CongestionSection'
 import InfoTab from '@/components/sauna/detail/InfoTab'
+import SaumeshiTab from '@/components/sauna/detail/SaumeshiTab'
 import { getReviewsBySaunaId, getReviewCount } from '@/app/actions/review.actions'
 import { getSaunaById, updateSaunaImages } from '@/app/actions/sauna.actions'
 import { checkFavorite, addFavorite, removeFavorite, getFavoriteCount } from '@/app/actions/favorite.actions'
 
 
 // ── 탭 타입 ──────────────────────────────────────────────────
-type Tab = 'info' | 'reviews' | 'congestion'
+type Tab = 'info' | 'reviews' | 'saumeshi' | 'congestion'
 const TABS: { id: Tab; label: string }[] = [
   { id: 'info',       label: '시설정보' },
   { id: 'reviews',    label: '사활' },
+  { id: 'saumeshi',   label: '사우나밥' },
   { id: 'congestion', label: '혼잡도' },
 ]
 
@@ -319,6 +321,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
         {/* ── 탭 콘텐츠 ── */}
         {activeTab === 'info'       && <InfoTab sauna={sauna} />}
         {activeTab === 'reviews'    && <div className="pb-24"><ReviewList saunaId={id} saunaName={sauna.name} onWrite={() => setShowReview(true)} /></div>}
+        {activeTab === 'saumeshi'   && <SaumeshiTab sauna={sauna} />}
         {activeTab === 'congestion' && <CongestionSection saunaId={id} />}
       </div>
 

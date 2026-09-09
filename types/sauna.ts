@@ -148,3 +148,17 @@ export interface SaunaSummaryDto {
   review_count?: number
   is_featured?: boolean
 }
+
+export interface NearbyRestaurant {
+  id: string
+  name: string
+  category: string
+  address: string
+  phone?: string
+  distanceMeters: number
+  placeUrl: string
+  lat?: number
+  lng?: number
+}
+
+
