@@ -14,6 +14,7 @@ import toast from 'react-hot-toast'
 import type { ReviewDto, Session } from '@/types/sauna'
 import { ReviewBottomSheet } from './ReviewBottomSheet'
 import { motion, AnimatePresence } from 'framer-motion'
+import { formatSessionDuration } from '@/lib/utils'
 
 // ── ImagePreviewModal ───────────────────────────────────────────
 function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void }) {
@@ -101,9 +102,9 @@ function RenderSessions({ sessions }: { sessions?: Session[] }) {
       <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-sub/50 px-3 py-2 text-[11px] font-bold text-text-sub">
         <span className="text-point font-black text-[9px] uppercase tracking-wider bg-point/10 px-1.5 py-0.5 rounded">ROUTINE</span>
         <div className="flex items-center gap-1">
-          {sauna && <span>🧖 {sauna.duration_minutes}분</span>}
-          {cold && <span>➡️ ❄️ {cold.duration_minutes}분</span>}
-          {rest && <span>➡️ 🍃 {rest.duration_minutes}분</span>}
+          {sauna && <span>🧖 {formatSessionDuration(sauna.duration_minutes)}</span>}
+          {cold && <span>➡️ ❄️ {formatSessionDuration(cold.duration_minutes)}</span>}
+          {rest && <span>➡️ 🍃 {formatSessionDuration(rest.duration_minutes)}</span>}
         </div>
         <span className="ml-auto text-[10px] font-black text-point">
           {setLength}세트
@@ -119,7 +120,7 @@ function RenderSessions({ sessions }: { sessions?: Session[] }) {
     <div className="mt-2.5 flex flex-wrap gap-1.5">
       {sessions.map((s, idx) => (
         <span key={idx} className="rounded-lg border border-border-main bg-bg-sub px-2.5 py-1 text-[10px] font-bold text-text-sub">
-          {emojiMap[s.type as keyof typeof emojiMap] || '🧖'} {labelMap[s.type as keyof typeof labelMap] || '사우나'} {s.duration_minutes}분
+          {emojiMap[s.type as keyof typeof emojiMap] || '🧖'} {labelMap[s.type as keyof typeof labelMap] || '사우나'} {formatSessionDuration(s.duration_minutes)}
         </span>
       ))}
     </div>

@@ -10,6 +10,15 @@ import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import type { SaunaDto, Session, ReviewDto } from '@/types/sauna'
+import { formatSessionDuration } from '@/lib/utils'
+
+const COLD_PRESETS = [
+  { label: '30초', value: 0.5 },
+  { label: '45초', value: 0.75 },
+  { label: '1분', value: 1 },
+  { label: '1분 30초', value: 1.5 },
+  { label: '2분', value: 2 },
+] as const
 
 const VISIT_TIMES = [
   { id: 'morning',   label: '아침', emoji: '🌅' },
@@ -196,6 +205,21 @@ export function ReviewBottomSheet({
   const [setsCount,   setSetsCount]   = useState(initData.sets)
 
   const [portalEl,    setPortalEl]    = useState<Element | null>(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  const isDirty =
+    rating !== (initialReview?.rating ?? 0) ||
+    content.trim() !== (initialReview?.content ?? '') ||
+    imgUpload.images.length > (initialReview?.images?.length ?? 0) ||
+    useRoutine !== hasInitialSessions
+
+  const handleRequestClose = () => {
+    if (isDirty) {
+      setShowExitConfirm(true)
+    } else {
+      onClose()
+    }
+  }
 
   const imgUpload = useReviewImageUpload(initialReview?.images ?? [])
 
@@ -284,10 +308,10 @@ export function ReviewBottomSheet({
   return createPortal(
     <div
       className="absolute inset-0 z-[200] flex items-end bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={handleRequestClose}
     >
       <div
-        className="w-full max-h-[90%] overflow-y-auto rounded-t-2xl bg-bg-card border-t border-border-main shadow-[0_-8px_32px_rgba(0,0,0,0.12)]"
+        className="w-full max-h-[90%] overflow-y-auto rounded-t-2xl bg-bg-card border-t border-border-main shadow-[0_-8px_32px_rgba(0,0,0,0.12)] relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 핸들 */}
@@ -301,7 +325,7 @@ export function ReviewBottomSheet({
             <p className="text-[10px] font-black tracking-widest text-text-muted uppercase">Review</p>
             <p className="text-[14px] font-black text-text-main">{sauna.name} 사활 {isEditMode ? '수정' : '기록'}</p>
           </div>
-          <button onClick={onClose}
+          <button onClick={handleRequestClose}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-bg-main text-text-sub transition active:scale-90">
             <BiX size={18} />
           </button>
@@ -451,24 +475,46 @@ export function ReviewBottomSheet({
                 </div>
 
                 {/* 냉탕 시간 */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-text-sub">❄️ 냉탕 시간</span>
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setColdTime(Math.max(1, coldTime - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
-                    >
-                      -
-                    </button>
-                    <span className="w-12 text-center text-[12px] font-black text-text-main">{coldTime}분</span>
-                    <button
-                      type="button"
-                      onClick={() => setColdTime(coldTime + 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
-                    >
-                      +
-                    </button>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-text-sub">❄️ 냉탕 시간</span>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => setColdTime(Math.max(0.5, Math.round((coldTime - (coldTime <= 1 ? 0.25 : 0.5)) * 100) / 100))}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                      >
+                        -
+                      </button>
+                      <span className="w-16 text-center text-[12px] font-black text-cold tabular-nums">
+                        {formatSessionDuration(coldTime)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setColdTime(Math.round((coldTime + (coldTime < 1 ? 0.25 : 0.5)) * 100) / 100)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-border-main bg-bg-card text-[12px] font-black text-text-sub transition active:scale-90"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 냉탕 퀵 프리셋 */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+                    {COLD_PRESETS.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => setColdTime(preset.value)}
+                        className={`rounded-lg px-2.5 py-1 text-[10px] font-black transition active:scale-95 ${
+                          coldTime === preset.value
+                            ? 'bg-cold text-white shadow-sm'
+                            : 'border border-border-subtle bg-bg-card text-text-muted hover:bg-bg-sub'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -515,6 +561,50 @@ export function ReviewBottomSheet({
                     </button>
                   </div>
                 </div>
+
+                {/* ── 루틴 타임라인 시각화 ── */}
+                <div className="mt-3.5 rounded-xl border border-border-subtle bg-bg-card p-3 shadow-inner">
+                  <div className="flex items-center justify-between text-[11px] mb-2">
+                    <span className="font-black text-text-sub">1세트 루틴 프리뷰</span>
+                    <span className="font-black text-point">
+                      총 {Math.round((saunaTime + coldTime + restTime) * setsCount)}분 소요 ({setsCount}세트)
+                    </span>
+                  </div>
+
+                  {/* 세그먼트 프로그레스 바 */}
+                  <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-bg-main">
+                    <div
+                      className="bg-sauna transition-all duration-300"
+                      style={{ width: `${(saunaTime / (saunaTime + coldTime + restTime)) * 100}%` }}
+                    />
+                    <div
+                      className="bg-cold transition-all duration-300"
+                      style={{ width: `${(coldTime / (saunaTime + coldTime + restTime)) * 100}%` }}
+                    />
+                    <div
+                      className="bg-emerald-500 transition-all duration-300"
+                      style={{ width: `${(restTime / (saunaTime + coldTime + restTime)) * 100}%` }}
+                    />
+                  </div>
+
+                  {/* 세트 흐름 태그 */}
+                  <div className="mt-2.5 flex items-center justify-between text-[10px] font-bold text-text-sub">
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-sauna" />
+                      <span>사우나 {saunaTime}분</span>
+                    </div>
+                    <span className="text-text-muted">➔</span>
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-cold" />
+                      <span>냉탕 {formatSessionDuration(coldTime)}</span>
+                    </div>
+                    <span className="text-text-muted">➔</span>
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      <span>휴식 {restTime}분</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -547,6 +637,38 @@ export function ReviewBottomSheet({
 
           <div className="h-2" />
         </div>
+
+        {/* ── 작성 취소 확인 모달 ── */}
+        {showExitConfirm && (
+          <div
+            className="absolute inset-0 z-30 flex items-center justify-center bg-black/60 p-6 backdrop-blur-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-full max-w-xs rounded-2xl bg-bg-card p-5 border border-border-main text-center shadow-2xl">
+              <span className="text-3xl mb-2 inline-block">⚠️</span>
+              <p className="text-[15px] font-black text-text-main">작성을 취소할까요?</p>
+              <p className="mt-1.5 text-[12px] text-text-sub leading-relaxed">
+                지금 나가면 작성 중인 사활 기록이 저장되지 않습니다.
+              </p>
+              <div className="mt-5 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowExitConfirm(false)}
+                  className="flex-1 rounded-xl bg-bg-sub py-2.5 text-[12px] font-bold text-text-main transition active:scale-95"
+                >
+                  계속 작성
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 rounded-xl bg-red-500 py-2.5 text-[12px] font-bold text-white transition active:scale-95"
+                >
+                  나가기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     portalEl

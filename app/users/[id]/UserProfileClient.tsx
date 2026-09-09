@@ -9,6 +9,7 @@ import { toggleFollow, getFollowStatus, UserProfileDto } from '@/app/actions/fol
 import { useUserStore } from '@/stores/userStore'
 import type { MyReviewDto } from '@/types/sauna'
 import toast from 'react-hot-toast'
+import { formatSessionDuration } from '@/lib/utils'
 
 /* ── 팔로우 버튼 ─────────────────────────────────────────── */
 function FollowButton({ targetId, initialFollowing, initialCount }: {
@@ -139,7 +140,7 @@ function ReviewMiniCard({ review }: { review: MyReviewDto }) {
               }`}>
                 {s.type === 'sauna' ? '♨' : s.type === 'cold' ? '❄' : '🌿'}
                 {s.temp ? ` ${s.temp}°` : ''}
-                {s.duration_minutes ? ` ${s.duration_minutes}분` : ''}
+                {s.duration_minutes ? ` ${formatSessionDuration(s.duration_minutes)}` : ''}
               </span>
             ))}
           </div>
