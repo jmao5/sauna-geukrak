@@ -8,6 +8,7 @@ import { getRecentReviews } from '@/app/actions/review.actions'
 import { RecentReviewDto, Session } from '@/types/sauna'
 import { formatSessionDuration } from '@/lib/utils'
 import { BiChevronLeft, BiChevronRight } from 'react-icons/bi'
+import RoutineTimeline from '@/components/sauna/RoutineTimeline'
 
 // 세션 루틴 요약 텍스트 추출 (예: "🔥 10분 · ❄️ 1분 · 🍃 10분 (3세트)")
 function summarizeRoutine(sessions: Session[]) {
@@ -192,11 +193,15 @@ export default function LiveRoutineTicker() {
                 </p>
 
                 {/* 루틴 바 요약 */}
-                {routine && (
+                {review.sessions && review.sessions.length > 0 ? (
+                  <div className="mt-1.5 pointer-events-none overflow-hidden">
+                    <RoutineTimeline sessions={review.sessions} variant="compact" />
+                  </div>
+                ) : routine ? (
                   <div className="mt-1 rounded bg-point/10 px-1.5 py-0.5 text-[9.5px] font-black text-point truncate pointer-events-none">
                     {routine}
                   </div>
-                )}
+                ) : null}
 
                 {/* 한줄 평 */}
                 {review.content && (

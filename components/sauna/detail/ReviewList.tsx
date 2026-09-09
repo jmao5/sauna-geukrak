@@ -15,6 +15,7 @@ import type { ReviewDto, Session } from '@/types/sauna'
 import { ReviewBottomSheet } from './ReviewBottomSheet'
 import { motion, AnimatePresence } from 'framer-motion'
 import { formatSessionDuration } from '@/lib/utils'
+import RoutineTimeline from '@/components/sauna/RoutineTimeline'
 
 // ── ImagePreviewModal ───────────────────────────────────────────
 function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void }) {
@@ -61,69 +62,6 @@ function ImagePreviewModal({ src, onClose }: { src: string; onClose: () => void 
       </motion.div>
     </motion.div>,
     portalEl
-  )
-}
-
-function RenderSessions({ sessions }: { sessions?: Session[] }) {
-  if (!sessions || sessions.length === 0) return null
-
-  const pattern: string[] = []
-  let isPatternMatched = true
-
-  for (let i = 0; i < sessions.length; i++) {
-    const s = sessions[i]
-    if (i > 0 && s.type === sessions[0].type) {
-      break
-    }
-    pattern.push(s.type)
-  }
-
-  const patternLength = pattern.length
-  const setLength = sessions.length / patternLength
-
-  if (patternLength > 0 && sessions.length % patternLength === 0 && setLength >= 1) {
-    for (let i = 0; i < sessions.length; i++) {
-      if (sessions[i].type !== pattern[i % patternLength]) {
-        isPatternMatched = false
-        break
-      }
-    }
-  } else {
-    isPatternMatched = false
-  }
-
-  if (isPatternMatched && setLength > 0) {
-    const firstSet = sessions.slice(0, patternLength)
-    const sauna = firstSet.find((s) => s.type === 'sauna')
-    const cold = firstSet.find((s) => s.type === 'cold')
-    const rest = firstSet.find((s) => s.type === 'rest')
-
-    return (
-      <div className="mt-2.5 flex items-center gap-1.5 rounded-xl border border-border-subtle bg-bg-sub/50 px-3 py-2 text-[11px] font-bold text-text-sub">
-        <span className="text-point font-black text-[9px] uppercase tracking-wider bg-point/10 px-1.5 py-0.5 rounded">ROUTINE</span>
-        <div className="flex items-center gap-1">
-          {sauna && <span>🧖 {formatSessionDuration(sauna.duration_minutes)}</span>}
-          {cold && <span>➡️ ❄️ {formatSessionDuration(cold.duration_minutes)}</span>}
-          {rest && <span>➡️ 🍃 {formatSessionDuration(rest.duration_minutes)}</span>}
-        </div>
-        <span className="ml-auto text-[10px] font-black text-point">
-          {setLength}세트
-        </span>
-      </div>
-    )
-  }
-
-  const emojiMap = { sauna: '🧖', cold: '❄️', rest: '🍃' }
-  const labelMap = { sauna: '사우나', cold: '냉탕', rest: '휴식' }
-
-  return (
-    <div className="mt-2.5 flex flex-wrap gap-1.5">
-      {sessions.map((s, idx) => (
-        <span key={idx} className="rounded-lg border border-border-main bg-bg-sub px-2.5 py-1 text-[10px] font-bold text-text-sub">
-          {emojiMap[s.type as keyof typeof emojiMap] || '🧖'} {labelMap[s.type as keyof typeof labelMap] || '사우나'} {formatSessionDuration(s.duration_minutes)}
-        </span>
-      ))}
-    </div>
   )
 }
 
@@ -425,55 +363,72 @@ function ReviewCard({ review, saunaId, saunaName, likeStatus }: {
   return (
     <>
       <div className="border-b border-border-subtle px-4 py-4 transition hover:bg-bg-sub">
-        <div className="flex items-center gap-2.5">
-          <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
+        <div className="flex items-start gap-2.5">
+          <div className="h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub mt-0.5">
             {avatar
               ? <img src={avatar} alt={displayName} className="h-full w-full object-cover" />
               : <div className="flex h-full w-full items-center justify-center"><BiUser size={16} className="text-text-muted" /></div>
             }
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-baseline gap-2">
-              <span className="text-[13px] font-black text-text-main">{displayName}</span>
-              {dateStr && <span className="text-[10px] text-text-muted">{dateStr}</span>}
-            </div>
-            {review.rating > 0 && (
-              <div className="mt-0.5 flex items-center gap-0.5">
-                {[1, 2, 3, 4, 5].map((n) => {
-                  const isFull = review.rating >= n
-                  const isHalf = review.rating === n - 0.5
-                  return (
-                    <span key={n} className="text-gold">
-                      {isFull ? (
-                        <BiSolidStar size={13} className="inline drop-shadow-sm" />
-                      ) : isHalf ? (
-                        <BiSolidStarHalf size={13} className="inline drop-shadow-sm" />
-                      ) : (
-                        <BiStar size={13} className="text-border-strong inline" />
-                      )}
-                    </span>
-                  )
-                })}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[13px] font-black text-text-main">{displayName}</span>
+                {dateStr && <span className="text-[10px] text-text-muted">{dateStr}</span>}
+              </div>
+
+              {/* 방문 시간대 & 혼잡도 뱃지 */}
+              <div className="flex items-center gap-1 flex-shrink-0">
                 {review.visit_time && (
-                  <span className="ml-2 text-[10px] text-text-muted">
+                  <span className="rounded-full bg-bg-sub border border-border-subtle px-2 py-0.5 text-[10px] font-bold text-text-sub">
                     {VISIT_TIME_LABELS[review.visit_time] ?? review.visit_time}
                   </span>
                 )}
+                {review.congestion && (
+                  <span className="rounded-full bg-bg-sub border border-border-subtle px-2 py-0.5 text-[10px] font-bold text-text-muted">
+                    👥 {review.congestion}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {review.rating > 0 && (
+              <div className="mt-1 flex items-center gap-1">
+                <div className="flex items-center gap-0.5">
+                  {[1, 2, 3, 4, 5].map((n) => {
+                    const isFull = review.rating >= n
+                    const isHalf = review.rating === n - 0.5
+                    return (
+                      <span key={n} className="text-gold">
+                        {isFull ? (
+                          <BiSolidStar size={13} className="inline drop-shadow-sm" />
+                        ) : isHalf ? (
+                          <BiSolidStarHalf size={13} className="inline drop-shadow-sm" />
+                        ) : (
+                          <BiStar size={13} className="text-border-strong inline" />
+                        )}
+                      </span>
+                    )
+                  })}
+                </div>
+                <span className="text-[11px] font-black text-text-sub tabular-nums">
+                  {review.rating.toFixed(1)}
+                </span>
               </div>
             )}
           </div>
           {isMe && (
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1.5 flex-shrink-0 self-start">
               <button
                 onClick={() => setShowEditSheet(true)}
-                className="text-[11px] font-bold text-text-sub hover:text-point px-2 py-1 rounded-md border border-border-main bg-bg-sub transition active:scale-95"
+                className="text-[11px] font-bold text-text-sub hover:text-point px-2 py-0.5 rounded-md border border-border-main bg-bg-sub transition active:scale-95"
               >
                 수정
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteMutation.isPending}
-                className="text-[11px] font-bold text-danger hover:bg-danger/5 px-2 py-1 rounded-md border border-danger/20 bg-bg-sub transition active:scale-95 disabled:opacity-40"
+                className="text-[11px] font-bold text-danger hover:bg-danger/5 px-2 py-0.5 rounded-md border border-danger/20 bg-bg-sub transition active:scale-95 disabled:opacity-40"
               >
                 삭제
               </button>
@@ -481,7 +436,8 @@ function ReviewCard({ review, saunaId, saunaName, likeStatus }: {
           )}
         </div>
 
-        <RenderSessions sessions={review.sessions} />
+        {/* 사우나 이키타이 스타일 루틴 타임라인 */}
+        <RoutineTimeline sessions={review.sessions} />
 
         {content && (
           <div className="mt-2.5">
