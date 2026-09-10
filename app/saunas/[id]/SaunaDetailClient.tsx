@@ -34,11 +34,21 @@ const TABS: { id: Tab; label: string }[] = [
 ]
 
 // ── 메인 ─────────────────────────────────────────────────────
-export function SaunaDetailClient({ id }: { id: string }) {
+export function SaunaDetailClient({
+  id,
+  initialIsFav = false,
+  initialUserId = null,
+}: {
+  id: string
+  initialIsFav?: boolean
+  initialUserId?: string | null
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryClient = useQueryClient()
   const { user } = useUserStore()
+
+  const effectiveUserId = user?.id ?? initialUserId ?? null
 
   const fromEdit = searchParams.get('from') === 'edit'
   const handleBack = () => {
@@ -90,10 +100,12 @@ export function SaunaDetailClient({ id }: { id: string }) {
     }
   }
 
-  const { data: isFav = false } = useQuery({
-    queryKey: ['favorite', id, user?.id],
-    queryFn: () => (user ? checkFavorite(user.id, id) : Promise.resolve(false)),
-    enabled: !!user && !!id,
+  const { data: isFav = initialIsFav } = useQuery({
+    queryKey: ['favorite', id, effectiveUserId],
+    queryFn: () => (effectiveUserId ? checkFavorite(effectiveUserId, id) : Promise.resolve(false)),
+    enabled: !!effectiveUserId && !!id,
+    initialData: effectiveUserId ? initialIsFav : false,
+    staleTime: 1000 * 60 * 5,
   })
 
   // 찜 수 — 실제 DB 카운트
@@ -114,14 +126,15 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
   const favMutation = useMutation({
     mutationFn: async () => {
-      if (!user) throw new Error('not_logged_in')
+      const uid = user?.id ?? initialUserId
+      if (!uid) throw new Error('not_logged_in')
       if (isFav) { await removeFavorite(id); return 'removed' as const }
       else        { await addFavorite(id);    return 'added'   as const }
     },
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['favorite', id, user?.id] })
-      const prev = queryClient.getQueryData(['favorite', id, user?.id])
-      queryClient.setQueryData(['favorite', id, user?.id], !isFav)
+      await queryClient.cancelQueries({ queryKey: ['favorite', id, effectiveUserId] })
+      const prev = queryClient.getQueryData(['favorite', id, effectiveUserId])
+      queryClient.setQueryData(['favorite', id, effectiveUserId], !isFav)
       // 찜 수 optimistic update
       queryClient.setQueryData(['favorite-count', id], (old: number) =>
         isFav ? Math.max(0, old - 1) : old + 1
@@ -133,18 +146,18 @@ export function SaunaDetailClient({ id }: { id: string }) {
       if (status === 'added')   toast.success('찜 목록에 추가했어요 ❤️')
     },
     onError: (error: Error, _, ctx) => {
-      if (ctx?.prev !== undefined) queryClient.setQueryData(['favorite', id, user?.id], ctx.prev)
+      if (ctx?.prev !== undefined) queryClient.setQueryData(['favorite', id, effectiveUserId], ctx.prev)
       queryClient.invalidateQueries({ queryKey: ['favorite-count', id] })
       if (error.message !== 'not_logged_in') toast.error('잠시 후 다시 시도해주세요')
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorite', id, user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['favorite', id, effectiveUserId] })
       queryClient.invalidateQueries({ queryKey: ['favorite-count', id] })
     },
   })
 
   const toggleFav = () => {
-    if (!user) { router.push('/login'); return }
+    if (!user && !initialUserId) { router.push('/login'); return }
     if (favMutation.isPending) return
     favMutation.mutate()
   }

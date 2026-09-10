@@ -4,7 +4,8 @@ import { SaunaDetailClient } from './SaunaDetailClient'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getSaunaById, getReviewsBySaunaId } from '@/app/actions/sauna.actions'
-import { getFavoriteCount } from '@/app/actions/favorite.actions'
+import { createClient } from '@/lib/supabase/server'
+import { getFavoriteCount, checkFavorite } from '@/app/actions/favorite.actions'
 import { getReviewCount } from '@/app/actions/review.actions'
 
 type Props = { params: Promise<{ id: string }> }
@@ -43,9 +44,18 @@ export default async function SaunaDetailPage({ params }: Props) {
   const { id } = await params
   const queryClient = getQueryClient()
 
+  // 현재 로그인 유저 확인
+  let currentUserId: string | null = null
+  let initialIsFav = false
   try {
-    // 사우나 상세 정보, 리뷰 목록, 찜 수, 사활 수를 병렬(Promise.all)로 프리페치하여 첫 화면 깜빡임(0 -> N) 방지
-    await Promise.all([
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    currentUserId = session?.user?.id ?? null
+  } catch {}
+
+  try {
+    // 사우나 상세 정보, 리뷰 목록, 찜 수, 사활 수, 그리고 로그인 유저의 찜 여부까지 병렬(Promise.all)로 프리페치
+    const prefetchPromises: Promise<any>[] = [
       queryClient.fetchQuery({
         queryKey: ['sauna', id],
         queryFn: () => getSaunaById(id),
@@ -66,7 +76,24 @@ export default async function SaunaDetailPage({ params }: Props) {
         queryFn: () => getReviewCount(id),
         staleTime: 1000 * 60 * 5,
       }),
-    ])
+    ]
+
+    if (currentUserId) {
+      prefetchPromises.push(
+        queryClient
+          .fetchQuery({
+            queryKey: ['favorite', id, currentUserId],
+            queryFn: () => checkFavorite(currentUserId!, id),
+            staleTime: 1000 * 60 * 5,
+          })
+          .then((res) => {
+            initialIsFav = !!res
+          })
+          .catch(() => {})
+      )
+    }
+
+    await Promise.all(prefetchPromises)
   } catch {
     notFound()
   }
@@ -76,7 +103,7 @@ export default async function SaunaDetailPage({ params }: Props) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <SaunaDetailClient id={id} />
+      <SaunaDetailClient id={id} initialIsFav={initialIsFav} initialUserId={currentUserId} />
     </HydrationBoundary>
   )
 }
