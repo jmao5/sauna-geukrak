@@ -108,18 +108,24 @@ export default function MyPageClient() {
   if (!isLoading && !user) {
     return (
       <div className="flex h-full flex-col bg-bg-main overflow-y-auto scrollbar-hide space-y-4 pb-24">
-        {/* 비로그인 상단 헤더 */}
-        <div className="bg-bg-sub px-6 pb-6 pt-8 text-center border-b border-border-subtle flex-shrink-0">
-          <div className="mx-auto mb-2.5 flex h-14 w-14 items-center justify-center rounded-full bg-bg-main border border-border-main text-2xl shadow-sm">
+        {/* 비로그인 상단 헤더 (명확한 로그인 / 회원가입 메인 CTA) */}
+        <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle flex-shrink-0">
+          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-bg-main border border-border-main text-3xl shadow-sm">
             🧖
           </div>
-          <h1 className="mb-1 text-[17px] font-black text-text-main">사우나 여권을 발급받으세요</h1>
-          <p className="text-[12px] text-text-sub">
-            로그인하면 방문 기록, 지역 스탬프, 사우너 뱃지가 저장됩니다.
+          <h1 className="mb-1 text-[18px] font-black text-text-main">로그인이 필요해요</h1>
+          <p className="text-[12px] text-text-sub mb-4">
+            로그인하고 나만의 사우나 여권과 사활을 기록해보세요
           </p>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-point px-8 py-3 text-[13px] font-black text-white shadow-md shadow-point/20 transition active:scale-[0.97] hover:bg-point-hover"
+          >
+            로그인 / 회원가입
+          </Link>
         </div>
 
-        {/* 미발급 사우나 여권 커버 */}
+        {/* 미발급 사우나 여권 안내 카드 */}
         <UnissuedSaunaPassport />
 
         {/* 여권 발급 혜택 안내 */}
@@ -160,8 +166,47 @@ export default function MyPageClient() {
               </div>
             </div>
           </div>
+        </div>
 
-          <InstagramFollowBlock />
+        {/* 마이페이지 기본 메뉴 목록 (비로그인 시에도 마이페이지의 구조를 자연스럽게 유지) */}
+        <div className="px-4 space-y-2 pt-1">
+          <p className="px-1 text-[11px] font-black uppercase tracking-wider text-text-muted">
+            사우나 메뉴
+          </p>
+
+          {MENU_ITEMS.map((item) => (
+            <button
+              key={item.href}
+              onClick={() => {
+                if (item.comingSoon) {
+                  toast('준비 중인 기능이에요 🔧', { icon: '🚧' })
+                  return
+                }
+                router.push('/login')
+              }}
+              className="group flex w-full items-center gap-3.5 rounded-2xl border border-border-main bg-bg-card p-3.5 shadow-sm transition active:scale-[0.98] hover:border-point/40"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-sub text-text-sub">
+                <item.icon size={20} />
+              </div>
+              <div className="flex-1 text-left min-w-0">
+                <p className="text-[13px] font-black text-text-main">{item.label}</p>
+                <p className="text-[11px] font-medium text-text-muted truncate">{item.desc}</p>
+              </div>
+              {item.comingSoon ? (
+                <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">
+                  준비중
+                </span>
+              ) : (
+                <BiChevronRight size={18} className="text-text-muted/60" />
+              )}
+            </button>
+          ))}
+
+          {/* 인스타그램 팔로우 블록 */}
+          <div className="pt-1">
+            <InstagramFollowBlock />
+          </div>
         </div>
       </div>
     )
