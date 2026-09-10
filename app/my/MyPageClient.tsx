@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
 import { getFavoritesByUserId } from '@/app/actions/favorite.actions'
 import { getReviewsByUserId } from '@/app/actions/review.actions'
+import { getNickname } from '@/app/actions/user.actions'
 import toast from 'react-hot-toast'
 import { computePassportStats } from '@/components/my/utils/passportStats'
 import SaunaPassport, { UnissuedSaunaPassport } from '@/components/my/SaunaPassport'
@@ -75,7 +76,20 @@ export default function MyPageClient() {
   const router = useRouter()
   const { user, isLoading, clearSession } = useUserStore()
 
-  const displayName = user?.user_metadata?.full_name ?? user?.email?.split('@')[0] ?? '사우나 매니아'
+  const { data: dbNickname } = useQuery({
+    queryKey: ['user-nickname', user?.id],
+    queryFn: () => getNickname(user!.id),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 3,
+  })
+
+  const displayName =
+    dbNickname ||
+    user?.user_metadata?.nickname ||
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split('@')[0] ||
+    '사우나 매니아'
   const avatarUrl = user?.user_metadata?.avatar_url ?? null
   const email = user?.email ?? null
 

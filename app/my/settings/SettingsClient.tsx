@@ -3,6 +3,7 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { BiChevronLeft, BiCheck, BiSun, BiMoon, BiPencil } from 'react-icons/bi'
+import { useQueryClient } from '@tanstack/react-query'
 import { useUserStore } from '@/stores/userStore'
 import { useUiStore } from '@/stores/uiStore'
 import { getNickname, updateNickname } from '@/app/actions/user.actions'
@@ -13,6 +14,7 @@ import toast from 'react-hot-toast'
 ────────────────────────────────────────────────── */
 function NicknameSection() {
   const { user } = useUserStore()
+  const queryClient = useQueryClient()
   const [current, setCurrent] = useState<string>('')
   const [value, setValue] = useState('')
   const [editing, setEditing] = useState(false)
@@ -20,7 +22,7 @@ function NicknameSection() {
 
   useEffect(() => {
     if (!user) return
-    getNickname().then((n) => {
+    getNickname(user.id).then((n) => {
       const name = n ?? user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? '사우나매니아'
       setCurrent(name)
       setValue(name)
@@ -33,6 +35,7 @@ function NicknameSection() {
       if (result.ok) {
         setCurrent(value)
         setEditing(false)
+        queryClient.invalidateQueries({ queryKey: ['user-nickname'] })
         toast.success('닉네임이 변경되었어요 ✅')
       } else {
         toast.error(result.error ?? '변경에 실패했습니다')

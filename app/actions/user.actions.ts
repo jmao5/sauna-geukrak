@@ -3,15 +3,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function getNickname(): Promise<string | null> {
+export async function getNickname(userId?: string): Promise<string | null> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return null
+    let uid = userId
+    if (!uid) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return null
+      uid = session.user.id
+    }
     const { data } = await supabase
       .from('users')
       .select('nickname')
-      .eq('id', session.user.id)
+      .eq('id', uid)
       .single()
     return data?.nickname ?? null
   } catch {
@@ -47,6 +51,19 @@ export async function updateNickname(nickname: string): Promise<{ ok: boolean; e
       .update({ nickname: trimmed })
       .eq('id', session.user.id)
     if (error) return { ok: false, error: error.message }
+
+    // Supabase Auth 유저 메타데이터 동기화 (전역 세션 일관성 유지)
+    try {
+      await supabase.auth.updateUser({
+        data: {
+          nickname: trimmed,
+          full_name: trimmed,
+          name: trimmed,
+        },
+      })
+    } catch {
+      // Auth 메타데이터 갱신 실패해도 DB 변경은 완료되었으므로 안전하게 유지
+    }
 
     revalidatePath('/my')
     return { ok: true }
