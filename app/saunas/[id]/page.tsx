@@ -4,6 +4,8 @@ import { SaunaDetailClient } from './SaunaDetailClient'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getSaunaById, getReviewsBySaunaId } from '@/app/actions/sauna.actions'
+import { getFavoriteCount } from '@/app/actions/favorite.actions'
+import { getReviewCount } from '@/app/actions/review.actions'
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -42,7 +44,7 @@ export default async function SaunaDetailPage({ params }: Props) {
   const queryClient = getQueryClient()
 
   try {
-    // 사우나 상세 정보와 리뷰 목록을 병렬(Promise.all)로 프리페치하여 네트워크 워터폴 해결
+    // 사우나 상세 정보, 리뷰 목록, 찜 수, 사활 수를 병렬(Promise.all)로 프리페치하여 첫 화면 깜빡임(0 -> N) 방지
     await Promise.all([
       queryClient.fetchQuery({
         queryKey: ['sauna', id],
@@ -53,7 +55,17 @@ export default async function SaunaDetailPage({ params }: Props) {
         queryKey: ['reviews', id],
         queryFn: () => getReviewsBySaunaId(id),
         staleTime: 1000 * 60 * 2,
-      })
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['favorite-count', id],
+        queryFn: () => getFavoriteCount(id),
+        staleTime: 1000 * 60 * 5,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: ['review-count', id],
+        queryFn: () => getReviewCount(id),
+        staleTime: 1000 * 60 * 5,
+      }),
     ])
   } catch {
     notFound()
