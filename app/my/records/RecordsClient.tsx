@@ -101,7 +101,7 @@ export default function RecordsClient() {
               return (
                 <Link
                   key={record.id}
-                  href={sauna ? `/saunas/${sauna.id}` : '#'}
+                  href={sauna ? `/saunas/${sauna.id}?tab=reviews` : '#'}
                   className="flex items-start gap-3 rounded-2xl border border-border-subtle bg-bg-card p-3.5 transition active:scale-[0.98] active:bg-bg-main"
                 >
                   {/* 썸네일 */}

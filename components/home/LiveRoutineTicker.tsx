@@ -156,7 +156,7 @@ export default function LiveRoutineTicker() {
           return (
             <Link
               key={review.id}
-              href={`/saunas/${review.sauna_id}`}
+              href={`/saunas/${review.sauna_id}?tab=reviews`}
               onClick={(e) => {
                 if (hasDragged) {
                   e.preventDefault()

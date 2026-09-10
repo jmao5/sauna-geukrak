@@ -70,7 +70,7 @@ function ReviewMiniCard({ review }: { review: MyReviewDto }) {
 
   return (
     <Link
-      href={`/saunas/${sauna.id}`}
+      href={`/saunas/${sauna.id}?tab=reviews`}
       className="flex gap-3 px-4 py-3.5 border-b border-border-subtle transition active:bg-bg-sub last:border-0"
     >
       {/* 썸네일 */}

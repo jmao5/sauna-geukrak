@@ -49,7 +49,35 @@ export function SaunaDetailClient({ id }: { id: string }) {
     }
   }
   const [showReview, setShowReview] = useState(false)
-  const [activeTab, setActiveTab] = useState<Tab>('info')
+
+  const tabParam = searchParams.get('tab')
+  const isValidTab = (val: string | null): val is Tab =>
+    val === 'info' || val === 'reviews' || val === 'saumeshi' || val === 'congestion'
+
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (isValidTab(tabParam)) return tabParam
+    return 'info'
+  })
+
+  useEffect(() => {
+    if (isValidTab(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  const handleTabChange = (tabId: Tab) => {
+    setActiveTab(tabId)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      if (tabId === 'info') {
+        url.searchParams.delete('tab')
+      } else {
+        url.searchParams.set('tab', tabId)
+      }
+      window.history.replaceState({}, '', url.toString())
+    }
+  }
+
   const [activeImgIndex, setActiveImgIndex] = useState(0)
   const imageScrollRef = useRef<HTMLDivElement>(null)
 
@@ -270,7 +298,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
 
             <button
               type="button"
-              onClick={() => setActiveTab('reviews')}
+              onClick={() => handleTabChange('reviews')}
               className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-sub px-3 py-1.5 text-[12px] font-black text-text-main transition active:scale-95 hover:border-point/40"
             >
               <span className="text-[12px]">🧖</span>
@@ -296,7 +324,7 @@ export function SaunaDetailClient({ id }: { id: string }) {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`relative flex-1 py-3.5 text-[13.5px] font-black transition ${
                   isActive ? 'text-text-main' : 'text-text-muted hover:text-text-sub'
                 }`}
