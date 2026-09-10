@@ -1,15 +1,28 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { BiBookmark, BiHistory, BiCog, BiBell, BiHelpCircle, BiLogOut, BiPlus, BiChevronRight } from 'react-icons/bi'
+import {
+  BiBookmark,
+  BiHistory,
+  BiCog,
+  BiBell,
+  BiHelpCircle,
+  BiLogOut,
+  BiPlus,
+  BiChevronRight,
+} from 'react-icons/bi'
 import { useUserStore } from '@/stores/userStore'
 import { createClient } from '@/lib/supabase/client'
 import { useQuery } from '@tanstack/react-query'
 import { getFavoritesByUserId } from '@/app/actions/favorite.actions'
 import { getReviewsByUserId } from '@/app/actions/review.actions'
 import toast from 'react-hot-toast'
+import { computePassportStats } from '@/components/my/utils/passportStats'
+import SaunaPassport, { UnissuedSaunaPassport } from '@/components/my/SaunaPassport'
+import PassportStatsBoard from '@/components/my/PassportStatsBoard'
+import PassportStamps from '@/components/my/PassportStamps'
+import SaunaBadgeCollection from '@/components/my/SaunaBadgeCollection'
 
 const MENU_ITEMS = [
   { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites', comingSoon: false },
@@ -31,7 +44,6 @@ function InstagramFollowBlock() {
         border: '1px solid #f0c0a0',
       }}
     >
-      {/* 인스타 그라데이션 아이콘 */}
       <div
         className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl"
         style={{
@@ -39,19 +51,21 @@ function InstagramFollowBlock() {
         }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="white" strokeWidth="1.8"/>
-          <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8"/>
-          <circle cx="17.5" cy="6.5" r="1.1" fill="white"/>
+          <rect x="2" y="2" width="20" height="20" rx="5.5" stroke="white" strokeWidth="1.8" />
+          <circle cx="12" cy="12" r="4.5" stroke="white" strokeWidth="1.8" />
+          <circle cx="17.5" cy="6.5" r="1.1" fill="white" />
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-[12px] font-black" style={{ color: '#9b1a6a' }}>@sauna_road_kr 팔로우</p>
+        <p className="text-[12px] font-black" style={{ color: '#9b1a6a' }}>
+          @sauna_road_kr 팔로우
+        </p>
         <p className="mt-0.5 text-[11px] leading-snug" style={{ color: '#c05080' }}>
           새 사우나 소식 · 업데이트 알림
         </p>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M9 18l6-6-6-6" stroke="#c05080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M9 18l6-6-6-6" stroke="#c05080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </a>
   )
@@ -79,80 +93,8 @@ export default function MyPageClient() {
     staleTime: 1000 * 60 * 3,
   })
 
-  // 사우나 기록 통계 산출
-  let totalSets = 0
-  let totalSaunaMinutes = 0
-  let totalColdMinutes = 0
-  let coldSessionsCount = 0
-
-  records.forEach((r) => {
-    if (r.sessions && Array.isArray(r.sessions)) {
-      r.sessions.forEach((s) => {
-        if (s.type === 'sauna') {
-          totalSaunaMinutes += s.duration_minutes || 0
-          totalSets++
-        } else if (s.type === 'cold') {
-          totalColdMinutes += s.duration_minutes || 0
-          coldSessionsCount++
-        } else if (s.type === 'rest') {
-          // 휴식 등 기타 세션 처리
-        }
-      })
-    }
-  })
-
-  const BADGES = [
-    {
-      id: 'rookie',
-      name: '입문 사우너',
-      emoji: '🐣',
-      desc: '첫 사활을 성공적으로 기록함',
-      unlocked: records.length >= 1,
-      hint: '사활 1회 작성',
-      color: 'from-[#fff3ee] to-[#ffdecb]',
-      textColor: 'text-[#e05a00]',
-    },
-    {
-      id: 'veteran',
-      name: '불가마 숙련자',
-      emoji: '🔥',
-      desc: '뜨거운 사우나에 익숙해진 사우너',
-      unlocked: records.length >= 5,
-      hint: '사활 5회 작성',
-      color: 'from-[#fff0f0] to-[#ffcccc]',
-      textColor: 'text-red-600',
-    },
-    {
-      id: 'emperor',
-      name: '극락의 지배자',
-      emoji: '🧖',
-      desc: '진정한 사우나의 극락을 깨달은 마스터',
-      unlocked: records.length >= 15,
-      hint: '사활 15회 작성',
-      color: 'from-[#f5e6ff] to-[#ebb3ff]',
-      textColor: 'text-purple-600',
-    },
-    {
-      id: 'cold_lord',
-      name: '냉탕의 황제',
-      emoji: '❄️',
-      desc: '차가운 냉탕을 완벽히 정복한 지배자',
-      unlocked: coldSessionsCount >= 10,
-      hint: '냉탕 10회 이상 이용',
-      color: 'from-[#eef3ff] to-[#ccd9ff]',
-      textColor: 'text-[#0051e0]',
-    },
-    {
-      id: 'bookmark_master',
-      name: '찜 마스터',
-      emoji: '💖',
-      desc: '가고 싶은 사우나를 꼼꼼히 저장한 수집가',
-      unlocked: favorites.length >= 5,
-      hint: '사우나 찜 5회 이상',
-      color: 'from-[#fff0f6] to-[#ffccd8]',
-      textColor: 'text-pink-600',
-    },
-  ]
+  // 사우나 여권 및 통계 종합 계산 (실제 유저 데이터 기반)
+  const stats = computePassportStats(records, favorites, user?.id)
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -162,51 +104,58 @@ export default function MyPageClient() {
     router.replace('/')
   }
 
+  // ── 비로그인 상태 ──────────────────────────────────────────
   if (!isLoading && !user) {
     return (
-      <div className="flex h-full flex-col bg-bg-main">
-        <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle flex-shrink-0">
-          <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-bg-main border border-border-main text-3xl shadow-sm">
+      <div className="flex h-full flex-col bg-bg-main overflow-y-auto scrollbar-hide space-y-4 pb-24">
+        {/* 비로그인 상단 헤더 */}
+        <div className="bg-bg-sub px-6 pb-6 pt-8 text-center border-b border-border-subtle flex-shrink-0">
+          <div className="mx-auto mb-2.5 flex h-14 w-14 items-center justify-center rounded-full bg-bg-main border border-border-main text-2xl shadow-sm">
             🧖
           </div>
-          <h1 className="mb-1 text-[17px] font-black text-text-main">로그인이 필요해요</h1>
-          <p className="text-[12px] text-text-sub mb-4">찜 목록과 방문 기록을 저장해보세요</p>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-point px-6 py-2.5 text-[13px] font-black text-white shadow-sm transition active:scale-[0.97] hover:bg-point-hover"
-          >
-            로그인 / 회원가입
-          </Link>
+          <h1 className="mb-1 text-[17px] font-black text-text-main">사우나 여권을 발급받으세요</h1>
+          <p className="text-[12px] text-text-sub">
+            로그인하면 방문 기록, 지역 스탬프, 사우너 뱃지가 저장됩니다.
+          </p>
         </div>
 
-        {/* 비로그인 안내 기능 프리뷰 */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3.5 scrollbar-hide pb-20">
+        {/* 미발급 사우나 여권 커버 */}
+        <UnissuedSaunaPassport />
+
+        {/* 여권 발급 혜택 안내 */}
+        <div className="px-4 space-y-3">
           <div className="rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
-            <p className="text-[12px] font-black text-text-main mb-0.5">✨ 로그인하면 이런 기능을 쓸 수 있어요</p>
-            <p className="text-[11px] text-text-muted mb-3">나만의 사우나 라이프를 기록하고 관리해 보세요.</p>
-            
+            <p className="text-[12px] font-black text-text-main mb-0.5">✨ 사우나 여권으로 누리는 혜택</p>
+            <p className="text-[11px] text-text-muted mb-3">나만의 사우나 라이프를 기록하고 성장시켜보세요.</p>
+
             <div className="space-y-2">
               <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
-                <span className="text-2xl flex-shrink-0">💖</span>
+                <span className="text-2xl flex-shrink-0">🛂</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-text-main">가고 싶은 사우나 찜하기</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">찜한 사우나를 모아보고 방문 상태를 체크하세요.</p>
+                  <p className="text-[12px] font-black text-text-main">고유 사우나 여권 & 등급 칭호</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    방문 횟수(사활)에 따라 '입문 사우너'부터 '전설의 토토노이 마스터'까지 승급!
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
-                <span className="text-2xl flex-shrink-0">⏱️</span>
+                <span className="text-2xl flex-shrink-0">🧭</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-text-main">사활 세션 루틴 기록</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">사우나·냉탕·휴식 시간을 분 단위로 기록하고 통계를 남겨요.</p>
+                  <p className="text-[12px] font-black text-text-main">전국 사우나 지역 스탬프 투어</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    마포구, 강남구 등 방문한 지역마다 여권 도장이 찍히는 도장 깨기!
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 rounded-xl bg-bg-sub/60 p-3 border border-border-subtle">
-                <span className="text-2xl flex-shrink-0">🏆</span>
+                <span className="text-2xl flex-shrink-0">📊</span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-[12px] font-black text-text-main">사우너 업적 뱃지 획득</p>
-                  <p className="text-[10px] text-text-muted mt-0.5">사활 작성 횟수와 냉탕 정복에 따라 특별 뱃지가 열려요.</p>
+                  <p className="text-[12px] font-black text-text-main">사우나·냉탕·휴식 루틴 비율 분석</p>
+                  <p className="text-[10px] text-text-muted mt-0.5">
+                    총 이용 시간과 황금 비율을 자동으로 계산해 드립니다.
+                  </p>
                 </div>
               </div>
             </div>
@@ -218,6 +167,7 @@ export default function MyPageClient() {
     )
   }
 
+  // ── 로딩 상태 ──────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex h-full flex-col bg-bg-main animate-pulse">
@@ -230,103 +180,94 @@ export default function MyPageClient() {
     )
   }
 
+  // ── 로그인된 마이페이지 (실제 유저 데이터 100% 반영) ───────────
   return (
-    <div data-scroll-main className="h-full overflow-y-auto scrollbar-hide bg-bg-main">
-      {/* 프로필 헤더 */}
-      <div className="bg-bg-sub px-6 pb-8 pt-10 text-center border-b border-border-subtle">
-        <div className="mx-auto mb-3 h-20 w-20 overflow-hidden rounded-full border-2 border-border-main shadow-md">
-          {avatarUrl ? (
-            <Image src={avatarUrl} alt={displayName} width={80} height={80} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-bg-main text-3xl">🧖</div>
-          )}
+    <div data-scroll-main className="h-full overflow-y-auto scrollbar-hide bg-bg-main space-y-4 pb-24">
+      {/* 최상단 프로필 인트로 바 */}
+      <div className="flex items-center justify-between px-5 pt-6 pb-1">
+        <div>
+          <h1 className="text-[19px] font-black text-text-main tracking-tight">
+            마이 사우나 여권
+          </h1>
+          <p className="text-[11px] text-text-muted">
+            오늘도 극락 다녀오셨나요? 🔥
+          </p>
         </div>
-        <h1 className="mb-0.5 text-xl font-black text-text-main">{displayName}</h1>
-        {email && <p className="text-[11px] text-text-muted">{email}</p>}
-        <p className="mt-1.5 text-[11px] font-semibold text-text-sub">오늘도 극락 다녀오셨나요? 🔥</p>
+        <Link
+          href="/my/settings"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-main bg-bg-card text-text-sub transition active:scale-95 hover:text-point"
+          title="설정"
+        >
+          <BiCog size={20} />
+        </Link>
       </div>
 
-      {/* 통계 요약 */}
-      <div className="mx-4 -mt-4 mb-4 grid grid-cols-2 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card overflow-hidden">
+      {/* 1. 사우나 여권 메인 카드 */}
+      <SaunaPassport
+        displayName={displayName}
+        avatarUrl={avatarUrl}
+        passportNumber={stats.passportNumber}
+        issuedDate={stats.issuedDate}
+        levelInfo={stats.levelInfo}
+        totalVisits={stats.totalVisits}
+        uniqueSaunasCount={stats.uniqueSaunasCount}
+      />
+
+      {/* 2. 찜 / 사활 원터치 이동 요약 카드 */}
+      <div className="mx-4 grid grid-cols-2 divide-x divide-border-subtle rounded-2xl border border-border-main bg-bg-card shadow-card overflow-hidden">
         <Link
           href="/my/favorites"
-          className="group py-4 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
+          className="group py-3.5 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
         >
-          <p className="text-[10px] font-bold text-text-muted mb-1">찜</p>
-          <p className="text-2xl font-black text-text-main transition-colors duration-200 group-hover:text-point">
+          <p className="text-[10px] font-bold text-text-muted mb-0.5">가고 싶은 찜</p>
+          <p className="text-xl font-black text-text-main transition-colors duration-200 group-hover:text-point tabular-nums">
             {favorites.length}
           </p>
         </Link>
         <Link
           href="/my/records"
-          className="group py-4 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
+          className="group py-3.5 text-center transition-colors duration-200 hover:bg-bg-sub active:bg-bg-main"
         >
-          <p className="text-[10px] font-bold text-text-muted mb-1">사활</p>
-          <p className="text-2xl font-black text-text-main transition-colors duration-200 group-hover:text-point">
+          <p className="text-[10px] font-bold text-text-muted mb-0.5">내 사활 기록</p>
+          <p className="text-xl font-black text-text-main transition-colors duration-200 group-hover:text-point tabular-nums">
             {records.length}
           </p>
         </Link>
       </div>
 
-      {/* 사우나 등록 버튼 */}
-      <div className="px-4 mb-4">
+      {/* 3. 새 사우나 등록 바로가기 */}
+      <div className="px-4">
         <Link
           href="/saunas/new"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-3 text-[13px] font-black text-point transition active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-point/40 bg-point/5 py-2.5 text-[12px] font-black text-point transition active:scale-[0.98] hover:bg-point/10"
         >
           <BiPlus size={16} />
           새 사우나 등록하기
         </Link>
       </div>
 
-      {/* 누적 통계 보드 */}
-      {records.length > 0 && (
-        <div className="mx-4 mb-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
-          <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">My Sauna Stats</p>
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-bg-main py-3">
-              <p className="text-[9px] font-bold text-text-muted mb-0.5">누적 세트</p>
-              <p className="text-[14px] font-black text-text-main tabular-nums">{totalSets}세트</p>
-            </div>
-            <div className="rounded-xl bg-bg-main py-3">
-              <p className="text-[9px] font-bold text-text-muted mb-0.5">사우나 총합</p>
-              <p className="text-[14px] font-black text-text-main tabular-nums">{totalSaunaMinutes}분</p>
-            </div>
-            <div className="rounded-xl bg-bg-main py-3">
-              <p className="text-[9px] font-bold text-text-muted mb-0.5">냉탕 총합</p>
-              <p className="text-[14px] font-black text-text-main tabular-nums">{totalColdMinutes}분</p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* 4. 사활 핵심 메트릭 대시보드 (KPI 4종, 최애 사우나, 루틴 비율 게이지) */}
+      <PassportStatsBoard
+        totalVisits={stats.totalVisits}
+        uniqueSaunasCount={stats.uniqueSaunasCount}
+        thisMonthVisits={stats.thisMonthVisits}
+        averageRating={stats.averageRating}
+        topSauna={stats.topSauna}
+        routine={stats.routine}
+      />
 
-      {/* 명예 배지 섹션 */}
-      <div className="mx-4 mb-6 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm">
-        <p className="mb-3 text-[10px] font-black text-text-muted tracking-widest uppercase">Sauner Badges</p>
-        <div className="flex flex-row gap-3 overflow-x-auto scrollbar-hide pb-1" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}>
-          {BADGES.map((badge) => (
-            <div
-              key={badge.id}
-              className={`flex w-24 flex-shrink-0 flex-col items-center justify-center rounded-xl border p-3 text-center transition ${
-                badge.unlocked
-                  ? `border-border-main bg-gradient-to-br ${badge.color} shadow-sm`
-                  : 'border-border-subtle bg-bg-main/30 opacity-40'
-              }`}
-            >
-              <span className="text-2xl mb-1.5">{badge.emoji}</span>
-              <p className={`text-[10px] font-black truncate w-full ${badge.unlocked ? badge.textColor : 'text-text-muted'}`}>
-                {badge.name}
-              </p>
-              <p className="mt-0.5 text-[8px] font-medium text-text-muted leading-tight">
-                {badge.unlocked ? '획득 완료' : badge.hint}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 5. 지역별 도장 깨기 (스탬프 투어) */}
+      <PassportStamps stamps={stats.stamps} />
 
-      {/* 메뉴 목록 */}
-      <div className="px-4 space-y-2 pb-24">
+      {/* 6. 사우너 명예 뱃지 2.0 */}
+      <SaunaBadgeCollection badges={stats.badges} />
+
+      {/* 7. 마이페이지 메뉴 목록 */}
+      <div className="px-4 space-y-2 pt-2">
+        <p className="px-1 text-[11px] font-black uppercase tracking-wider text-text-muted">
+          사우나 메뉴
+        </p>
+
         {MENU_ITEMS.map((item) => (
           <button
             key={item.href}
@@ -337,35 +278,44 @@ export default function MyPageClient() {
               }
               router.push(item.href)
             }}
-            className="group flex w-full items-center gap-4 rounded-2xl border border-border-main bg-bg-card p-4 shadow-sm transition active:scale-[0.98]"
+            className="group flex w-full items-center gap-3.5 rounded-2xl border border-border-main bg-bg-card p-3.5 shadow-sm transition active:scale-[0.98] hover:border-point/40"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-main text-text-sub">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-bg-sub text-text-sub">
               <item.icon size={20} />
             </div>
-            <div className="flex-1 text-left">
+            <div className="flex-1 text-left min-w-0">
               <p className="text-[13px] font-black text-text-main">{item.label}</p>
-              <p className="text-[11px] font-medium text-text-muted">{item.desc}</p>
+              <p className="text-[11px] font-medium text-text-muted truncate">{item.desc}</p>
             </div>
             {item.comingSoon ? (
-              <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">준비중</span>
+              <span className="text-[10px] font-bold text-text-muted border border-border-main rounded-full px-2 py-0.5">
+                준비중
+              </span>
             ) : (
-              <BiChevronRight size={18} className="text-text-muted/50" />
+              <BiChevronRight size={18} className="text-text-muted/60" />
             )}
           </button>
         ))}
 
-        {/* ── 인스타그램 팔로우 블록 ── */}
-        <InstagramFollowBlock />
+        {/* 인스타그램 팔로우 블록 */}
+        <div className="pt-1">
+          <InstagramFollowBlock />
+        </div>
 
-        {/* ── 하단 보조 메뉴 ── */}
-        <div className="pt-2 pb-6 border-t border-border-subtle mt-1">
-          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold text-text-muted transition-colors duration-150 hover:bg-bg-card hover:text-text-sub active:bg-bg-main">
+        {/* 하단 보조 메뉴 */}
+        <div className="pt-3 pb-4 border-t border-border-subtle space-y-1">
+          <button
+            type="button"
+            onClick={() => toast('고객센터(카카오채널) 오픈 준비 중입니다 🙏', { icon: '💬' })}
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold text-text-muted transition-colors duration-150 hover:bg-bg-card hover:text-text-sub active:bg-bg-main"
+          >
             <BiHelpCircle size={18} />
             도움말 및 문의
           </button>
           <button
+            type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[13px] font-bold text-danger/60 transition-colors duration-150 hover:bg-danger/5 hover:text-danger active:bg-danger/10"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-[13px] font-bold text-danger/60 transition-colors duration-150 hover:bg-danger/5 hover:text-danger active:bg-danger/10"
           >
             <BiLogOut size={18} />
             로그아웃
