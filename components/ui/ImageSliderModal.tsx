@@ -40,6 +40,14 @@ export default function ImageSliderModal({
 
   const total = images.length
   const hasMultiple = total > 1
+  const hasPrev = currentIndex > 0
+  const hasNext = currentIndex < total - 1
+
+  // 외부 initialIndex 변경 시 동기화
+  useEffect(() => {
+    setCurrentIndex(initialIndex)
+    setDirection(0)
+  }, [initialIndex])
 
   // 키보드 & 포털 & 바디 스크롤 제어
   useEffect(() => {
@@ -53,53 +61,27 @@ export default function ImageSliderModal({
   }, [])
 
   const prevImage = useCallback(() => {
-    if (!hasMultiple) return
+    if (currentIndex <= 0) return
     setDirection(-1)
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : total - 1))
-  }, [hasMultiple, total])
+    setCurrentIndex((prev) => Math.max(0, prev - 1))
+  }, [currentIndex])
 
   const nextImage = useCallback(() => {
-    if (!hasMultiple) return
+    if (currentIndex >= total - 1) return
     setDirection(1)
-    setCurrentIndex((prev) => (prev < total - 1 ? prev + 1 : 0))
-  }, [hasMultiple, total])
+    setCurrentIndex((prev) => Math.min(total - 1, prev + 1))
+  }, [currentIndex, total])
 
   // 키보드 단축키
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      if (e.key === 'ArrowLeft') prevImage()
-      if (e.key === 'ArrowRight') nextImage()
+      if (e.key === 'ArrowLeft' && hasPrev) prevImage()
+      if (e.key === 'ArrowRight' && hasNext) nextImage()
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [nextImage, onClose, prevImage])
-
-  // 터치 스와이프 제어
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
-    const diffX = e.changedTouches[0].clientX - touchStartX.current
-    const diffY = e.changedTouches[0].clientY - (touchStartY.current ?? 0)
-
-    // 수평 스와이프 거리 > 40px 및 수평 방향 우선
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
-      if (diffX < 0) {
-        nextImage()
-      } else {
-        prevImage()
-      }
-    }
-    touchStartX.current = null
-    touchStartY.current = null
-  }
+  }, [hasNext, hasPrev, nextImage, onClose, prevImage])
 
   const handleThumbnailClick = (idx: number) => {
     if (idx === currentIndex) return
@@ -115,10 +97,8 @@ export default function ImageSliderModal({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-[400] flex flex-col justify-between bg-black/92 backdrop-blur-md select-none touch-none"
+      className="fixed inset-0 z-[400] flex flex-col justify-between bg-black/92 backdrop-blur-md select-none"
       onClick={onClose}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
       {/* ── 상단 헤더 바 (카운터 & 닫기 버튼) ── */}
       <div
@@ -152,8 +132,8 @@ export default function ImageSliderModal({
         className="relative flex flex-1 items-center justify-center overflow-hidden px-3"
         onClick={onClose}
       >
-        {/* 좌측 이전 버튼 (데스크톱/모바일) */}
-        {hasMultiple && (
+        {/* 좌측 이전 버튼 (첫 번째 사진이 아닐 때만 노출) */}
+        {hasMultiple && hasPrev && (
           <button
             type="button"
             onClick={(e) => {
@@ -187,13 +167,18 @@ export default function ImageSliderModal({
               }}
               drag={hasMultiple ? 'x' : false}
               dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.4}
+              dragElastic={0.25}
               onDragEnd={(_e, { offset, velocity }) => {
-                const swipe = Math.abs(offset.x) * velocity.x
-                if (swipe < -80 || offset.x < -50) {
-                  nextImage()
-                } else if (swipe > 80 || offset.x > 50) {
-                  prevImage()
+                const swipeThreshold = 40
+                const velocityThreshold = 0.4
+
+                // 왼쪽으로 드래그 (다음 사진)
+                if (offset.x < -swipeThreshold || velocity.x < -velocityThreshold) {
+                  if (hasNext) nextImage()
+                }
+                // 오른쪽으로 드래그 (이전 사진)
+                else if (offset.x > swipeThreshold || velocity.x > velocityThreshold) {
+                  if (hasPrev) prevImage()
                 }
               }}
               className="flex max-h-[76vh] max-w-full items-center justify-center cursor-grab active:cursor-grabbing"
@@ -208,8 +193,8 @@ export default function ImageSliderModal({
           </AnimatePresence>
         </div>
 
-        {/* 우측 다음 버튼 */}
-        {hasMultiple && (
+        {/* 우측 다음 버튼 (마지막 사진이 아닐 때만 노출) */}
+        {hasMultiple && hasNext && (
           <button
             type="button"
             onClick={(e) => {
@@ -224,7 +209,7 @@ export default function ImageSliderModal({
         )}
       </div>
 
-      {/* ── 하단 썸네일 스트립 ── */}
+      {/* ── 하단 썸네일 스트립 (1번부터 마지막 번호까지 순서대로) ── */}
       {hasMultiple && (
         <div
           className="relative z-[410] flex items-center justify-center gap-2 overflow-x-auto px-4 pb-6 pt-2 scrollbar-hide"

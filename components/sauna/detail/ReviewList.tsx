@@ -445,6 +445,7 @@ function ReviewCard({ review, saunaId, saunaName, likeStatus }: {
       <AnimatePresence>
         {previewIndex !== null && (
           <ImageSliderModal
+            key={`review-modal-${review.id}-${previewIndex}`}
             images={review.images}
             initialIndex={previewIndex}
             onClose={() => setPreviewIndex(null)}
