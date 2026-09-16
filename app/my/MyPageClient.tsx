@@ -25,6 +25,7 @@ import PassportStatsBoard from '@/components/my/PassportStatsBoard'
 import PassportStamps from '@/components/my/PassportStamps'
 import RegionConquestMap from '@/components/my/RegionConquestMap'
 import SaunaBadgeCollection from '@/components/my/SaunaBadgeCollection'
+import type { MyFavoriteDto, MyReviewDto } from '@/types/sauna'
 
 const MENU_ITEMS = [
   { icon: BiBookmark, label: '찜한 사우나', desc: '가고 싶은 사우나 모아보기', href: '/my/favorites', comingSoon: false },
@@ -74,17 +75,27 @@ function InstagramFollowBlock() {
 }
 
 interface MyPageClientProps {
+  initialUserId?: string | null
   initialNickname?: string | null
+  initialFavorites?: MyFavoriteDto[]
+  initialRecords?: MyReviewDto[]
 }
 
-export default function MyPageClient({ initialNickname }: MyPageClientProps = {}) {
+export default function MyPageClient({
+  initialUserId,
+  initialNickname,
+  initialFavorites = [],
+  initialRecords = [],
+}: MyPageClientProps = {}) {
   const router = useRouter()
   const { user, isLoading, clearSession } = useUserStore()
 
+  const currentUserId = user?.id || initialUserId
+
   const { data: dbNickname } = useQuery({
-    queryKey: ['user-nickname', user?.id],
-    queryFn: () => getNickname(user!.id),
-    enabled: !!user,
+    queryKey: ['user-nickname', currentUserId],
+    queryFn: () => getNickname(currentUserId!),
+    enabled: !!currentUserId,
     staleTime: 1000 * 60 * 3,
     initialData: initialNickname ?? undefined,
   })
@@ -100,22 +111,24 @@ export default function MyPageClient({ initialNickname }: MyPageClientProps = {}
   const avatarUrl = user?.user_metadata?.avatar_url ?? null
   const email = user?.email ?? null
 
-  const { data: favorites = [] } = useQuery({
-    queryKey: ['favorites', user?.id],
-    queryFn: () => getFavoritesByUserId(user!.id),
-    enabled: !!user,
+  const { data: favorites = initialFavorites } = useQuery({
+    queryKey: ['favorites', currentUserId],
+    queryFn: () => getFavoritesByUserId(currentUserId!),
+    enabled: !!currentUserId,
     staleTime: 1000 * 60 * 3,
+    initialData: initialFavorites.length > 0 ? initialFavorites : undefined,
   })
 
-  const { data: records = [] } = useQuery({
-    queryKey: ['my-records', user?.id],
-    queryFn: () => getReviewsByUserId(user!.id),
-    enabled: !!user,
+  const { data: records = initialRecords } = useQuery({
+    queryKey: ['my-records', currentUserId],
+    queryFn: () => getReviewsByUserId(currentUserId!),
+    enabled: !!currentUserId,
     staleTime: 1000 * 60 * 3,
+    initialData: initialRecords.length > 0 ? initialRecords : undefined,
   })
 
   // 사우나 여권 및 통계 종합 계산 (실제 유저 데이터 기반)
-  const stats = computePassportStats(records, favorites, user?.id)
+  const stats = computePassportStats(records, favorites, currentUserId ?? undefined)
 
   const handleLogout = async () => {
     const supabase = createClient()
@@ -126,7 +139,7 @@ export default function MyPageClient({ initialNickname }: MyPageClientProps = {}
   }
 
   // ── 비로그인 상태 ──────────────────────────────────────────
-  if (!isLoading && !user) {
+  if (!isLoading && !user && !initialUserId) {
     return (
       <div className="flex h-full flex-col bg-bg-main overflow-y-auto scrollbar-hide space-y-4 pb-24">
         {/* 비로그인 상단 헤더 (명확한 로그인 / 회원가입 메인 CTA) */}
@@ -234,7 +247,7 @@ export default function MyPageClient({ initialNickname }: MyPageClientProps = {}
   }
 
   // ── 로딩 상태 ──────────────────────────────────────────
-  if (isLoading) {
+  if (isLoading && !initialUserId) {
     return (
       <div className="flex h-full flex-col bg-bg-main animate-pulse">
         <div className="bg-bg-sub px-6 pb-8 pt-10 text-center">
