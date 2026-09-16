@@ -29,6 +29,68 @@ export async function getRecentReviews(limit = 8): Promise<RecentReviewDto[]> {
   }
 }
 
+export type FeedScope = 'all' | 'following'
+
+/**
+ * 사활 피드 (페이지네이션).
+ * - all: 전체 최신 사활 (공개 클라이언트)
+ * - following: 로그인 유저가 팔로우한 사우너의 사활. 비로그인/팔로우 없음이면 빈 배열
+ */
+export async function getFeedReviews(params: {
+  scope: FeedScope
+  page?: number
+  pageSize?: number
+}): Promise<RecentReviewDto[]> {
+  const { scope, page = 0, pageSize = 15 } = params
+  try {
+    const select = `
+      id, sauna_id, rating, content, visit_date, visit_time, congestion,
+      sessions, images, like_count, comment_count, created_at,
+      users!user_id (id, nickname, avatar_url),
+      saunas (id, name, address)
+    `
+    const from = page * pageSize
+    const to = from + pageSize - 1
+
+    let query
+    if (scope === 'following') {
+      const supabase = await createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return []
+
+      const { data: follows, error: followError } = await supabase
+        .from('follows')
+        .select('following_id')
+        .eq('follower_id', user.id)
+      if (followError) throw new Error(followError.message)
+      const ids = (follows ?? []).map((f) => f.following_id as string)
+      if (ids.length === 0) return []
+
+      query = supabase.from('reviews').select(select).in('user_id', ids)
+    } else {
+      query = createPublicClient().from('reviews').select(select)
+    }
+
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .range(from, to)
+    if (error) throw new Error(error.message)
+
+    type FeedRow = Omit<RecentReviewDto, 'users' | 'saunas'> & {
+      users: ReviewUser | ReviewUser[] | null
+      saunas: RecentReviewDto['saunas'] | NonNullable<RecentReviewDto['saunas']>[]
+    }
+    return ((data ?? []) as unknown as FeedRow[]).map((row) => ({
+      ...row,
+      users: Array.isArray(row.users) ? row.users[0] ?? null : row.users,
+      saunas: Array.isArray(row.saunas) ? row.saunas[0] ?? null : row.saunas,
+    }))
+  } catch (error) {
+    console.error('사활 피드 조회 에러:', error)
+    throw new Error('피드를 불러오는데 실패했습니다.')
+  }
+}
+
 export async function getReviewsBySaunaId(saunaId: string): Promise<ReviewDto[]> {
   try {
     const supabase = createPublicClient()

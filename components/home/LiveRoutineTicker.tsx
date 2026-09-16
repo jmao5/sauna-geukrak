@@ -112,8 +112,14 @@ export default function LiveRoutineTicker() {
           </span>
         </div>
 
-        {/* 웹 & 모바일 좌우 네비게이션 버튼 컨트롤러 */}
+        {/* 피드 전체 보기 + 웹 & 모바일 좌우 네비게이션 버튼 컨트롤러 */}
         <div className="flex items-center gap-1">
+          <Link
+            href="/feed"
+            className="mr-1 flex items-center text-[11px] font-bold text-point transition active:opacity-70"
+          >
+            피드 <BiChevronRight size={13} />
+          </Link>
           <button
             type="button"
             onClick={() => scrollStep('left')}
