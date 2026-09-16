@@ -161,9 +161,20 @@
   }
 }
 
+/*
+ * html/body는 높이를 고정하거나 overflow를 숨기지 않는다.
+ * iOS 독립 실행(PWA)에서는 재로드·콘텐츠 높이 변화 직후 100dvh가 실제 화면보다 크게 계산되는 경우가 있어,
+ * 모든 층이 overflow:hidden이면 하단 네비게이션이 화면 아래에 갇혀 앱을 재시작해야 돌아온다.
+ * 평소엔 AppFrame(100dvh)이 정확히 맞아 스크롤이 생기지 않고, 어긋난 순간에만 body가 그 몇 px을 흡수한다.
+ * 바운스(rubber band)는 overscroll-behavior로만 막는다.
+ */
+html,
+body {
+  overscroll-behavior: none;
+}
+
 body {
   width: 100vw;
-  height: 100%;
   color: var(--text-main);
   background-color: #000;
   font-family: var(--font-suit), var(--font-pretendard), -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;

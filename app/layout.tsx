@@ -119,7 +119,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           async
         />
       </head>
-      <body className="antialiased overflow-hidden">
+      <body className="antialiased">
         <Script id="sw-register" strategy="afterInteractive">
           {`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`}
         </Script>
