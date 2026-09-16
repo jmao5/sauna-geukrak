@@ -40,7 +40,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude local
+# antigravity / gemini local
+.agents/output/
+.agents/settings.local.json
+GEMINI.local.md
+
+# claude legacy local
 .claude-out/
 .claude/settings.local.json
 CLAUDE.local.md

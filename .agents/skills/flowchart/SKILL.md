@@ -1,7 +1,10 @@
 ---
-description: 팀 표준 컨벤션에 맞춰 draw.io(diagrams.net) Flowchart XML(mxGraphModel)을 생성한다. 모드 full(전체 기능 흐름)·change(변경점 설계), 상세도 detail(기본)·core 지원.
-disable-model-invocation: true
+name: flowchart
+description: >-
+  팀 표준 컨벤션에 맞춰 draw.io(diagrams.net) Flowchart XML(mxGraphModel)을 생성할 때 사용한다. 모드 full(전체 기능 흐름)·change(변경점 설계), 상세도 detail(기본)·core 지원.
 ---
+
+# Flowchart Generator Skill
 
 사용자가 `/flowchart`를 호출했다. 설명받은 처리 흐름을 **표준 draw.io Flowchart 컨벤션**에 맞춘 `mxGraphModel` XML로 생성한다. 결과 XML은 draw.io에 붙여넣어 바로 렌더된다.
 
@@ -13,7 +16,7 @@ disable-model-invocation: true
 2. 흐름(사용자 액션, Server Action/API, Supabase DB 쿼리, 분기 조건, 화면 렌더 등)을 파악한다.
 3. 아래 **베이스 껍데기** 안에 **도형 카탈로그**의 스타일을 그대로 써서 노드를 배치하고, **엣지 규칙**으로 연결한다. **범례(팔레트) 블록은 항상 포함**한다.
 4. 배치·크기·연결은 아래 **레이아웃 규칙**을 따른다.
-5. 완성된 XML을 **프로젝트 루트 상대경로 `.claude-out/{기능명}.drawio.xml`** 로 저장하고 경로를 안내한다.
+5. 완성된 XML을 **프로젝트 루트 상대경로 `.agents/output/{기능명}.drawio.xml`** 로 저장하고 경로를 안내한다.
    - **저장 전 검증**: 출력 XML에 `<!-- -->` 주석이 없는지 확인한다 (주석 제거 필수).
 
 ---

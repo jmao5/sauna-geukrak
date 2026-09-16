@@ -1,8 +1,8 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code & AI Coding Agents when working with code in this repository.
+This file provides guidance to Gemini & Antigravity AI Coding Agents when working with code in this repository.
 
-> 💡 도메인 특화 세부 지침은 `.claude/rules/`에 분리되어 있으며 관련 파일 작업 시 자동 로드됩니다:
+> 💡 도메인 특화 세부 지침은 `.agents/rules/`에 분리되어 있으며 관련 작업 시 참조됩니다:
 > - `rules/architecture.md` — Next.js 16 App Router, ISR, Server Actions, 상태 관리 (`app/**`, `stores/**`, `lib/**`)
 > - `rules/supabase-db.md` — Supabase 클라이언트 3원칙, DB 스키마, JSONB 쿼리, RLS, 트리거 (`app/actions/**`, `lib/supabase/**`, `supabase/**`)
 > - `rules/ui-styling.md` — Tailwind CSS v4, 시맨틱 디자인 토큰, PWA 모바일 레이아웃 (`components/**`, `globals.css`)
@@ -11,7 +11,7 @@ This file provides guidance to Claude Code & AI Coding Agents when working with 
 
 ## 1. 프로젝트 개요
 
-- **사우나 극락 (`sauna-geukrak`)**: 일본의 '사우나이쿠' UX를 벤치마킹하여 한국 목욕 문화(세신, 한증막, 불가마, 식음료, 문신 허용 등)에 최적화한 사우나·찜질방 탐색 및 '사활(세션 루틴)' 기록 플랫폼.
+- **사우나 극락 (`sauna-geukrak`)**: 일본의 '사우나이키타이' UX를 벤치마킹하여 한국 목욕 문화(세신, 한증막, 불가마, 식음료, 문신 허용 등)에 최적화한 사우나·찜질방 탐색 및 '사활(세션 루틴)' 기록 플랫폼.
 - **플랫폼**: 모바일 퍼스트 반응형 웹 및 PWA (`100dvh`, Safe Area, 햅틱 피드백).
 
 ---
@@ -51,6 +51,7 @@ lib/                  # 유틸리티 및 Supabase 클라이언트 (client, serve
 supabase/             # DB 스키마(schema.sql) 및 마이그레이션 SQL
 types/                # TypeScript 도메인 타입 정의 (sauna, user, common)
 proxy.ts              # Next.js 16 네트워크 프록시 (SSR 세션 쿠키 갱신)
+.agents/              # Antigravity/Gemini 에이전트 설정 (rules, skills, hooks)
 ```
 
 ---

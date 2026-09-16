@@ -1,7 +1,10 @@
 ---
-description: 기능 개발, 버그 수정, 성능 개선 등의 작업 내역을 체계적인 분석/작업 보고서 마크다운으로 생성한다.
-disable-model-invocation: true
+name: task-report
+description: >-
+  기능 개발, 버그 수정, 성능 개선 등의 작업 내역을 체계적인 분석/작업 보고서 마크다운으로 생성할 때 사용한다.
 ---
+
+# Task Report Generator Skill
 
 사용자가 `/task-report`를 호출했다. 진행된 작업(기능 추가, 버그 수정, 성능 최적화, 스키마 마이그레이션 등)의 **작업 보고서(Task Report)**를 마크다운으로 생성한다.
 
@@ -10,7 +13,7 @@ disable-model-invocation: true
 1. **작업 대상 및 커밋/diff 파악**:
    - 최근 작업 내용(`git diff`, `git log`) 또는 사용자가 전달한 내용을 바탕으로 변경 범위를 수집한다.
 2. 아래 6개 섹션 표준 문서 양식에 맞춰 작성한다.
-3. 결과를 **프로젝트 루트 상대경로 `.claude-out/{작업명}.report.md`** 로 저장하고 경로를 안내한다.
+3. 결과를 **프로젝트 루트 상대경로 `.agents/output/{작업명}.report.md`** 로 저장하고 경로를 안내한다.
 
 ---
 

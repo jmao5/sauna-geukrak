@@ -8,7 +8,7 @@ paths:
 
 # Architecture & Next.js 16 Rules
 
-> `app/**`, `proxy.ts`, `stores/**`, `lib/**` 작업 시 자동 로드. 전역 지침은 루트 `CLAUDE.md` 참고.
+> `app/**`, `proxy.ts`, `stores/**`, `lib/**` 작업 시 자동 로드. 전역 지침은 루트 `GEMINI.md` 참고.
 
 ---
 

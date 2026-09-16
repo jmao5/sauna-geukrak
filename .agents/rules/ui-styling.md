@@ -7,7 +7,7 @@ paths:
 
 # UI, UX & Styling Rules
 
-> `components/**`, `app/globals.css`, `tailwind.config.ts` 작업 시 자동 로드. 전역 지침은 루트 `CLAUDE.md` 참고.
+> `components/**`, `app/globals.css`, `tailwind.config.ts` 작업 시 자동 로드. 전역 지침은 루트 `GEMINI.md` 참고.
 
 ---
 

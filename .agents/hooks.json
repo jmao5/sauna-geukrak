@@ -1,0 +1,16 @@
+{
+  "protect-env": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|view_file|replace_file_content|multi_replace_file_content|write_to_file|grep_search",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node ./hooks/protect_env.js",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -8,7 +8,7 @@ paths:
 
 # Supabase & Database Rules
 
-> `app/actions/**`, `lib/supabase/**`, `supabase/**`, `types/**` 작업 시 자동 로드. 전역 지침은 루트 `CLAUDE.md` 참고.
+> `app/actions/**`, `lib/supabase/**`, `supabase/**`, `types/**` 작업 시 자동 로드. 전역 지침은 루트 `GEMINI.md` 참고.
 
 ---
 

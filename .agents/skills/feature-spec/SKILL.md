@@ -1,7 +1,10 @@
 ---
-description: 사우나 극락의 화면 또는 기능에 대한 기능 명세서(개요, 작업 파일 목록, 컴포넌트 구조, 데이터 흐름, 핵심 프로세스)를 마크다운으로 생성한다.
-disable-model-invocation: true
+name: feature-spec
+description: >-
+  사우나 극락의 화면 또는 기능에 대한 기능 명세서(개요, 작업 파일 목록, 컴포넌트 구조, 데이터 흐름, 핵심 프로세스)를 마크다운으로 생성할 때 사용한다.
 ---
+
+# Feature Specification Skill
 
 사용자가 `/feature-spec`을 호출했다. 지정된 화면/기능(예: `/`, `/map`, `/saunas/[id]`, 리뷰 작성 등)의 **기능 명세서(Feature Specification)**를 마크다운으로 생성한다.
 
@@ -10,7 +13,7 @@ disable-model-invocation: true
 1. **대상 확정**: 라우트 경로 또는 기능명 (예: `app/saunas/[id]`, `app/map`, `stores/homeFilterStore` 등).
 2. 관련 코드(페이지, 컴포넌트, Server Action, Zustand Store, Supabase 스키마)를 읽고 아래 5개 섹션으로 구성한다.
 3. 코드에 없는 추측 정보는 기재하지 않으며 미확인 부분은 `[확인 필요]`로 명시한다.
-4. 결과를 **프로젝트 루트 상대경로 `.claude-out/{기능명}.feature-spec.md`** 로 저장하고 경로를 안내한다.
+4. 결과를 **프로젝트 루트 상대경로 `.agents/output/{기능명}.feature-spec.md`** 로 저장하고 경로를 안내한다.
 
 ---
 
