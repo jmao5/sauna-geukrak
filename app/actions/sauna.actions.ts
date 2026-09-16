@@ -97,6 +97,20 @@ const saunaSchema = z.object({
   pricing: pricingSchema,
 })
 
+/** ILIKE 와일드카드(%, _, \)를 리터럴 문자로 취급하도록 이스케이프 */
+function escapeLikePattern(input: string): string {
+  return input.replace(/[\\%_]/g, '\\$&')
+}
+
+/**
+ * PostgREST .or() 필터 값 인용.
+ * 예약문자(, . : * ( ))가 포함된 값은 큰따옴표로 감싸야 필터 파싱이 깨지지 않으며,
+ * 따옴표 내부의 " 와 \ 는 백슬래시로 이스케이프한다.
+ */
+function quoteFilterValue(value: string): string {
+  return `"${value.replace(/[\\"]/g, '\\$&')}"`
+}
+
 export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSummaryDto[]> {
   const { page = 0, pageSize = 20, keyword, region, conditions = [], sort = 'default' } = params
   try {
@@ -110,10 +124,13 @@ export async function getSaunas(params: GetSaunasParams = {}): Promise<SaunaSumm
 
     if (keyword) {
       const kw = keyword.trim()
-      query = query.or(`name.ilike.%${kw}%,address.ilike.%${kw}%`)
+      if (kw) {
+        const pattern = quoteFilterValue(`%${escapeLikePattern(kw)}%`)
+        query = query.or(`name.ilike.${pattern},address.ilike.${pattern}`)
+      }
     }
     if (region) {
-      query = query.ilike('address', `%${region}%`)
+      query = query.ilike('address', `%${escapeLikePattern(region)}%`)
     }
 
     const isFemale = conditions.includes('female')
@@ -255,7 +272,9 @@ export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
     const { data, error } = await supabase
       .from('saunas')
       .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count')
-      .textSearch('search_vector', query.trim().split(/\s+/).join(' & '))
+      // websearch: 사용자 입력의 특수문자(괄호, 콜론, 따옴표 등)로 to_tsquery 문법 오류가 나지 않음.
+      // config는 search_vector 생성식(to_tsvector('simple', ...))과 동일하게 맞춤.
+      .textSearch('search_vector', query.trim(), { type: 'websearch', config: 'simple' })
       .order('created_at', { ascending: false })
     if (error) throw new Error(error.message)
     return data as SaunaSummaryDto[]
