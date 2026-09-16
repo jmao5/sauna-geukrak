@@ -12,7 +12,7 @@ const APP_SHELL = [
   '/icons/icon-512x512.png',
   '/icons/apple-touch-icon.png',
   '/manifest.json',
-  '/lottie/sauna-loading.json',
+  '/lottie/waiting.json',
 ]
 
 // ── Install: 앱 셸 캐시 ───────────────────────────────────────
