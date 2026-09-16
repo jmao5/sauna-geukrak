@@ -17,42 +17,49 @@ export async function getUserProfile(userId: string): Promise<UserProfileDto | n
   try {
     const supabase = createPublicClient()
 
-    // 1차 시도: 전체 컬럼 조회 (bio, follower_count, following_count)
-    const { data, error } = await supabase
+    // 1. 기본 유저 정보 조회 (id, nickname, avatar_url은 항상 존재하는 안전한 컬럼)
+    const { data: user, error } = await supabase
       .from('users')
-      .select('id, nickname, avatar_url, bio, follower_count, following_count')
+      .select('id, nickname, avatar_url')
       .eq('id', userId)
       .maybeSingle()
 
-    if (data) {
-      return data as UserProfileDto
+    if (error || !user) {
+      console.warn('[getUserProfile] 유저 조회 실패:', error?.message)
+      return null
     }
 
-    // 2차 시도 (fallback): bio나 follower_count 컬럼이 DB에 없는 경우 기본 컬럼만 조회
-    if (error) {
-      console.warn('[getUserProfile] 전체 컬럼 조회 실패, 기본 컬럼으로 fallback:', error.message)
-      const { data: fallbackUser, error: fallbackError } = await supabase
+    // 2. bio 조회 시도 (컬럼 없을 수 있음)
+    let bio: string | null = null
+    try {
+      const { data: bioData } = await supabase
         .from('users')
-        .select('id, nickname, avatar_url')
+        .select('bio')
         .eq('id', userId)
         .maybeSingle()
+      bio = (bioData as any)?.bio ?? null
+    } catch {}
 
-      if (fallbackError || !fallbackUser) {
-        console.error('[getUserProfile] 기본 유저 조회도 실패:', fallbackError)
-        return null
-      }
+    // 3. 팔로워 수 및 팔로잉 수는 follows 테이블에서 직접 카운트 (users.follower_count 컬럼 유무 무관)
+    let followerCount = 0
+    let followingCount = 0
+    try {
+      const [{ count: fCount }, { count: ingCount }] = await Promise.all([
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId),
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId),
+      ])
+      followerCount = fCount ?? 0
+      followingCount = ingCount ?? 0
+    } catch {}
 
-      return {
-        id: fallbackUser.id,
-        nickname: fallbackUser.nickname,
-        avatar_url: fallbackUser.avatar_url,
-        bio: null,
-        follower_count: 0,
-        following_count: 0,
-      }
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      avatar_url: user.avatar_url,
+      bio,
+      follower_count: followerCount,
+      following_count: followingCount,
     }
-
-    return null
   } catch (err) {
     console.error('[getUserProfile] 예외 발생:', err)
     return null
@@ -67,16 +74,14 @@ export async function getFollowStatus(
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
+    // follows 테이블에서 직접 팔로워 수 카운트
     let followerCount = 0
     try {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('follower_count')
-        .eq('id', targetUserId)
-        .maybeSingle()
-      if (profile?.follower_count !== undefined && profile?.follower_count !== null) {
-        followerCount = profile.follower_count
-      }
+      const { count } = await supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', targetUserId)
+      followerCount = count ?? 0
     } catch {}
 
     if (!user || user.id === targetUserId) {
@@ -178,31 +183,15 @@ export async function toggleFollow(
       isFollowing = true
     }
 
-    // 2. 최신 팔로워 수 집계 (컬럼 조회 시도 후 실패 시 count로 fallback)
+    // 2. 최신 팔로워 수 집계 (follows 테이블에서 직접 카운트)
     let followerCount = 0
     try {
-      const { data: profile } = await supabase
-        .from('users')
-        .select('follower_count')
-        .eq('id', targetUserId)
-        .maybeSingle()
-
-      if (profile?.follower_count !== undefined && profile?.follower_count !== null) {
-        followerCount = profile.follower_count
-      } else {
-        const { count } = await supabase
-          .from('follows')
-          .select('*', { count: 'exact', head: true })
-          .eq('following_id', targetUserId)
-        followerCount = count ?? 0
-      }
-    } catch {
       const { count } = await supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
         .eq('following_id', targetUserId)
       followerCount = count ?? 0
-    }
+    } catch {}
 
     // 3. 관련 경로 캐시 무효화
     try {
