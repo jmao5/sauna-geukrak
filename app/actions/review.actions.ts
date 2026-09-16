@@ -117,7 +117,7 @@ export async function getReviewsBySaunaId(saunaId: string): Promise<ReviewDto[]>
 
 export async function getReviewsByUserId(userId: string): Promise<MyReviewDto[]> {
   try {
-    const supabase = await createClient()
+    const supabase = createPublicClient()
     const { data, error } = await supabase
       .from('reviews')
       .select(`
