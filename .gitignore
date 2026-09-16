@@ -49,3 +49,7 @@ GEMINI.local.md
 .claude-out/
 .claude/settings.local.json
 CLAUDE.local.md
+
+# local artifacts
+.pnpm-store/
+scratch/

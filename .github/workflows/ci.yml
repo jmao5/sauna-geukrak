@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Next.js route types
+        run: pnpm exec next typegen
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
+      # 기존 lint 오류(scripts/*.js require, no-explicit-any 등)가 정리되면 continue-on-error를 제거해 필수 단계로 전환
+      - name: Lint (non-blocking)
+        run: pnpm lint
+        continue-on-error: true
