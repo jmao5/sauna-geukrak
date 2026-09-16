@@ -62,7 +62,10 @@ export async function getFeedReviews(params: {
         .from('follows')
         .select('following_id')
         .eq('follower_id', user.id)
-      if (followError) throw new Error(followError.message)
+      if (followError) {
+        console.warn('[getFeedReviews] follows 조회 실패:', followError.message)
+        return []
+      }
       const ids = (follows ?? []).map((f) => f.following_id as string)
       if (ids.length === 0) return []
 

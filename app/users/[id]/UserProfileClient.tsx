@@ -4,7 +4,7 @@ import { useTransition, useOptimistic } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { BiChevronLeft, BiUser, BiHeart, BiStar, BiSolidStar, BiSolidStarHalf } from 'react-icons/bi'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toggleFollow, getFollowStatus, UserProfileDto } from '@/app/actions/follow.actions'
 import { useUserStore } from '@/stores/userStore'
 import type { MyReviewDto } from '@/types/sauna'
@@ -19,6 +19,7 @@ function FollowButton({ targetId, initialFollowing, initialCount }: {
 }) {
   const { user } = useUserStore()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isPending, startTransition] = useTransition()
   const [optimistic, setOptimistic] = useOptimistic(
     { following: initialFollowing, count: initialCount },
@@ -31,7 +32,13 @@ function FollowButton({ targetId, initialFollowing, initialCount }: {
     startTransition(async () => {
       setOptimistic({ following: next, count: optimistic.count + (next ? 1 : -1) })
       const res = await toggleFollow(targetId)
-      if (!res.ok) toast.error(res.error ?? '팔로우 처리에 실패했습니다')
+      if (!res.ok) {
+        toast.error(res.error ?? '팔로우 처리에 실패했습니다')
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['follow-status', targetId] })
+        queryClient.invalidateQueries({ queryKey: ['my-following-ids'] })
+        queryClient.invalidateQueries({ queryKey: ['feed-reviews'] })
+      }
     })
   }
 
@@ -238,6 +245,7 @@ export default function UserProfileClient({
 
             {!isMyProfile && (
               <FollowButton
+                key={`${profile.id}-${followStatus?.following}`}
                 targetId={profile.id}
                 initialFollowing={followStatus?.following ?? false}
                 initialCount={followStatus?.followerCount ?? profile.follower_count}

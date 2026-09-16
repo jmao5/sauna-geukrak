@@ -4,15 +4,17 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 import { BiHeart, BiComment, BiStar } from 'react-icons/bi'
 import { getFeedReviews, FeedScope } from '@/app/actions/review.actions'
+import { toggleFollow, getMyFollowingIds } from '@/app/actions/follow.actions'
 import { useUserStore } from '@/stores/userStore'
 import { RecentReviewDto } from '@/types/sauna'
 import RoutineTimeline from '@/components/sauna/RoutineTimeline'
 import Loading from '@/components/ui/Loading'
 import useIntersectionObserver from '@/hooks/useIntersectionObserver'
 import { hapticFeedback } from '@/utils/haptic'
+import toast from 'react-hot-toast'
 
 const PAGE_SIZE = 15
 
@@ -40,31 +42,65 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
 }
 
-function FeedCard({ review }: { review: RecentReviewDto }) {
+function FeedCard({
+  review,
+  currentUserId,
+  followingIds,
+  onToggleFollow,
+}: {
+  review: RecentReviewDto
+  currentUserId?: string | null
+  followingIds: string[]
+  onToggleFollow: (targetUserId: string) => void
+}) {
   const author = review.users
   const sauna = review.saunas
   const images = (review.images ?? []).slice(0, 3)
+  const isMe = !!author && author.id === currentUserId
+  const isFollowing = !!author && followingIds.includes(author.id)
 
   return (
     <article className="rounded-2xl border border-border-subtle bg-bg-card p-3.5">
-      {/* 작성자 */}
+      {/* 작성자 + 팔로우 버튼 + 별점 */}
       <div className="flex items-center justify-between gap-2">
-        <Link
-          href={author ? `/users/${author.id}` : '#'}
-          className="flex min-w-0 items-center gap-2 transition active:opacity-70"
-        >
-          <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
-            {author?.avatar_url ? (
-              <Image src={author.avatar_url} alt={author.nickname} fill sizes="32px" className="object-cover" />
-            ) : (
-              <span className="flex h-full w-full items-center justify-center text-sm">🧖</span>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-text-main">{author?.nickname ?? '사우나러'}</p>
-            <p className="text-[10px] text-text-muted">{timeAgo(review.created_at)}</p>
-          </div>
-        </Link>
+        <div className="flex min-w-0 items-center gap-2">
+          <Link
+            href={author ? `/users/${author.id}` : '#'}
+            className="flex min-w-0 items-center gap-2 transition active:opacity-70"
+          >
+            <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-border-main bg-bg-sub">
+              {author?.avatar_url ? (
+                <Image src={author.avatar_url} alt={author.nickname} fill sizes="32px" className="object-cover" />
+              ) : (
+                <span className="flex h-full w-full items-center justify-center text-sm">🧖</span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[12px] font-black text-text-main">{author?.nickname ?? '사우나러'}</p>
+              <p className="text-[10px] text-text-muted">{timeAgo(review.created_at)}</p>
+            </div>
+          </Link>
+
+          {/* 원탭 팔로우 버튼 */}
+          {author && !isMe && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onToggleFollow(author.id)
+              }}
+              className={`flex-shrink-0 rounded-full px-2.5 py-0.5 text-[10.5px] font-black transition active:scale-90 ${
+                isFollowing
+                  ? 'border border-border-main bg-bg-sub text-text-muted hover:text-text-main'
+                  : 'bg-point text-white hover:bg-point-hover'
+              }`}
+            >
+              {isFollowing ? '팔로잉' : '+ 팔로우'}
+            </button>
+          )}
+        </div>
+
         <span className="flex flex-shrink-0 items-center gap-0.5 text-[11px] font-black text-amber-500">
           <BiStar size={12} style={{ fill: 'currentColor' }} />
           {review.rating}
@@ -146,8 +182,37 @@ function CardSkeleton() {
 
 export default function FeedClient() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { user, isLoading: isAuthLoading } = useUserStore()
   const [scope, setScope] = useState<FeedScope>('all')
+
+  // 로그인 유저의 현재 팔로잉 ID 목록 조회
+  const { data: followingIds = [] } = useQuery({
+    queryKey: ['my-following-ids', user?.id],
+    queryFn: () => getMyFollowingIds(),
+    enabled: !!user,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const handleToggleFollow = async (targetUserId: string) => {
+    if (!user) {
+      toast('로그인 후 팔로우할 수 있어요', { icon: '🔒' })
+      router.push('/login')
+      return
+    }
+    hapticFeedback('light')
+    const res = await toggleFollow(targetUserId)
+    if (res.ok) {
+      toast(res.following ? '사우너를 팔로우했어요!' : '팔로우를 취소했어요', {
+        icon: res.following ? '🤝' : '👋',
+      })
+      queryClient.invalidateQueries({ queryKey: ['my-following-ids'] })
+      queryClient.invalidateQueries({ queryKey: ['feed'] })
+      queryClient.invalidateQueries({ queryKey: ['follow-status', targetUserId] })
+    } else {
+      toast.error(res.error ?? '팔로우 처리에 실패했습니다')
+    }
+  }
 
   const enabled = scope === 'all' || (!!user && !isAuthLoading)
 
@@ -247,7 +312,15 @@ export default function FeedClient() {
           </div>
         ) : (
           <div className="space-y-2.5 p-4">
-            {reviews.map((review) => <FeedCard key={review.id} review={review} />)}
+            {reviews.map((review) => (
+              <FeedCard
+                key={review.id}
+                review={review}
+                currentUserId={user?.id}
+                followingIds={followingIds}
+                onToggleFollow={handleToggleFollow}
+              />
+            ))}
             <div ref={sentinelRef} className="h-1" />
             {isFetchingNextPage && (
               <div className="flex items-center justify-center py-3">
