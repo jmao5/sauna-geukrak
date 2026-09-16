@@ -278,8 +278,8 @@ export async function createSauna(
     const validatedPayload = parsed.data
 
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: '로그인이 필요합니다.' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: '로그인이 필요합니다.' }
 
     let finalImages = validatedPayload.images ?? []
     if (finalImages.length === 0) {
@@ -364,8 +364,8 @@ export async function updateSauna(
     const validatedPayload = parsed.data
 
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: '로그인이 필요합니다.' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: '로그인이 필요합니다.' }
 
     const { data, error } = await supabase
       .from('saunas')

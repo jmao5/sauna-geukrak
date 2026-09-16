@@ -65,13 +65,13 @@ export async function checkFavorite(userId: string, saunaId: string): Promise<bo
 export async function addFavorite(saunaId: string): Promise<void> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { error } = await supabase
       .from('favorites')
       .upsert(
-        { user_id: session.user.id, sauna_id: saunaId },
+        { user_id: user.id, sauna_id: saunaId },
         { onConflict: 'user_id,sauna_id', ignoreDuplicates: true }
       )
     if (error) throw new Error(error.message)
@@ -83,13 +83,13 @@ export async function addFavorite(saunaId: string): Promise<void> {
 export async function removeFavorite(saunaId: string): Promise<void> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { error } = await supabase
       .from('favorites')
       .delete()
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('sauna_id', saunaId)
     if (error) throw new Error(error.message)
   } catch (error) {
@@ -100,13 +100,13 @@ export async function removeFavorite(saunaId: string): Promise<void> {
 export async function updateFavoriteMemo(saunaId: string, memo: string): Promise<void> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { error } = await supabase
       .from('favorites')
       .update({ memo: memo.trim() || null })
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('sauna_id', saunaId)
     if (error) throw new Error(error.message)
   } catch (error) {
@@ -120,13 +120,13 @@ export async function updateFavoriteStatus(
 ): Promise<void> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { error } = await supabase
       .from('favorites')
       .update({ status })
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('sauna_id', saunaId)
     if (error) throw new Error(error.message)
   } catch (error) {

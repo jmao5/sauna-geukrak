@@ -8,9 +8,9 @@ export async function getNickname(userId?: string): Promise<string | null> {
     const supabase = await createClient()
     let uid = userId
     if (!uid) {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return null
-      uid = session.user.id
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+      uid = user.id
     }
     const { data } = await supabase
       .from('users')
@@ -34,22 +34,22 @@ export async function updateNickname(nickname: string): Promise<{ ok: boolean; e
     }
 
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: '로그인이 필요합니다' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: '로그인이 필요합니다' }
 
     // 중복 확인
     const { data: existing } = await supabase
       .from('users')
       .select('id')
       .eq('nickname', trimmed)
-      .neq('id', session.user.id)
+      .neq('id', user.id)
       .maybeSingle()
     if (existing) return { ok: false, error: '이미 사용 중인 닉네임입니다' }
 
     const { error } = await supabase
       .from('users')
       .update({ nickname: trimmed })
-      .eq('id', session.user.id)
+      .eq('id', user.id)
     if (error) return { ok: false, error: error.message }
 
     // Supabase Auth 유저 메타데이터 동기화 (전역 세션 일관성 유지)

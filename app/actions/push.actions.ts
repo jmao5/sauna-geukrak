@@ -16,9 +16,9 @@ interface PushSubscriptionPayload {
 export async function savePushSubscription(subscription: PushSubscriptionPayload) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return { ok: false, error: '로그인이 필요합니다.' }
     }
 
@@ -26,7 +26,7 @@ export async function savePushSubscription(subscription: PushSubscriptionPayload
     const { data: existing, error: fetchError } = await supabase
       .from('push_subscriptions')
       .select('id')
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('subscription->>endpoint', subscription.endpoint)
       .maybeSingle()
 
@@ -44,7 +44,7 @@ export async function savePushSubscription(subscription: PushSubscriptionPayload
     const { error: insertError } = await supabase
       .from('push_subscriptions')
       .insert({
-        user_id: session.user.id,
+        user_id: user.id,
         subscription: subscription
       })
 
@@ -66,16 +66,16 @@ export async function savePushSubscription(subscription: PushSubscriptionPayload
 export async function deletePushSubscription(endpoint: string) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (!user) {
       return { ok: false, error: '로그인이 필요합니다.' }
     }
 
     const { error } = await supabase
       .from('push_subscriptions')
       .delete()
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .eq('subscription->>endpoint', endpoint)
 
     if (error) {

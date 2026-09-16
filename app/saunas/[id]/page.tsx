@@ -49,8 +49,8 @@ export default async function SaunaDetailPage({ params }: Props) {
   let initialIsFav = false
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    currentUserId = session?.user?.id ?? null
+    const { data: { user } } = await supabase.auth.getUser()
+    currentUserId = user?.id ?? null
   } catch {}
 
   try {

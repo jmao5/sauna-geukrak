@@ -14,7 +14,7 @@ export async function getReviewLikeStatuses(
   if (!reviewIds.length) return {}
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
     // like_count 포함해서 SELECT
     const { data: reviews } = await supabase
@@ -28,13 +28,13 @@ export async function getReviewLikeStatuses(
     }
 
     // 비로그인이면 liked는 모두 false, count는 DB 값 그대로 반환
-    if (!session) return result
+    if (!user) return result
 
     const { data: likes } = await supabase
       .from('review_likes')
       .select('review_id')
       .in('review_id', reviewIds)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
 
     for (const like of likes ?? []) {
       if (result[like.review_id]) result[like.review_id].liked = true
@@ -58,10 +58,10 @@ export async function toggleReviewLike(
 ): Promise<{ ok: boolean; liked: boolean; count: number; error?: string }> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, liked: false, count: 0, error: '로그인이 필요합니다' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, liked: false, count: 0, error: '로그인이 필요합니다' }
 
-    const userId = session.user.id
+    const userId = user.id
 
     // 현재 좋아요 여부 확인
     const { data: existing } = await supabase

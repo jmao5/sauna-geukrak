@@ -33,7 +33,7 @@ export async function getFollowStatus(
 ): Promise<{ following: boolean; followerCount: number }> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { user } } = await supabase.auth.getUser()
 
     const { data: profile } = await supabase
       .from('users')
@@ -43,14 +43,14 @@ export async function getFollowStatus(
 
     const followerCount = profile?.follower_count ?? 0
 
-    if (!session || session.user.id === targetUserId) {
+    if (!user || user.id === targetUserId) {
       return { following: false, followerCount }
     }
 
     const { data: existing } = await supabase
       .from('follows')
       .select('follower_id')
-      .eq('follower_id', session.user.id)
+      .eq('follower_id', user.id)
       .eq('following_id', targetUserId)
       .maybeSingle()
 
@@ -66,25 +66,25 @@ export async function toggleFollow(
 ): Promise<{ ok: boolean; following: boolean; followerCount: number; error?: string }> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, following: false, followerCount: 0, error: '로그인이 필요합니다' }
-    if (session.user.id === targetUserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, following: false, followerCount: 0, error: '로그인이 필요합니다' }
+    if (user.id === targetUserId) {
       return { ok: false, following: false, followerCount: 0, error: '자기 자신을 팔로우할 수 없습니다' }
     }
 
     const { data: existing } = await supabase
       .from('follows')
       .select('follower_id')
-      .eq('follower_id', session.user.id)
+      .eq('follower_id', user.id)
       .eq('following_id', targetUserId)
       .maybeSingle()
 
     if (existing) {
       await supabase.from('follows').delete()
-        .eq('follower_id', session.user.id).eq('following_id', targetUserId)
+        .eq('follower_id', user.id).eq('following_id', targetUserId)
     } else {
       await supabase.from('follows').insert({
-        follower_id: session.user.id,
+        follower_id: user.id,
         following_id: targetUserId,
       })
     }

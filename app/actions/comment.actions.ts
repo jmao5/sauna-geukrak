@@ -41,12 +41,12 @@ export async function createComment(
     if (trimmed.length > 500) return { ok: false, error: '500자 이하로 입력해주세요' }
 
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: '로그인이 필요합니다' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: '로그인이 필요합니다' }
 
     const { error } = await supabase.from('review_comments').insert({
       review_id: reviewId,
-      user_id: session.user.id,
+      user_id: user.id,
       content: trimmed,
     })
     if (error) return { ok: false, error: error.message }
@@ -60,14 +60,14 @@ export async function createComment(
 export async function deleteComment(commentId: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { ok: false, error: '로그인이 필요합니다' }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { ok: false, error: '로그인이 필요합니다' }
 
     const { error } = await supabase
       .from('review_comments')
       .delete()
       .eq('id', commentId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
     if (error) return { ok: false, error: error.message }
     return { ok: true }
   } catch {

@@ -103,12 +103,12 @@ export async function createReview(review: {
 }) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { data, error } = await supabase
       .from('reviews')
-      .insert({ ...review, user_id: session.user.id })
+      .insert({ ...review, user_id: user.id })
       .select()
       .single()
     if (error) throw new Error(error.message)
@@ -133,8 +133,8 @@ export async function updateReview(
 ) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { data, error } = await supabase
       .from('reviews')
@@ -148,7 +148,7 @@ export async function updateReview(
         images: review.images ?? [],
       })
       .eq('id', reviewId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
       .select()
       .single()
 
@@ -163,14 +163,14 @@ export async function updateReview(
 export async function deleteReview(reviewId: string) {
   try {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) throw new Error('로그인이 필요합니다.')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
 
     const { error } = await supabase
       .from('reviews')
       .delete()
       .eq('id', reviewId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', user.id)
 
     if (error) throw new Error(error.message)
     return { ok: true }
