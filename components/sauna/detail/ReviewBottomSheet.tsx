@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 import type { SaunaDto, Session, ReviewDto } from '@/types/sauna'
 import { formatSessionDuration } from '@/lib/utils'
+import RoutinePresets from '@/components/sauna/detail/RoutinePresets'
 
 const COLD_PRESETS = [
   { label: '30초', value: 0.5 },
@@ -452,6 +453,17 @@ export function ReviewBottomSheet({
 
             {useRoutine && (
               <div className="mt-4 space-y-3.5 border-t border-border-subtle pt-4">
+                {/* 내 루틴 프리셋 (기기 저장, 원탭 적용) */}
+                <RoutinePresets
+                  current={{ sauna: saunaTime, cold: coldTime, rest: restTime, sets: setsCount }}
+                  onApply={(p) => {
+                    setSaunaTime(p.sauna)
+                    setColdTime(p.cold)
+                    setRestTime(p.rest)
+                    setSetsCount(p.sets)
+                  }}
+                />
+
                 {/* 사우나 시간 */}
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-text-sub">🧖 사우나 시간</span>
