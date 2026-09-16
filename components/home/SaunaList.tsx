@@ -10,12 +10,12 @@ import { SaunaSummaryDto } from '@/types/sauna'
 import { useHomeFilterStore } from '@/stores/homeFilterStore'
 import { SORT_OPTIONS } from '@/constants/home'
 import { BiSortAlt2, BiChevronDown } from 'react-icons/bi'
-import LiveRoutineTicker from '@/components/home/LiveRoutineTicker'
 import ThemeCuration from '@/components/home/ThemeCuration'
 
 const INSTAGRAM_BANNER_ITEM = '__INSTAGRAM_BANNER__' as const
 const THEME_CURATION_ITEM = '__THEME_CURATION__' as const
-type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM | typeof THEME_CURATION_ITEM
+const SORT_BAR_ITEM = '__SORT_BAR__' as const
+type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM | typeof THEME_CURATION_ITEM | typeof SORT_BAR_ITEM
 
 // ── 인스타그램 배너 ───────────────────────────────────────────
 function InstagramBanner() {
@@ -89,9 +89,13 @@ export default function SaunaList({
   // 인스타그램 배너 임시 주석 처리 (사우나 목록 바로 노출)
   // const listItems: ListItem[] =
   //   hasActiveFilter || filtered.length === 0 ? filtered : [INSTAGRAM_BANNER_ITEM, ...filtered]
-  // 테마 큐레이션은 필터 미적용 시에만 목록 최상단 가상 아이템으로 삽입 (스크롤 영역과 함께 흐름)
+  // 테마 큐레이션은 필터 미적용 시 최상단에, 정렬 바는 사우나 목록 바로 위에 배치
   const listItems: ListItem[] =
-    hasActiveFilter || filtered.length === 0 ? filtered : [THEME_CURATION_ITEM, ...filtered]
+    filtered.length === 0
+      ? []
+      : hasActiveFilter
+      ? [SORT_BAR_ITEM, ...filtered]
+      : [THEME_CURATION_ITEM, SORT_BAR_ITEM, ...filtered]
   const firstSaunaIndex = listItems.findIndex((item) => typeof item !== 'string')
 
   const parentRef = useRef<HTMLDivElement>(null)
@@ -101,6 +105,7 @@ export default function SaunaList({
     estimateSize: (index) => {
       const item = listItems[index]
       if (item === THEME_CURATION_ITEM) return 320
+      if (item === SORT_BAR_ITEM) return 40
       if (item === INSTAGRAM_BANNER_ITEM) return 68
       return 155
     },
@@ -121,29 +126,8 @@ export default function SaunaList({
   const prefGender = isFemale && !isMale ? 'female' : !isFemale && isMale ? 'male' : undefined
 
   return (
-    <>
-      {/* 사우나 이키타이 스타일 실시간 신착 사활 (필터 미적용 시 홈 상단 노출) */}
-      {!hasActiveFilter && !isLoading && <LiveRoutineTicker />}
-
-      {!isLoading && (
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-border-subtle bg-bg-main px-4 py-2">
-          <p className="text-[11.5px] font-bold text-text-muted">
-            전체 사우나 <span className="text-point font-black">{filtered.length}</span>곳
-          </p>
-          <button
-            onClick={() => setSortOpen(true)}
-            aria-label="정렬 기준 변경"
-            className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-card px-3 py-1 transition active:scale-95 hover:bg-bg-sub"
-          >
-            <BiSortAlt2 size={13} className="text-text-sub" />
-            <span className="text-[11px] font-bold text-text-sub">{currentSort.label}</span>
-            <BiChevronDown size={12} className="text-text-muted" />
-          </button>
-        </div>
-      )}
-
-      {/* 리스트 영역 */}
-      <div ref={parentRef} data-scroll-main className="scrollbar-hide flex-1 overflow-y-auto">
+    /* 리스트 영역 (테마 큐레이션 + 정렬 바 + 사우나 목록이 자연스럽게 스크롤) */
+    <div ref={parentRef} data-scroll-main className="scrollbar-hide flex-1 overflow-y-auto">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)
         ) : filtered.length === 0 ? (
@@ -176,6 +160,21 @@ export default function SaunaList({
                 >
                   {item === THEME_CURATION_ITEM ? (
                     <ThemeCuration />
+                  ) : item === SORT_BAR_ITEM ? (
+                    <div className="flex items-center justify-between border-b border-border-subtle bg-bg-main px-4 py-2">
+                      <p className="text-[11.5px] font-bold text-text-muted">
+                        전체 사우나 <span className="text-point font-black">{filtered.length}</span>곳
+                      </p>
+                      <button
+                        onClick={() => setSortOpen(true)}
+                        aria-label="정렬 기준 변경"
+                        className="flex items-center gap-1.5 rounded-full border border-border-main bg-bg-card px-3 py-1 transition active:scale-95 hover:bg-bg-sub"
+                      >
+                        <BiSortAlt2 size={13} className="text-text-sub" />
+                        <span className="text-[11px] font-bold text-text-sub">{currentSort.label}</span>
+                        <BiChevronDown size={12} className="text-text-muted" />
+                      </button>
+                    </div>
                   ) : item === INSTAGRAM_BANNER_ITEM ? (
                     <InstagramBanner />
                   ) : (
@@ -198,6 +197,5 @@ export default function SaunaList({
         )}
         <div className="h-20" />
       </div>
-    </>
   )
 }
