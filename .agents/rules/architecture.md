@@ -16,7 +16,7 @@ paths:
 
 - **Next.js 16 컨벤션 준수**:
   - `proxy.ts`는 Next.js 16의 네트워크 프록시/포워딩 컨벤션 파일입니다. (기존 `middleware.ts` 대신 동작)
-  - Supabase SSR 쿠키 세션 동기화(`supabase.auth.getUser()`) 및 백엔드 토큰 갱신 로직이 위치하므로 임의로 삭제하거나 구조를 깨뜨리지 않습니다.
+  - Supabase SSR 쿠키 세션 동기화(`supabase.auth.getUser()`) 로직이 위치하므로 임의로 삭제하거나 구조를 깨뜨리지 않습니다.
 - **Turbopack & React Compiler**:
   - React Compiler(`reactCompiler: true`)가 활성화되어 있어 불필요한 `useMemo`, `useCallback` 수동 작성을 지양하고 선언적인 React 코드를 유지합니다.
 

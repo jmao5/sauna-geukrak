@@ -19,7 +19,7 @@ This file provides guidance to Gemini & Antigravity AI Coding Agents when workin
 ## 2. 기술 스택
 
 - **Framework**: Next.js 16.2.4 (App Router, Turbopack, React Compiler 활성화), React 19.2.4, TypeScript 5
-- **Network Proxy**: `proxy.ts` (Next.js 16 공식 프록시 컨벤션 — Supabase SSR 세션 갱신 및 토큰 프록시)
+- **Network Proxy**: `proxy.ts` (Next.js 16 공식 프록시 컨벤션 — Supabase SSR 세션 갱신)
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`), CSS 변수 기반 시맨틱 토큰 체계, Framer Motion 12 (`domAnimation`)
 - **State**: Zustand v5 (클라이언트 전역 UI 상태), TanStack Query v5 (서버 데이터 캐싱/무한 스크롤)
 - **Backend & DB**: Supabase (PostgreSQL, Auth, Storage, RLS, DB 트리거), Web Push (VAPID)
