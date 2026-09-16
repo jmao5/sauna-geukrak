@@ -73,7 +73,11 @@ function InstagramFollowBlock() {
   )
 }
 
-export default function MyPageClient() {
+interface MyPageClientProps {
+  initialNickname?: string | null
+}
+
+export default function MyPageClient({ initialNickname }: MyPageClientProps = {}) {
   const router = useRouter()
   const { user, isLoading, clearSession } = useUserStore()
 
@@ -82,10 +86,12 @@ export default function MyPageClient() {
     queryFn: () => getNickname(user!.id),
     enabled: !!user,
     staleTime: 1000 * 60 * 3,
+    initialData: initialNickname ?? undefined,
   })
 
   const displayName =
     dbNickname ||
+    initialNickname ||
     user?.user_metadata?.nickname ||
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
