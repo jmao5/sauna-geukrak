@@ -16,6 +16,25 @@ export const CONDITIONS: { id: Condition; label: string; emoji: string }[] = [
   { id: 'parking',     label: '주차',        emoji: '🅿️' },
 ]
 
+export type ThemeId = 'coldest' | 'groundwater' | 'hottest' | 'autoloyly' | 'tattoo' | 'sesin'
+
+export type ThemeAction =
+  | { type: 'condition'; value: Condition }
+  | { type: 'sort'; value: SortKey }
+
+/**
+ * 홈 테마 큐레이션. action이 있으면 "전체 보기" 시 홈 필터/정렬에 그대로 적용된다.
+ * 세신 가성비는 대응하는 정렬 키가 없어 action 없이 레일만 노출.
+ */
+export const THEMES: { id: ThemeId; label: string; emoji: string; description: string; action?: ThemeAction }[] = [
+  { id: 'coldest',     label: '냉탕 가장 찬 곳',   emoji: '🧊', description: '냉탕 온도 낮은 순',        action: { type: 'sort', value: 'temp_cold' } },
+  { id: 'groundwater', label: '지하수 냉탕',       emoji: '🏔️', description: '천연 지하수 냉탕 보유',     action: { type: 'condition', value: 'groundwater' } },
+  { id: 'hottest',     label: '사우나 가장 뜨거운 곳', emoji: '🔥', description: '사우나실 온도 높은 순',  action: { type: 'sort', value: 'temp_hot' } },
+  { id: 'autoloyly',   label: '오토 로울리',       emoji: '💦', description: '자동 로일리 사우나실 보유', action: { type: 'condition', value: 'autoloyly' } },
+  { id: 'tattoo',      label: '타투 OK',           emoji: '🖋️', description: '문신 입장 가능',            action: { type: 'condition', value: 'tattoo' } },
+  { id: 'sesin',       label: '세신 가성비',       emoji: '🧼', description: '세신 요금 저렴한 순' },
+]
+
 export const SORT_OPTIONS: { id: SortKey; label: string }[] = [
   { id: 'default',   label: '등록순' },
   { id: 'rating',    label: '평점 높은순' },

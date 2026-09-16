@@ -1,6 +1,6 @@
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query'
 import getQueryClient from '@/lib/getQueryClient'
-import { getSaunas } from './actions/sauna.actions'
+import { getSaunas, getThemeSaunas } from './actions/sauna.actions'
 import HomeClient from './HomeClient'
 
 /**
@@ -23,14 +23,21 @@ const PAGE_SIZE = 20
 export default async function HomePage() {
   const queryClient = getQueryClient()
 
-  await queryClient.prefetchInfiniteQuery({
-    queryKey: ['saunas', 'infinite'],
-    queryFn: async () => {
-      const result = await getSaunas({ page: 0, pageSize: PAGE_SIZE })
-      return Array.isArray(result) ? result : []
-    },
-    initialPageParam: 0,
-  })
+  await Promise.all([
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ['saunas', 'infinite'],
+      queryFn: async () => {
+        const result = await getSaunas({ page: 0, pageSize: PAGE_SIZE })
+        return Array.isArray(result) ? result : []
+      },
+      initialPageParam: 0,
+    }),
+    // 테마 큐레이션도 ISR 스냅샷에 포함해 홈 진입 시 스켈레톤 없이 즉시 렌더
+    queryClient.prefetchQuery({
+      queryKey: ['theme-saunas'],
+      queryFn: () => getThemeSaunas(),
+    }),
+  ])
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

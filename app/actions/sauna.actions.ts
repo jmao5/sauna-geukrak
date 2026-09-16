@@ -3,6 +3,7 @@
 import { createClient, createPublicClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { SaunaDto, SaunaSummaryDto, NearbyRestaurant } from '@/types/sauna'
+import type { ThemeId } from '@/constants/home'
 import { getKakaoPlaceImage, downloadImageBuffer } from '@/lib/kakao'
 import { uploadSaunaImage } from '@/lib/supabase/storage'
 import { z } from 'zod'
@@ -221,6 +222,78 @@ export async function getSaunasByLocation(
   } catch (error) {
     console.error('위치 기반 사우나 조회 에러:', error)
     throw new Error('사우나 목록을 불러오는데 실패했습니다.')
+  }
+}
+
+const THEME_SELECT =
+  'id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count, is_featured'
+
+const EMPTY_THEMES: Record<ThemeId, SaunaSummaryDto[]> = {
+  coldest: [], groundwater: [], hottest: [], autoloyly: [], tattoo: [], sesin: [],
+}
+
+/**
+ * 홈 테마 큐레이션용 사우나 묶음.
+ * - 불리언 조건(지하수/타투/오토 로울리)은 DB contains 필터 + 평점순
+ * - 수치 비교(냉탕 최저/사우나 최고/세신 최저)는 JSONB 배열 내부 값이라 DB 정렬이 불가하므로
+ *   후보 풀(사활 많은 순 300곳)을 받아 서버에서 계산
+ * 실패 시 빈 묶음을 돌려 홈 렌더링을 막지 않는다.
+ */
+export async function getThemeSaunas(limit = 10): Promise<Record<ThemeId, SaunaSummaryDto[]>> {
+  try {
+    const supabase = createPublicClient()
+    const ratingOrder = { ascending: false, nullsFirst: false } as const
+
+    const [pool, groundwater, tattoo, autoloyly] = await Promise.all([
+      supabase.from('saunas').select(THEME_SELECT)
+        .order('review_count', ratingOrder).limit(300),
+      supabase.from('saunas').select(THEME_SELECT)
+        .contains('cold_baths', '[{"is_groundwater":true}]').order('avg_rating', ratingOrder).limit(limit),
+      supabase.from('saunas').select(THEME_SELECT)
+        .contains('rules', '{"tattoo_allowed":true}').order('avg_rating', ratingOrder).limit(limit),
+      supabase.from('saunas').select(THEME_SELECT)
+        .contains('sauna_rooms', '[{"has_auto_loyly":true}]').order('avg_rating', ratingOrder).limit(limit),
+    ])
+    for (const res of [pool, groundwater, tattoo, autoloyly]) {
+      if (res.error) throw new Error(res.error.message)
+    }
+
+    const trim = (rows: SaunaSummaryDto[] | null) =>
+      (rows ?? []).map((row) => ({ ...row, images: row.images?.slice(0, 1) ?? [] }))
+
+    const rows = (pool.data ?? []) as SaunaSummaryDto[]
+    const minCold = (s: SaunaSummaryDto) => {
+      const temps = (s.cold_baths ?? []).map((b) => b.temp).filter((t) => t > 0)
+      return temps.length ? Math.min(...temps) : null
+    }
+    const maxHot = (s: SaunaSummaryDto) => {
+      const temps = (s.sauna_rooms ?? []).map((r) => r.temp).filter((t) => t > 0)
+      return temps.length ? Math.max(...temps) : null
+    }
+    const minSesin = (s: SaunaSummaryDto) => {
+      const prices = [s.kr_specific?.sesin_price_male, s.kr_specific?.sesin_price_female]
+        .filter((p): p is number => typeof p === 'number' && p > 0)
+      return prices.length ? Math.min(...prices) : null
+    }
+    const rank = (metric: (s: SaunaSummaryDto) => number | null, ascending: boolean) =>
+      rows
+        .map((s) => ({ s, v: metric(s) }))
+        .filter((x): x is { s: SaunaSummaryDto; v: number } => x.v !== null)
+        .sort((a, b) => (ascending ? a.v - b.v : b.v - a.v))
+        .slice(0, limit)
+        .map((x) => x.s)
+
+    return {
+      coldest:     trim(rank(minCold, true)),
+      hottest:     trim(rank(maxHot, false)),
+      sesin:       trim(rank(minSesin, true)),
+      groundwater: trim(groundwater.data as SaunaSummaryDto[] | null),
+      tattoo:      trim(tattoo.data as SaunaSummaryDto[] | null),
+      autoloyly:   trim(autoloyly.data as SaunaSummaryDto[] | null),
+    }
+  } catch (error) {
+    console.error('테마 사우나 조회 에러:', error)
+    return EMPTY_THEMES
   }
 }
 

@@ -11,9 +11,11 @@ import { useHomeFilterStore } from '@/stores/homeFilterStore'
 import { SORT_OPTIONS } from '@/constants/home'
 import { BiSortAlt2, BiChevronDown } from 'react-icons/bi'
 import LiveRoutineTicker from '@/components/home/LiveRoutineTicker'
+import ThemeCuration from '@/components/home/ThemeCuration'
 
 const INSTAGRAM_BANNER_ITEM = '__INSTAGRAM_BANNER__' as const
-type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM
+const THEME_CURATION_ITEM = '__THEME_CURATION__' as const
+type ListItem = SaunaSummaryDto | typeof INSTAGRAM_BANNER_ITEM | typeof THEME_CURATION_ITEM
 
 // ── 인스타그램 배너 ───────────────────────────────────────────
 function InstagramBanner() {
@@ -87,13 +89,21 @@ export default function SaunaList({
   // 인스타그램 배너 임시 주석 처리 (사우나 목록 바로 노출)
   // const listItems: ListItem[] =
   //   hasActiveFilter || filtered.length === 0 ? filtered : [INSTAGRAM_BANNER_ITEM, ...filtered]
-  const listItems: ListItem[] = filtered
+  // 테마 큐레이션은 필터 미적용 시에만 목록 최상단 가상 아이템으로 삽입 (스크롤 영역과 함께 흐름)
+  const listItems: ListItem[] =
+    hasActiveFilter || filtered.length === 0 ? filtered : [THEME_CURATION_ITEM, ...filtered]
+  const firstSaunaIndex = listItems.findIndex((item) => typeof item !== 'string')
 
   const parentRef = useRef<HTMLDivElement>(null)
   const virtualizer = useVirtualizer({
     count: listItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: (index) => (listItems[index] === INSTAGRAM_BANNER_ITEM ? 68 : 155),
+    estimateSize: (index) => {
+      const item = listItems[index]
+      if (item === THEME_CURATION_ITEM) return 320
+      if (item === INSTAGRAM_BANNER_ITEM) return 68
+      return 155
+    },
     overscan: 5,
     measureElement: typeof window !== 'undefined' ? (el) => el.getBoundingClientRect().height : undefined,
   })
@@ -164,14 +174,16 @@ export default function SaunaList({
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
-                  {item === INSTAGRAM_BANNER_ITEM ? (
+                  {item === THEME_CURATION_ITEM ? (
+                    <ThemeCuration />
+                  ) : item === INSTAGRAM_BANNER_ITEM ? (
                     <InstagramBanner />
                   ) : (
                     <SaunaCard
                       sauna={item}
                       variant="row"
                       preferredGender={prefGender}
-                      priority={virtualRow.index === 0}
+                      priority={virtualRow.index === firstSaunaIndex}
                     />
                   )}
                 </div>

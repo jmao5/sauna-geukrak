@@ -173,7 +173,7 @@ export default function LiveRoutineTicker() {
                   <div className="flex items-center gap-1.5 min-w-0">
                     <div className="relative h-4 w-4 flex-shrink-0 overflow-hidden rounded-full bg-bg-card border border-border-main">
                       {avatar ? (
-                        <Image src={avatar} alt={author} fill className="object-cover" draggable={false} />
+                        <Image src={avatar} alt={author} fill sizes="16px" className="object-cover" draggable={false} />
                       ) : (
                         <span className="flex h-full w-full items-center justify-center text-[8px]">🧖</span>
                       )}
