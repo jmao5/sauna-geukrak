@@ -121,7 +121,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased">
         <Script id="sw-register" strategy="afterInteractive">
-          {`if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{})}`}
+          {`if('serviceWorker' in navigator){if(location.hostname==='localhost'||location.hostname==='127.0.0.1'){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister()))}else{navigator.serviceWorker.register('/sw.js').catch(()=>{})}}`}
         </Script>
         <QueryProvider>
           <ThemeProvider>

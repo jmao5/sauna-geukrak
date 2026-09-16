@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { BiCompass, BiSearch, BiUserCircle, BiMap } from 'react-icons/bi'
+import { BiCompass, BiNews, BiUserCircle, BiMap } from 'react-icons/bi'
 import { usePathname } from 'next/navigation'
 import { m, AnimatePresence } from 'framer-motion'
 import { hapticFeedback } from '@/utils/haptic'
@@ -9,7 +9,7 @@ import { hapticFeedback } from '@/utils/haptic'
 const NAV_ITEMS = [
   { label: '홈',  href: '/',       icon: BiCompass,    activePath: '/' },
   { label: '지도', href: '/map',    icon: BiMap,        activePath: '/map' },
-  { label: '검색', href: '/search', icon: BiSearch,     activePath: '/search' },
+  { label: '피드', href: '/feed',   icon: BiNews,       activePath: '/feed' },
   { label: '마이', href: '/my',     icon: BiUserCircle, activePath: '/my' },
 ]
 

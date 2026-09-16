@@ -1,8 +1,14 @@
-import type { Metadata } from 'next'
-import SearchClient from './SearchClient'
+import { redirect } from 'next/navigation'
 
-export const metadata: Metadata = { title: '검색' }
+interface SearchPageProps {
+  searchParams?: Promise<{ q?: string; keyword?: string }>
+}
 
-export default function SearchPage() {
-  return <SearchClient />
+export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const params = await searchParams
+  const query = params?.q || params?.keyword
+  if (query) {
+    redirect(`/?keyword=${encodeURIComponent(query)}`)
+  }
+  redirect('/')
 }

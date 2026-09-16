@@ -318,45 +318,6 @@ export async function getReviewsBySaunaId(id: string) {
   return _get(id)
 }
 
-export async function getPopularKeywords(): Promise<string[]> {
-  try {
-    const supabase = createPublicClient()
-    const { data, error } = await supabase
-      .from('saunas')
-      .select('name, address, review_count')
-      .order('review_count', { ascending: false })
-      .limit(10)
-    if (error) throw new Error(error.message)
-    const keywords: string[] = []
-    for (const row of (data ?? [])) {
-      const regionMatch = row.address?.match(/^(\S+[시군구])/)
-      if (regionMatch) keywords.push(regionMatch[1])
-      keywords.push(row.name)
-    }
-    return [...new Set(keywords)].slice(0, 5)
-  } catch {
-    return []
-  }
-}
-
-export async function searchSaunas(query: string): Promise<SaunaSummaryDto[]> {
-  try {
-    const supabase = createPublicClient()
-    const { data, error } = await supabase
-      .from('saunas')
-      .select('id, name, address, latitude, longitude, sauna_rooms, cold_baths, resting_area, pricing, rules, kr_specific, images, avg_rating, review_count')
-      // websearch: 사용자 입력의 특수문자(괄호, 콜론, 따옴표 등)로 to_tsquery 문법 오류가 나지 않음.
-      // config는 search_vector 생성식(to_tsvector('simple', ...))과 동일하게 맞춤.
-      .textSearch('search_vector', query.trim(), { type: 'websearch', config: 'simple' })
-      .order('created_at', { ascending: false })
-    if (error) throw new Error(error.message)
-    return data as SaunaSummaryDto[]
-  } catch (error) {
-    console.error('사우나 검색 에러:', error)
-    throw new Error('검색에 실패했습니다.')
-  }
-}
-
 type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
 export async function createSauna(

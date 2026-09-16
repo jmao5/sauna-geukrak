@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { BiChevronLeft, BiHeart, BiComment, BiStar } from 'react-icons/bi'
+import { BiHeart, BiComment, BiStar } from 'react-icons/bi'
 import { getFeedReviews, FeedScope } from '@/app/actions/review.actions'
 import { useUserStore } from '@/stores/userStore'
 import { RecentReviewDto } from '@/types/sauna'
@@ -181,17 +181,12 @@ export default function FeedClient() {
     <div className="flex h-full flex-col bg-bg-main">
       {/* 헤더 */}
       <div className="flex-shrink-0 bg-bg-sub shadow-[0_1px_0_var(--border-main)]">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-2">
-          <button
-            onClick={() => router.back()}
-            aria-label="뒤로 가기"
-            className="flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-bg-main active:scale-90"
-          >
-            <BiChevronLeft size={26} className="text-text-main" />
-          </button>
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
           <div>
-            <h1 className="text-base font-black text-text-main">사활 피드</h1>
-            <p className="text-[11px] text-text-muted">사우너들의 최신 루틴</p>
+            <h1 className="font-juache text-[26px] leading-none text-text-main" style={{ letterSpacing: '-0.02em' }}>
+              사활 피드
+            </h1>
+            <p className="mt-1 text-[11px] font-bold text-text-muted">사우너들의 실시간 루틴</p>
           </div>
         </div>
 

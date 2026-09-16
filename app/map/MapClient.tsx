@@ -699,8 +699,8 @@ export default function MapClient() {
                 )
               })}
               <Link
-                href="/search"
-                aria-label="검색 페이지로 이동하여 사우나 전체 보기"
+                href="/"
+                aria-label="홈으로 이동하여 사우나 전체 보기"
                 className="flex-shrink-0 w-[70px] flex flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-border-main text-text-muted transition active:scale-95 hover:border-point/40 hover:text-point"
               >
                 <BiChevronRight size={18} />

@@ -1,5 +1,7 @@
 'use client'
 
+import { Suspense, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { SaunaSummaryDto } from '@/types/sauna'
 import { getSaunas } from './actions/sauna.actions'
@@ -10,6 +12,23 @@ import SaunaList from '@/components/home/SaunaList'
 import FilterBottomSheets from '@/components/home/FilterBottomSheets'
 
 const PAGE_SIZE = 20
+
+/**
+ * /?keyword= (구 /search 리다이렉트) 쿼리를 검색어 스토어에 주입.
+ * useSearchParams는 정적 프리렌더 시 가장 가까운 Suspense 경계까지 클라이언트 렌더링으로 빠지므로,
+ * 홈 본체가 아닌 이 빈 컴포넌트에만 두고 Suspense로 격리해 홈 HTML이 온전히 프리렌더되게 한다.
+ */
+function UrlKeywordSync() {
+  const searchParams = useSearchParams()
+  const setKeyword = useHomeFilterStore((s) => s.setKeyword)
+
+  useEffect(() => {
+    const urlKeyword = searchParams.get('keyword') || searchParams.get('q')
+    if (urlKeyword) setKeyword(urlKeyword)
+  }, [searchParams, setKeyword])
+
+  return null
+}
 
 export default function HomeClient() {
   const { keyword, selectedRegion, selectedConds, sortKey } = useHomeFilterStore()
@@ -66,6 +85,9 @@ export default function HomeClient() {
 
   return (
     <div className="flex h-full flex-col bg-bg-main">
+      <Suspense fallback={null}>
+        <UrlKeywordSync />
+      </Suspense>
       <HomeHeader resultCount={filtered.length} isLoading={isLoading} />
 
       <SaunaList

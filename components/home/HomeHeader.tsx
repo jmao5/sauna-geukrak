@@ -1,10 +1,14 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { BiSearch, BiMap, BiX, BiChevronDown } from 'react-icons/bi'
+import { BiSearch, BiMap, BiX, BiChevronDown, BiHistory } from 'react-icons/bi'
 import { useHomeFilterStore } from '@/stores/homeFilterStore'
 import { CONDITIONS, SORT_OPTIONS } from '@/constants/home'
+import useLocalStorage from '@/hooks/useLocalStorage'
+
+const RECENT_STORAGE_KEY = 'sauna-geukrak:recent-searches'
+const MAX_RECENT = 8
 
 interface HomeHeaderProps {
   resultCount: number
@@ -13,9 +17,32 @@ interface HomeHeaderProps {
 
 export default function HomeHeader({ resultCount, isLoading }: HomeHeaderProps) {
   const filterScrollRef = useRef<HTMLDivElement>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
   const [isFilterDown, setIsFilterDown] = useState(false)
   const [filterStartX, setFilterStartX] = useState(0)
   const [filterScrollLeft, setFilterScrollLeft] = useState(0)
+  const [isSearchFocused, setIsSearchFocused] = useState(false)
+
+  // 최근 검색어: useSyncExternalStore 기반 훅이라 effect 없이 하이드레이션 안전
+  const { value: recentSearches, setValue: setRecentSearches } = useLocalStorage<string[]>(RECENT_STORAGE_KEY, [])
+  const saveRecent = (term: string) =>
+    setRecentSearches((prev) => [term, ...prev.filter((k) => k !== term)].slice(0, MAX_RECENT))
+  const removeRecent = (term: string) => setRecentSearches((prev) => prev.filter((k) => k !== term))
+  const clearRecent = () => setRecentSearches([])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [])
 
   const handleFilterMouseDown = (e: React.MouseEvent) => {
     if (!filterScrollRef.current) return
@@ -44,6 +71,22 @@ export default function HomeHeader({ resultCount, isLoading }: HomeHeaderProps) 
     resetAll,
   } = useHomeFilterStore()
 
+  const handleSelectRecent = (term: string) => {
+    setKeyword(term)
+    saveRecent(term)
+    setIsSearchFocused(false)
+  }
+
+  const handleRemoveRecent = (term: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    removeRecent(term)
+  }
+
+  const handleClearRecent = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    clearRecent()
+  }
+
   const visibleConds = showMoreFilters ? CONDITIONS : CONDITIONS.slice(0, 3)
   const hasSelection = !!selectedRegion || selectedConds.length > 0 || !!keyword.trim() || sortKey !== 'default'
   const currentSort = SORT_OPTIONS.find((option) => option.id === sortKey)
@@ -68,21 +111,89 @@ export default function HomeHeader({ resultCount, isLoading }: HomeHeaderProps) 
         </Link>
       </div>
 
-      <div className="px-4 pb-2.5">
+      <div className="px-4 pb-2.5" ref={searchContainerRef}>
         <div className="relative">
           <BiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" size={16} />
           <input
             type="text"
             value={keyword}
+            onFocus={() => setIsSearchFocused(true)}
             onChange={(event) => setKeyword(event.target.value)}
-            placeholder="사우나명, 지역, '지하수', '오토로울리' 검색..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const trimmed = keyword.trim()
+                if (trimmed) {
+                  saveRecent(trimmed)
+                }
+                setIsSearchFocused(false)
+                ;(e.target as HTMLInputElement).blur()
+              } else if (e.key === 'Escape') {
+                setIsSearchFocused(false)
+              }
+            }}
+            placeholder="사우나 이름, 지역으로 검색 (시설 조건은 아래 필터)"
             aria-label="사우나 검색"
             className="w-full rounded-xl border border-border-main bg-bg-card py-2.5 pl-9 pr-9 text-[13px] font-bold text-text-main outline-none transition placeholder:text-text-muted focus:border-point focus:ring-1 focus:ring-point shadow-xs"
           />
           {keyword && (
-            <button onClick={() => setKeyword('')} aria-label="검색어 지우기" className="absolute right-3 top-1/2 -translate-y-1/2">
+            <button
+              onClick={() => setKeyword('')}
+              aria-label="검색어 지우기"
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
               <BiX size={16} className="text-text-muted" />
             </button>
+          )}
+
+          {/* 최근 검색어 드롭다운 */}
+          {isSearchFocused && (
+            <div
+              className="absolute top-full left-0 right-0 mt-1.5 z-50 rounded-2xl border border-border-main bg-bg-card/95 p-3.5 shadow-xl backdrop-blur-md transition"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-border-subtle">
+                <span className="flex items-center gap-1.5 text-[11px] font-bold text-text-muted">
+                  <BiHistory size={13} /> 최근 검색어
+                </span>
+                {recentSearches.length > 0 && (
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleClearRecent}
+                    className="text-[10.5px] font-bold text-text-muted hover:text-danger transition active:opacity-70"
+                  >
+                    전체 삭제
+                  </button>
+                )}
+              </div>
+
+              {recentSearches.length === 0 ? (
+                <p className="py-4 text-center text-[11.5px] font-medium text-text-muted">
+                  최근 검색 내역이 없습니다.
+                </p>
+              ) : (
+                <div className="mt-2.5 flex flex-wrap gap-1.5 max-h-36 overflow-y-auto scrollbar-hide">
+                  {recentSearches.map((term) => (
+                    <div
+                      key={term}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSelectRecent(term)}
+                      className="group flex items-center gap-1.5 rounded-full border border-border-subtle bg-bg-sub/80 px-2.5 py-1 text-[11.5px] font-bold text-text-sub transition hover:border-point/40 hover:bg-bg-sub hover:text-text-main cursor-pointer active:scale-95"
+                    >
+                      <span>{term}</span>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => handleRemoveRecent(term, e)}
+                        aria-label={`${term} 검색어 삭제`}
+                        className="text-text-muted hover:text-text-main transition p-0.5 rounded-full"
+                      >
+                        <BiX size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
