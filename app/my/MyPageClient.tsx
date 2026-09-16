@@ -23,6 +23,7 @@ import { computePassportStats } from '@/components/my/utils/passportStats'
 import SaunaPassport, { UnissuedSaunaPassport } from '@/components/my/SaunaPassport'
 import PassportStatsBoard from '@/components/my/PassportStatsBoard'
 import PassportStamps from '@/components/my/PassportStamps'
+import RegionConquestMap from '@/components/my/RegionConquestMap'
 import SaunaBadgeCollection from '@/components/my/SaunaBadgeCollection'
 
 const MENU_ITEMS = [
@@ -315,7 +316,10 @@ export default function MyPageClient() {
         routine={stats.routine}
       />
 
-      {/* 5. 지역별 도장 깨기 (스탬프 투어) */}
+      {/* 5. 지역 정복 지도 (서울 25구 타일 + 시·도별 진행률) */}
+      <RegionConquestMap conquest={stats.conquest} />
+
+      {/* 6. 지역별 도장 깨기 (스탬프 투어) */}
       <PassportStamps stamps={stats.stamps} />
 
       {/* 6. 사우너 명예 뱃지 2.0 */}

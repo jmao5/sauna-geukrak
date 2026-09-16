@@ -1,4 +1,5 @@
 import { MyReviewDto, MyFavoriteDto, Session } from '@/types/sauna'
+import { SIDO_ALIASES, SIDO_TOTALS } from '@/constants/regions'
 
 export interface LevelInfo {
   level: number
@@ -49,6 +50,16 @@ export interface PassportBadgeInfo {
   textColor: string
 }
 
+export interface SidoConquestInfo {
+  sido: string
+  /** 방문한 구·군(또는 시·군) 이름 → 방문 횟수 */
+  visited: Record<string, number>
+  visitedCount: number
+  total: number
+  unit: string
+  progressPercent: number
+}
+
 export interface PassportStats {
   passportNumber: string
   issuedDate: string
@@ -61,6 +72,27 @@ export interface PassportStats {
   routine: RoutineRatioInfo
   stamps: RegionStampInfo[]
   badges: PassportBadgeInfo[]
+  /** 시·도별 지역 정복 진행률 (방문 많은 시·도 순) */
+  conquest: SidoConquestInfo[]
+}
+
+/**
+ * 주소에서 시·도와 정복 단위(광역시·특별시는 구·군, 도는 시·군)를 추출.
+ * 예) "서울 마포구 토정로 282" → { sido: '서울', unit: '마포구' }
+ *     "경기 고양시 덕양구 ..."  → { sido: '경기', unit: '고양시' }
+ *     "세종특별자치시 ..."      → { sido: '세종', unit: '세종' }
+ */
+export function extractSidoUnit(address?: string | null): { sido: string; unit: string } | null {
+  if (!address) return null
+  const tokens = address.trim().split(/\s+/)
+  const first = tokens[0] ?? ''
+  const alias = SIDO_ALIASES.find((a) => first.startsWith(a.match))
+  if (!alias) return null
+  if (alias.kind === 'single') return { sido: alias.sido, unit: alias.sido }
+
+  const suffix = alias.kind === 'metro' ? /(구|군)$/ : /(시|군)$/
+  const unit = tokens.slice(1, 3).find((t) => suffix.test(t))
+  return unit ? { sido: alias.sido, unit } : null
 }
 
 /**
@@ -177,6 +209,7 @@ export function computePassportStats(
   // 4. 정복한 사우나 시설 수 (중복 제거)
   const uniqueSaunaMap = new Map<string, { count: number; name: string; thumbnail: string | null; address: string }>()
   const districtMap = new Map<string, number>()
+  const sidoMap = new Map<string, Record<string, number>>()
   let thisMonthCount = 0
   let totalRatingSum = 0
   let ratingCount = 0
@@ -230,6 +263,14 @@ export function computePassportStats(
       // 지역 집계
       const district = extractDistrict(s.address)
       districtMap.set(district, (districtMap.get(district) ?? 0) + 1)
+
+      // 시·도별 정복 집계
+      const su = extractSidoUnit(s.address)
+      if (su) {
+        const bucket = sidoMap.get(su.sido) ?? {}
+        bucket[su.unit] = (bucket[su.unit] ?? 0) + 1
+        sidoMap.set(su.sido, bucket)
+      }
     }
 
     // 루틴 세션 집계
@@ -280,6 +321,27 @@ export function computePassportStats(
   const stamps: RegionStampInfo[] = Array.from(districtMap.entries())
     .map(([district, count]) => ({ district, count }))
     .sort((a, b) => b.count - a.count)
+
+  // 시·도별 정복 진행률 (서울은 타일 지도가 있어 방문이 없어도 항상 포함)
+  if (!sidoMap.has('서울')) sidoMap.set('서울', {})
+  const conquest: SidoConquestInfo[] = Array.from(sidoMap.entries())
+    .map(([sido, visited]) => {
+      const meta = SIDO_TOTALS[sido] ?? { total: 0, unit: '곳' }
+      const visitedCount = Object.keys(visited).length
+      return {
+        sido,
+        visited,
+        visitedCount,
+        total: meta.total,
+        unit: meta.unit,
+        progressPercent: meta.total > 0 ? Math.min(100, Math.round((visitedCount / meta.total) * 100)) : 0,
+      }
+    })
+    .sort((a, b) => {
+      const av = Object.values(a.visited).reduce((s, n) => s + n, 0)
+      const bv = Object.values(b.visited).reduce((s, n) => s + n, 0)
+      return bv - av
+    })
 
   // 업적 배지 목록 8종
   const badges: PassportBadgeInfo[] = [
@@ -410,5 +472,6 @@ export function computePassportStats(
     },
     stamps,
     badges,
+    conquest,
   }
 }
